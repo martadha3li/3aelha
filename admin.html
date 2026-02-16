@@ -4,96 +4,45 @@
     <meta charset="UTF-8">
     <title>لوحة التحكم - المدير</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 30px; }
-        .container { max-width: 800px; margin: auto; }
-        section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .status-active { color: green; font-weight: bold; }
-        .status-blocked { color: red; font-weight: bold; }
-        .btn-toggle { background: #6c757d; font-size: 12px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; }
+        section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>إدارة التطبيق 🔐</h1>
-
     <section>
-        <h2>نشر خبر جديد</h2>
-        <input type="text" id="newsTitle" placeholder="عنوان الخبر">
-        <textarea id="newsBody" rows="4" placeholder="تفاصيل الخبر"></textarea>
-        <input type="text" id="newsCat" placeholder="التصنيف (مثلاً: عاجل، رياضة)">
-        <button id="btnPost">نشر الخبر الآن</button>
+        <h2>إرسال إشعار عام 📢</h2>
+        <textarea id="notifText" placeholder="نص الإشعار..."></textarea>
+        <select id="notifType">
+            <option value="urgent">عاجل (أحمر)</option>
+            <option value="medium">متوسط (أزرق)</option>
+            <option value="normal">عادي (أبيض)</option>
+        </select>
+        <input type="number" id="notifDuration" placeholder="مدة العرض بالثواني (مثلاً 10)">
+        <button class="btn" id="sendNotif">إرسال الإشعار الآن</button>
     </section>
 
-    <section>
-        <h2>إدارة الأعضاء</h2>
-        <div id="usersList">جاري جلب قائمة الأعضاء...</div>
-    </section>
+    <script type="module">
+        import { db } from './config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <a href="news.html" style="display:block; text-align:center; color:#666; text-decoration:none;">← العودة للأخبار</a>
-</div>
+        document.getElementById('sendNotif').onclick = async () => {
+            const text = document.getElementById('notifText').value;
+            const type = document.getElementById('notifType').value;
+            const duration = parseInt(document.getElementById('notifDuration').value);
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { collection, addDoc, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // حماية الصفحة: التأكد أن المستخدم مدير
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (!snap.exists() || snap.data().role !== 'admin') {
-                window.location.href = "news.html";
+            if (text && duration) {
+                await addDoc(collection(db, "Notifications"), {
+                    text, type, duration,
+                    createdAt: serverTimestamp(),
+                    expiry: new Date().getTime() + (duration * 1000)
+                });
+                alert("تم إرسال الإشعار!");
+                document.getElementById('notifText').value = "";
             }
-        } else { window.location.href = "index.html"; }
-    });
-
-    // إضافة خبر
-    document.getElementById('btnPost').onclick = async () => {
-        const title = document.getElementById('newsTitle').value;
-        const body = document.getElementById('newsBody').value;
-        const cat = document.getElementById('newsCat').value;
-
-        if (title && body) {
-            await addDoc(collection(db, "News"), {
-                title, body, cat, date: new Date()
-            });
-            alert("تم نشر الخبر بنجاح!");
-            document.getElementById('newsTitle').value = "";
-            document.getElementById('newsBody').value = "";
-        } else { alert("أكمل البيانات"); }
-    };
-
-    // عرض الأعضاء والتحكم في تفعيلهم
-    onSnapshot(collection(db, "Users"), (snap) => {
-        const list = document.getElementById('usersList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const u = d.data();
-            if (u.role !== 'admin') { // لا تظهر خيار تعطيل المدير نفسه
-                list.innerHTML += `
-                    <div class="user-row">
-                        <div>
-                            <strong>${u.fullName}</strong><br>
-                            <small>${u.phone} | <span class="${u.isActive ? 'status-active' : 'status-blocked'}">${u.isActive ? 'نشط' : 'معطل'}</span></small>
-                        </div>
-                        <button class="btn-toggle" onclick="window.updateStatus('${d.id}', ${u.isActive})">
-                            ${u.isActive ? 'تعطيل الحساب' : 'تفعيل الحساب'}
-                        </button>
-                    </div>`;
-            }
-        });
-    });
-
-    // وظيفة تغيير الحالة (تفعيل/تعطيل)
-    window.updateStatus = async (id, currentStatus) => {
-        await updateDoc(doc(db, "Users", id), { isActive: !currentStatus });
-    };
-</script>
-
+        };
+    </script>
 </body>
 </html>
