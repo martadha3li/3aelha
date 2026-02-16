@@ -2,52 +2,126 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>الأخبار</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأخبار والدردشة</title>
     <style>
-        body { font-family: sans-serif; margin: 0; display: flex; }
-        nav { width: 200px; background: #333; color: white; height: 100vh; padding: 15px; }
-        main { flex: 1; padding: 20px; }
-        .admin-btn { display: none; position: fixed; bottom: 20px; left: 20px; background: red; color: white; padding: 15px; border-radius: 50px; text-decoration: none; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .news-card { border-bottom: 1px solid #ddd; padding: 15px; margin-bottom: 10px; }
+        :root { --primary: #2c3e50; --accent: #28a745; --admin: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background: #f0f2f5; height: 100vh; overflow: hidden; }
+        
+        /* القائمة الجانبية */
+        nav { width: 250px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; }
+        nav h3 { border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .cat-item { padding: 10px; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        .cat-item:hover { background: #34495e; }
+
+        /* منطقة الأخبار */
+        main { flex: 1; padding: 20px; overflow-y: auto; }
+        .news-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .news-card h4 { margin-top: 0; color: var(--primary); }
+        .news-meta { font-size: 12px; color: #888; margin-top: 10px; }
+
+        /* صندوق الدردشة */
+        #chatWrapper { width: 320px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #chatHeader { background: #333; color: white; padding: 15px; font-weight: bold; text-align: center; }
+        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; background: #e5ddd5; }
+        .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; background: white; max-width: 80%; font-size: 14px; position: relative; }
+        .my-msg { align-self: flex-end; background: #dcf8c6; margin-right: auto; }
+        #chatInputArea { padding: 10px; border-top: 1px solid #ddd; display: flex; }
+        #chatInput { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none; }
+        
+        /* زر الإدارة */
+        .admin-floating-btn { display: none; position: fixed; bottom: 20px; right: 350px; background: var(--admin); color: white; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 1000; }
+        
+        @media (max-width: 768px) { #chatWrapper, nav { display: none; } }
     </style>
 </head>
 <body>
+
     <nav>
         <h3>التصنيفات</h3>
-        <hr>
-        <div id="cats">جاري التحميل...</div>
-        <br>
-        <a href="profile.html" style="color: yellow;">ملفي الشخصي</a>
+        <div class="cat-item">الكل</div>
+        <div class="cat-item">أخبار عامة</div>
+        <div class="cat-item">تنبيهات</div>
+        <div style="margin-top: auto;">
+            <a href="profile.html" style="color: #ffc107; text-decoration: none;">👤 ملفي الشخصي</a>
+        </div>
     </nav>
+
     <main>
         <h2>آخر الأخبار</h2>
-        <div id="newsList"></div>
+        <div id="newsList">جاري التحميل...</div>
     </main>
 
-    <a href="admin.html" id="adminBtn" class="admin-btn">⚙️ لوحة الإدارة</a>
+    <div id="chatWrapper">
+        <div id="chatHeader">الدردشة العامة</div>
+        <div id="chatMessages" style="display: flex; flex-direction: column;"></div>
+        <div id="chatInputArea">
+            <input type="text" id="chatInput" placeholder="اكتب رسالة...">
+            <button id="sendMsg" style="background:none; border:none; cursor:pointer; font-size:20px; margin-right:5px;">➤</button>
+        </div>
+    </div>
+
+    <a href="admin.html" id="adminBtn" class="admin-floating-btn">⚙️ لوحة الإدارة</a>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { doc, getDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // 1. فحص الصلاحيات لزر المدير
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const snap = await getDoc(doc(db, "Users", user.uid));
-                if (snap.exists() && (snap.data().role === 'admin')) {
+                if (snap.exists() && snap.data().role === 'admin') {
                     document.getElementById('adminBtn').style.display = 'block';
                 }
             } else { window.location.href = "index.html"; }
         });
 
-        // جلب الأخبار
-        const q = query(collection(db, "News"), orderBy("date", "desc"));
-        onSnapshot(q, (snapshot) => {
+        // 2. جلب الأخبار
+        const qNews = query(collection(db, "News"), orderBy("date", "desc"));
+        onSnapshot(qNews, (snap) => {
             const list = document.getElementById('newsList');
             list.innerHTML = "";
-            snapshot.forEach(d => {
+            snap.forEach(d => {
                 const n = d.data();
-                list.innerHTML += `<div class="news-card"><h4>${n.title}</h4><p>${n.body}</p><small>${n.cat} - ${n.date.toDate().toLocaleDateString()}</small></div>`;
+                list.innerHTML += `
+                    <div class="news-card">
+                        <h4>${n.title}</h4>
+                        <p>${n.body}</p>
+                        <div class="news-meta">${n.cat} | ${n.date?.toDate().toLocaleString()}</div>
+                    </div>`;
             });
+        });
+
+        // 3. نظام الدردشة
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+
+        document.getElementById('sendMsg').onclick = async () => {
+            if (!chatInput.value.trim()) return;
+            const userSnap = await getDoc(doc(db, "Users", auth.currentUser.uid));
+            await addDoc(collection(db, "Messages"), {
+                text: chatInput.value,
+                sender: userSnap.data().fullName,
+                uid: auth.currentUser.uid,
+                time: serverTimestamp()
+            });
+            chatInput.value = "";
+        };
+
+        const qChat = query(collection(db, "Messages"), orderBy("time", "asc"));
+        onSnapshot(qChat, (snap) => {
+            chatMessages.innerHTML = "";
+            snap.forEach(d => {
+                const m = d.data();
+                const isMe = m.uid === auth.currentUser.uid;
+                chatMessages.innerHTML += `
+                    <div class="msg ${isMe ? 'my-msg' : ''}">
+                        <small style="display:block; color:orange; font-size:10px;">${m.sender}</small>
+                        ${m.text}
+                    </div>`;
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
     </script>
 </body>
