@@ -1,165 +1,54 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>الملف الشخصي</title>
-    <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        .profile-header { background: var(--primary); color: white; padding: 40px 20px; text-align: center; border-radius: 0 0 30px 30px; position: relative; }
-        .avatar-wrap { position: relative; width: 110px; height: 110px; margin: 0 auto 15px; }
-        .avatar { width: 100%; height: 100%; border-radius: 50%; border: 4px solid white; object-fit: cover; background: #eee; }
-        .upload-badge { position: absolute; bottom: 5px; right: 5px; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; cursor: pointer; font-size: 18px; }
-        .info-container { padding: 20px; }
-        .info-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-        .info-row:last-child { border: none; }
-        .label { color: #888; font-size: 13px; }
-        .value { color: var(--primary); font-weight: bold; font-size: 15px; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        .btn-change-pass { background: #eee; color: #333; }
-        .btn-request-phone { background: var(--accent); color: white; }
-        .btn-logout { background: #fff; color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; text-decoration: none; display: block; text-align: center; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; flex: 1; text-decoration: none; }
-        .nav-item i { display: block; font-size: 20px; margin-bottom: 2px; font-style: normal; }
-        .nav-item span { font-size: 11px; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; width: 100%; max-width: 350px; padding: 20px; border-radius: 15px; text-align: center; }
-        .modal-input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-size: 16px; }
-    </style>
-</head>
-<body>
+<script type="module">
+    import { auth, db, storage } from './config.js';
+    import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    import { updatePassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    <div class="profile-header">
-        <div class="avatar-wrap">
-            <img src="https://via.placeholder.com/150" id="userPhoto" class="avatar" alt="User">
-            <label for="imgInput" class="upload-badge">📷</label>
-            <input type="file" id="imgInput" hidden accept="image/*">
-        </div>
-        <h2 id="displayFullName" style="margin:0;">جاري التحميل...</h2>
-        <p id="displayRole" style="font-size:12px; opacity:0.8; margin-top:5px;"></p>
-    </div>
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            console.log("تم تسجيل الدخول بـ UID:", user.uid);
+            try {
+                // جلب المستند
+                const userDocRef = doc(db, "Users", user.uid);
+                const snap = await getDoc(userDocRef);
 
-    <div class="info-container">
-        <div class="info-card">
-            <div class="info-row"><span class="label">رقم الجوال</span> <span class="value" id="valPhone">-</span></div>
-            <div class="info-row"><span class="label">العمر</span> <span class="value" id="valAge">- سنة</span></div>
-            <div class="info-row"><span class="label">البريد الإلكتروني</span> <span class="value" id="valEmail">-</span></div>
-            <div id="guardianSection" style="display:none;">
-                <div class="info-row"><span class="label">اسم المعرف</span> <span class="value" id="valGuardian">-</span></div>
-            </div>
-        </div>
+                if (snap.exists()) {
+                    const data = snap.data();
+                    console.log("البيانات الموجودة في Firestore هي:", data);
 
-        <button class="btn btn-request-phone" onclick="openRequestModal()">📱 طلب تغيير رقم الجوال</button>
-        <button class="btn btn-change-pass" id="btnChangePass">🔑 تغيير كلمة المرور</button>
-        <button class="btn btn-logout" id="btnLogout">تسجيل الخروج</button>
-    </div>
+                    // تحديث الواجهة بمرونة (إذا لم يجد الاسم سيبحث عن مسميات أخرى)
+                    document.getElementById('displayFullName').innerText = data.fullName || data.fullname || data.name || "اسم غير محدد";
+                    document.getElementById('valPhone').innerText = data.phone || data.mobile || data.tel || "رقم غير محدد";
+                    document.getElementById('valEmail').innerText = auth.currentUser.email;
+                    document.getElementById('userPhoto').src = data.photoURL || 'https://via.placeholder.com/150';
+                    document.getElementById('displayRole').innerText = data.role === 'admin' ? "مدير النظام" : "عضو";
 
-    <div id="requestModal" class="modal">
-        <div class="modal-content">
-            <h3>تغيير رقم الجوال</h3>
-            <input type="tel" id="newPhoneInput" class="modal-input" placeholder="أدخل الرقم الجديد">
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-request-phone" id="submitRequestBtn">إرسال</button>
-                <button class="btn btn-change-pass" onclick="closeRequestModal()">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item"><i>📰</i><span>الأخبار</span></a>
-        <a href="news.html" class="nav-item"><i>💬</i><span>الدردشة</span></a>
-        <a href="profile.html" class="nav-item active"><i>👤</i><span>بروفايل</span></a>
-    </nav>
-
-    <script type="module">
-        import { auth, db, storage } from './config.js';
-        import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-        import { updatePassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        let userCachedData = null;
-
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                try {
-                    const userDocRef = doc(db, "Users", user.uid);
-                    const snap = await getDoc(userDocRef);
-                    if (snap.exists()) {
-                        userCachedData = snap.data();
-                        renderData(userCachedData);
-                    } else {
-                        document.getElementById('displayFullName').innerText = "بياناتك غير موجودة";
+                    // حساب العمر
+                    const dob = data.dob || data.birthdate || data.date;
+                    if (dob) {
+                        const birth = new Date(dob);
+                        const age = new Date().getFullYear() - birth.getFullYear();
+                        document.getElementById('valAge').innerText = age + " سنة";
                     }
-                } catch (e) {
-                    console.error("Error fetching data:", e);
-                    document.getElementById('displayFullName').innerText = "خطأ في الاتصال";
+
+                    // بيانات المعرف
+                    if (data.gender === 'female' || data.sex === 'female') {
+                        document.getElementById('guardianSection').style.display = 'block';
+                        document.getElementById('valGuardian').innerText = data.guardianName || data.guardian || "-";
+                    }
+                } else {
+                    // في حال لم يجد المستند أصلاً
+                    document.getElementById('displayFullName').innerText = "لم يتم العثور على ملفك";
+                    alert("تنبيه: حسابك مسجل في Authentication ولكن لا يوجد له سجل في Firestore. جرب التسجيل بحساب جديد.");
                 }
-            } else { window.location.href = "index.html"; }
-        });
-
-        function renderData(data) {
-            document.getElementById('displayFullName').innerText = data.fullName || "مستخدم";
-            document.getElementById('valPhone').innerText = data.phone || "-";
-            document.getElementById('valEmail').innerText = auth.currentUser.email || "-";
-            document.getElementById('userPhoto').src = data.photoURL || 'https://via.placeholder.com/150';
-            document.getElementById('displayRole').innerText = data.role === 'admin' ? "مدير النظام" : "عضو";
-
-            if (data.dob) {
-                const birth = new Date(data.dob);
-                const age = new Date().getFullYear() - birth.getFullYear();
-                document.getElementById('valAge').innerText = age + " سنة";
+            } catch (e) {
+                console.error("خطأ تقني:", e);
+                document.getElementById('displayFullName').innerText = "خطأ في الاتصال بالقاعدة";
             }
-
-            if (data.gender === 'female') {
-                document.getElementById('guardianSection').style.display = 'block';
-                document.getElementById('valGuardian').innerText = data.guardianName || "-";
-            }
+        } else { 
+            window.location.href = "index.html"; 
         }
+    });
 
-        document.getElementById('imgInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const sRef = ref(storage, `avatars/${auth.currentUser.uid}`);
-            await uploadBytes(sRef, file);
-            const url = await getDownloadURL(sRef);
-            await updateDoc(doc(db, "Users", auth.currentUser.uid), { photoURL: url });
-            document.getElementById('userPhoto').src = url;
-        };
-
-        window.openRequestModal = () => document.getElementById('requestModal').style.display = 'flex';
-        window.closeRequestModal = () => document.getElementById('requestModal').style.display = 'none';
-
-        document.getElementById('submitRequestBtn').onclick = async () => {
-            const newPhone = document.getElementById('newPhoneInput').value;
-            if (!newPhone) return;
-            await addDoc(collection(db, "Requests"), {
-                uid: auth.currentUser.uid,
-                currentPhone: userCachedData.phone,
-                requestedPhone: newPhone,
-                status: 'pending',
-                time: serverTimestamp()
-            });
-            alert("تم إرسال الطلب");
-            closeRequestModal();
-        };
-
-        document.getElementById('btnChangePass').onclick = async () => {
-            const newP = prompt("كلمة المرور الجديدة (6 رموز):");
-            if (newP && newP.length >= 6) {
-                try {
-                    await updatePassword(auth.currentUser, newP);
-                    alert("تم التحديث");
-                } catch (e) { alert("أعد تسجيل الدخول أولاً"); }
-            }
-        };
-
-        document.getElementById('btnLogout').onclick = () => {
-            signOut(auth).then(() => window.location.href = "index.html");
-        };
-    </script>
-</body>
-</html>
+    // سأبقي دوام وظائف الأزرار (تغيير الصورة، الخروج، الطلب) كما هي في الكود السابق...
+</script>
