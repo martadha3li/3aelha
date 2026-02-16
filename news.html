@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>الأخبار الجديدة</title>
+    <style>
+        body { display: flex; margin: 0; font-family: sans-serif; }
+        nav { width: 250px; background: #2c3e50; color: white; height: 100vh; padding: 20px; position: sticky; top: 0; }
+        main { flex: 1; padding: 20px; background: #fdfdfd; }
+        .news-item { border-bottom: 1px solid #eee; padding: 15px; margin-bottom: 10px; background: white; border-radius: 8px; }
+        .news-date { font-size: 12px; color: #888; }
+        .category-list div { padding: 10px; cursor: pointer; border-bottom: 1px solid #3e4f5f; }
+        .category-list div:hover { background: #34495e; }
+    </style>
+</head>
+<body>
+    <nav>
+        <h3>تصنيفات الأخبار</h3>
+        <div class="category-list" id="categories">
+            <div onclick="filterNews('all')">الكل</div>
+            </div>
+    </nav>
+    <main>
+        <h2>آخر الأخبار</h2>
+        <div id="newsFeed">جاري تحميل الأخبار...</div>
+    </main>
+
+    <script type="module">
+        import { db } from './config.js';
+        import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const newsFeed = document.getElementById('newsFeed');
+
+        // جلب الأخبار مرتبة تاريخياً
+        const q = query(collection(db, "News"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            newsFeed.innerHTML = "";
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                newsFeed.innerHTML += `
+                    <div class="news-item">
+                        <h4>${item.title}</h4>
+                        <p>${item.content}</p>
+                        <span class="news-date">${item.createdAt.toDate().toLocaleString()}</span>
+                    </div>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>

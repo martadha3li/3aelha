@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ملفي الشخصي</title>
+    <style>
+        .container { max-width: 600px; margin: 50px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+        .readonly-field { background: #eee; cursor: not-allowed; }
+        .btn-request { background: #ff9800; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>بياناتي</h2>
+        <label>الاسم:</label> <input type="text" id="profName">
+        <label>الجوال:</label> 
+        <input type="text" id="profPhone" class="readonly-field" readonly>
+        <button class="btn-request" id="requestPhoneChange">طلب تعديل الجوال</button>
+        
+        <div id="requestBox" style="display:none; margin-top:10px;">
+            <input type="tel" id="newPhone" placeholder="أدخل رقم الجوال الجديد">
+            <button id="sendRequest">إرسال الطلب للمدير</button>
+        </div>
+        
+        <button id="updateProfile" style="margin-top:20px; background: #28a745; color:white; width:100%; border:none; padding:10px;">حفظ التعديلات</button>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { doc, getDoc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // جلب البيانات عند التحميل
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "Users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    document.getElementById('profName').value = data.fullName;
+                    document.getElementById('profPhone').value = data.phone;
+                }
+            } else { window.location.href = "index.html"; }
+        });
+
+        // إظهار صندوق طلب تعديل الجوال
+        document.getElementById('requestPhoneChange').onclick = () => {
+            document.getElementById('requestBox').style.display = 'block';
+        };
+
+        // إرسال طلب التعديل للمدير
+        document.getElementById('sendRequest').onclick = async () => {
+            const newNum = document.getElementById('newPhone').value;
+            if(!newNum) return alert("أدخل الرقم");
+            await addDoc(collection(db, "Requests"), {
+                uid: auth.currentUser.uid,
+                currentPhone: document.getElementById('profPhone').value,
+                requestedPhone: newNum,
+                status: "pending",
+                date: new Date()
+            });
+            alert("تم إرسال طلبك للمدير بنجاح");
+        };
+    </script>
+</body>
+</html>
