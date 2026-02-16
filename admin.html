@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم المدير</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .admin-container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .section { border-bottom: 2px solid #eee; padding: 20px 0; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; margin: 5px; }
+        .btn-add { background: #28a745; }
+        .btn-danger { background: #dc3545; }
+        .btn-toggle { background: #007bff; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>لوحة تحكم الإدارة 🔐</h1>
+        
+        <div class="section">
+            <h3>إضافة خبر جديد</h3>
+            <input type="text" id="newsTitle" placeholder="عنوان الخبر">
+            <textarea id="newsContent" placeholder="محتوى الخبر"></textarea>
+            <select id="newsCat">
+                <option value="عاجل">عاجل</option>
+                <option value="رياضة">رياضة</option>
+                <option value="تقنية">تقنية</option>
+            </select>
+            <button class="btn btn-add" id="postNews">نشر الخبر</button>
+        </div>
+
+        <div class="section">
+            <h3>إعدادات عامة</h3>
+            <button class="btn btn-toggle" onclick="toggleSetting('chatEnabled')">تفعيل/تعطيل الدردشة العامة</button>
+            <button class="btn btn-toggle" onclick="toggleSetting('likesEnabled')">تفعيل/تعطيل الإعجابات</button>
+        </div>
+
+        <div class="section">
+            <h3>الكلمات المحجوبة</h3>
+            <input type="text" id="badWord" placeholder="أضف كلمة لحجبها">
+            <button class="btn btn-add" id="addWord">إضافة للقاموس</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { doc, getDoc, addDoc, collection, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // التحقق من أن الشخص مدير فعلاً قبل عرض الصفحة
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "Users", user.uid));
+                if (userDoc.data().role !== 'admin') {
+                    alert("غير مسموح لك بالدخول!");
+                    window.location.href = "news.html";
+                }
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // إضافة خبر
+        document.getElementById('postNews').onclick = async () => {
+            await addDoc(collection(db, "News"), {
+                title: document.getElementById('newsTitle').value,
+                content: document.getElementById('newsContent').value,
+                category: document.getElementById('newsCat').value,
+                createdAt: new Date(),
+                likes: 0
+            });
+            alert("تم نشر الخبر");
+        };
+    </script>
+</body>
+</html>
