@@ -5,98 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تطبيق التواصل الذكي</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #28a745; --unread: #e74c3c; --green: #2ecc71; --whatsapp: #25D366; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 70px; }
+        :root { --primary: #2c3e50; --accent: #28a745; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 70px; }
         
-        #adminLink { display: none; background: #e74c3c; color: white; padding: 10px; border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; position: fixed; top: 20px; left: 20px; z-index: 2000; text-decoration: none; font-size: 20px; }
-        #notificationBar { display: none; padding: 12px; text-align: center; font-weight: bold; color: white; position: sticky; top: 0; z-index: 1500; }
+        .news-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .news-actions { display: flex; gap: 15px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #666; display: flex; align-items: center; gap: 4px; }
         
-        .news-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 5px solid var(--primary); }
-        .news-actions { display: flex; gap: 15px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
-        .action-btn { background: none; border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; color: #666; }
-        .action-btn.liked { color: #e74c3c; }
-        .share-wa { color: var(--whatsapp) !important; font-weight: bold; }
-
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 12px; flex: 1; position: relative; }
-        .badge { position: absolute; top: -5px; right: 25%; background: var(--unread); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; border: 2px solid white; }
-
-        .chat-popup { display: none; position: fixed; inset: 0; background: white; z-index: 2001; flex-direction: column; animation: slideUp 0.3s; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; background: #e5ddd5; display: flex; flex-direction: column; }
+        /* قسم التعليقات */
+        .comments-section { margin-top: 15px; background: #f9f9f9; border-radius: 10px; padding: 10px; display: none; }
+        .comment-item { border-bottom: 1px solid #eee; padding: 8px 0; position: relative; }
+        .comment-user { font-weight: bold; font-size: 12px; color: var(--primary); }
+        .comment-text { font-size: 13px; margin: 2px 0; }
+        .btn-del-comm { color: var(--danger); font-size: 10px; cursor: pointer; background: none; border: none; float: left; }
+        .comment-input-box { display: flex; gap: 5px; margin-top: 10px; }
+        .comment-input-box input { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; font-size: 13px; outline: none; }
     </style>
 </head>
-<body id="appBody">
+<body>
 
-    <a href="admin.html" id="adminLink">⚙️</a>
-    <div id="notificationBar"></div>
-
-    <main>
-        <section id="newsSection" class="active-section">
-            <h2>الأخبار</h2>
-            <div id="newsList">جاري التحميل...</div>
-        </section>
-
-        <section id="chatsSection" style="display:none;">
-            <h2>المحادثات</h2>
-            <div id="onlineUsers"></div>
-        </section>
-    </main>
-
-    <div id="chatPopup" class="chat-popup">
-        <div style="background:var(--primary); color:white; padding:15px; display:flex; justify-content:space-between;">
-            <span id="chatTitle">الدردشة</span>
-            <button onclick="closeChat()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
-        </div>
-        <div id="chatMessages"></div>
-        <div style="padding:10px; display:flex; border-top:1px solid #ddd;">
-            <input type="text" id="chatInput" placeholder="اكتب هنا..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd;">
-            <button id="sendBtn" style="background:none; border:none; font-size:24px;">➤</button>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchSection('news')"><i>📰</i><span>الأخبار</span></div>
-        <div class="nav-item" onclick="switchSection('chats')">
-            <i>💬</i><span>الدردشة</span>
-            <span id="totalUnreadBadge" class="badge">0</span>
-        </div>
-        <div class="nav-item" onclick="location.href='profile.html'"><i>👤</i><span>ملفي</span></div>
-    </nav>
+    <main id="newsList" style="padding: 15px;"></main>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, collectionGroup, where, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let settings = { likesEnabled: true, shareEnabled: true };
+        let settings = { likesEnabled: true, shareEnabled: true, commentsEnabled: true };
+        let isAdmin = false;
 
-        // 1. جلب الإعدادات وفحص الصلاحيات
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const sSnap = await getDoc(doc(db, "Settings", "global"));
                 if(sSnap.exists()) settings = sSnap.data();
-
+                
                 const uSnap = await getDoc(doc(db, "Users", user.uid));
-                if (uSnap.data().role === 'admin') document.getElementById('adminLink').style.display = 'block';
+                isAdmin = uSnap.data().role === 'admin';
                 
                 loadNews();
-                trackUnread();
             } else { window.location.href = "index.html"; }
         });
 
-        // 2. نظام الإعجاب والمشاركة
-        window.toggleLike = async (newsId, isLiked) => {
-            const ref = doc(db, "News", newsId);
-            if (isLiked) {
-                await updateDoc(ref, { likes: increment(-1), likedBy: arrayRemove(auth.currentUser.uid) });
-            } else {
-                await updateDoc(ref, { likes: increment(1), likedBy: arrayUnion(auth.currentUser.uid) });
-            }
+        window.toggleComments = (id) => {
+            const el = document.getElementById(`comm-${id}`);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
         };
 
-        window.shareNews = (title, body) => {
-            const text = `*${title}*\n${body}\n\n_تمت المشاركة من تطبيقنا_`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        window.addComment = async (newsId) => {
+            const input = document.getElementById(`input-${newsId}`);
+            if (!input.value.trim()) return;
+            
+            const userSnap = await getDoc(doc(db, "Users", auth.currentUser.uid));
+            await addDoc(collection(db, `News/${newsId}/Comments`), {
+                text: input.value,
+                userName: userSnap.data().fullName,
+                uid: auth.currentUser.uid,
+                time: serverTimestamp()
+            });
+            input.value = "";
+        };
+
+        window.deleteComment = async (newsId, commId) => {
+            if(confirm("هل تريد حذف هذا التعليق؟")) {
+                await deleteDoc(doc(db, `News/${newsId}/Comments`, commId));
+            }
         };
 
         function loadNews() {
@@ -106,38 +77,43 @@
                 snap.forEach(d => {
                     const n = d.data();
                     const isLiked = n.likedBy?.includes(auth.currentUser.uid);
-                    list.innerHTML += `
-                        <div class="news-card">
-                            <h4>${n.title}</h4>
-                            <p>${n.body}</p>
-                            <div class="news-actions">
-                                ${settings.likesEnabled ? `
-                                    <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}', ${isLiked})">
-                                        ❤️ ${n.likes || 0}
-                                    </button>` : ''}
-                                ${settings.shareEnabled ? `
-                                    <button class="action-btn share-wa" onclick="shareNews('${n.title}', '${n.body}')">
-                                        🟢 مشاركة واتساب
-                                    </button>` : ''}
+                    
+                    const card = document.createElement('div');
+                    card.className = 'news-card';
+                    card.innerHTML = `
+                        <h4>${n.title}</h4>
+                        <p>${n.body}</p>
+                        <div class="news-actions">
+                            ${settings.likesEnabled ? `<button class="action-btn" onclick="toggleLike('${d.id}', ${isLiked})">${isLiked?'❤️':'🤍'} ${n.likes || 0}</button>` : ''}
+                            ${settings.commentsEnabled ? `<button class="action-btn" onclick="toggleComments('${d.id}')">💬 تعليق</button>` : ''}
+                            <button class="action-btn" onclick="shareNews('${n.title}', '${n.body}')">🔗 مشاركة</button>
+                        </div>
+                        <div class="comments-section" id="comm-${d.id}">
+                            <div id="list-${d.id}"></div>
+                            <div class="comment-input-box">
+                                <input type="text" id="input-${d.id}" placeholder="اكتب تعليقاً...">
+                                <button onclick="addComment('${d.id}')" style="border:none; background:none; font-size:18px;">➤</button>
                             </div>
                         </div>`;
+                    list.appendChild(card);
+                    loadComments(d.id);
                 });
             });
         }
 
-        // [أكواد الدردشة والتنقل المتبقية تظل كما في النسخة السابقة...]
-        window.switchSection = (id) => {
-            document.getElementById('newsSection').style.display = id === 'news' ? 'block' : 'none';
-            document.getElementById('chatsSection').style.display = id === 'chats' ? 'block' : 'none';
-        };
-
-        function trackUnread() {
-            const q = query(collectionGroup(db, 'messages'), where('uid', '!=', auth.currentUser.uid), where('read', '==', false));
-            onSnapshot(q, (snap) => {
-                let count = 0;
-                snap.forEach(d => { if (d.ref.path.includes(auth.currentUser.uid)) count++; });
-                document.getElementById('totalUnreadBadge').innerText = count;
-                document.getElementById('totalUnreadBadge').style.display = count > 0 ? 'block' : 'none';
+        function loadComments(newsId) {
+            onSnapshot(query(collection(db, `News/${newsId}/Comments`), orderBy("time", "asc")), (snap) => {
+                const cList = document.getElementById(`list-${newsId}`);
+                cList.innerHTML = "";
+                snap.forEach(docComm => {
+                    const c = docComm.data();
+                    cList.innerHTML += `
+                        <div class="comment-item">
+                            ${(isAdmin || c.uid === auth.currentUser.uid) ? `<button class="btn-del-comm" onclick="deleteComment('${newsId}', '${docComm.id}')">حذف</button>` : ''}
+                            <div class="comment-user">${c.userName}</div>
+                            <div class="comment-text">${c.text}</div>
+                        </div>`;
+                });
             });
         }
     </script>
