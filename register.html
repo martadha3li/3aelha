@@ -2,137 +2,58 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إنشاء حساب جديد</title>
+    <title>تسجيل حساب جديد</title>
     <style>
-        :root { --primary-color: #28a745; --bg-color: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .reg-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        
-        /* قسم المعرف الخاص بالأنثى */
-        #guardianSection { 
-            display: none; 
-            background: #fff3cd; 
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px dashed #ffeeba; 
-            margin-bottom: 15px; 
-        }
-        
-        button { width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #218838; }
-        .footer-links { text-align: center; margin-top: 15px; font-size: 14px; }
-        .footer-links a { color: #007bff; text-decoration: none; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .card { background: white; padding: 2rem; border-radius: 10px; max-width: 400px; margin: auto; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        #guardianField { display: none; background: #fff3cd; padding: 10px; border-radius: 5px; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div class="reg-card">
-    <h2>إنشاء حساب جديد</h2>
-    
-    <label>الاسم الرباعي</label>
-    <input type="text" id="fullName" placeholder="أدخل اسمك الكامل" required>
-
-    <label>رقم الجوال</label>
-    <input type="tel" id="phone" placeholder="05xxxxxxxx" required>
-
-    <label>الجنس</label>
-    <select id="gender">
-        <option value="male">ذكر</option>
-        <option value="female">أنثى</option>
-    </select>
-
-    <div id="guardianSection">
-        <label>اسم المعرف (الزوج/الأب/الأخ)</label>
-        <input type="text" id="guardianName" placeholder="اسم ولي الأمر">
-        <label>رقم جوال المعرف</label>
-        <input type="tel" id="guardianPhone" placeholder="رقم جوال ولي الأمر">
+    <div class="card">
+        <h2>تسجيل جديد</h2>
+        <input type="text" id="name" placeholder="الاسم الرباعي">
+        <input type="tel" id="phone" placeholder="رقم الجوال">
+        <select id="gender">
+            <option value="male">ذكر</option>
+            <option value="female">أنثى</option>
+        </select>
+        <div id="guardianField">
+            <input type="text" id="gName" placeholder="اسم المعرف (الزوج/الأب/الأخ)">
+            <input type="tel" id="gPhone" placeholder="رقم جوال المعرف">
+        </div>
+        <input type="email" id="email" placeholder="الإيميل">
+        <input type="password" id="pass" placeholder="كلمة المرور">
+        <label>تاريخ الميلاد</label>
+        <input type="date" id="dob">
+        <button id="btnReg">إنشاء الحساب</button>
     </div>
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <label>البريد الإلكتروني</label>
-    <input type="email" id="email" placeholder="example@mail.com" required>
+        const gender = document.getElementById('gender');
+        gender.onchange = () => document.getElementById('guardianField').style.display = (gender.value === 'female' ? 'block' : 'none');
 
-    <label>كلمة المرور</label>
-    <input type="password" id="password" placeholder="********" required>
-
-    <label>تاريخ الميلاد</label>
-    <input type="date" id="birthDate" required>
-
-    <button id="btnRegister">تسجيل الحساب</button>
-
-    <div class="footer-links">
-        لديك حساب بالفعل؟ <a href="index.html">دخول</a>
-    </div>
-</div>
-
-<script type="module">
-    import { auth, db } from './config.js';
-    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const genderSelect = document.getElementById('gender');
-    const guardianSection = document.getElementById('guardianSection');
-
-    // منطق إظهار وإخفاء قسم المعرف
-    genderSelect.onchange = () => {
-        if (genderSelect.value === 'female') {
-            guardianSection.style.display = 'block';
-        } else {
-            guardianSection.style.display = 'none';
-        }
-    };
-
-    document.getElementById('btnRegister').onclick = async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const fullName = document.getElementById('fullName').value;
-        const phone = document.getElementById('phone').value;
-        const gender = genderSelect.value;
-        const birthDate = document.getElementById('birthDate').value;
-
-        if (!email || !password || !fullName || !phone) {
-            alert("يرجى ملء جميع الحقول الأساسية");
-            return;
-        }
-
-        try {
-            // 1. إنشاء الحساب في Firebase Authentication
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // 2. حفظ البيانات الإضافية في Firestore
-            const userData = {
-                uid: user.uid,
-                fullName: fullName,
-                phone: phone,
-                gender: gender,
-                birthDate: birthDate,
-                email: email,
-                role: 'member', // الافتراضي عضو حتى يقوم المدير بترقيته
-                isActive: true,
-                createdAt: new Date()
-            };
-
-            // إضافة بيانات المعرف إذا كان الجنس أنثى
-            if (gender === 'female') {
-                userData.guardianName = document.getElementById('guardianName').value;
-                userData.guardianPhone = document.getElementById('guardianPhone').value;
-            }
-
-            await setDoc(doc(db, "Users", user.uid), userData);
-
-            alert("تم تسجيل الحساب بنجاح!");
-            window.location.href = "news.html"; // التوجه لصفحة الأخبار بعد التسجيل
-
-        } catch (error) {
-            console.error("Error during registration:", error);
-            alert("فشل التسجيل: " + error.message);
-        }
-    };
-</script>
-
+        document.getElementById('btnReg').onclick = async () => {
+            try {
+                const res = await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('pass').value);
+                await setDoc(doc(db, "Users", res.user.uid), {
+                    fullName: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    gender: gender.value,
+                    dob: document.getElementById('dob').value,
+                    guardianName: document.getElementById('gName').value || "",
+                    guardianPhone: document.getElementById('gPhone').value || "",
+                    role: 'member',
+                    isActive: true
+                });
+                alert("تم التسجيل!"); window.location.href = "news.html";
+            } catch (e) { alert(e.message); }
+        };
+    </script>
 </body>
 </html>
