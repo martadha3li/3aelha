@@ -5,183 +5,268 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تطبيق التواصل الذكي</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #28a745; --unread: #2ecc71; --read: #bdc3c7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f4f7f6; overflow-x: hidden; }
+        :root { --primary: #2c3e50; --accent: #28a745; --unread: #e74c3c; --green: #2ecc71; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f4f7f6; overflow-x: hidden; padding-bottom: 70px; }
         
-        /* تصميم شريط التنقل السفلي (مثل التطبيقات) */
+        /* أيقونة المدير الثابتة */
+        #adminLink { display: none; background: #e74c3c; color: white; padding: 10px; border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; position: fixed; top: 20px; left: 20px; z-index: 2000; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; }
+
+        /* شريط الإشعارات العلوي */
+        #notificationBar { display: none; padding: 12px; text-align: center; font-weight: bold; color: white; position: sticky; top: 0; z-index: 1500; font-size: 14px; }
+        .notif-urgent { background: #dc3545; }
+        .notif-medium { background: #007bff; }
+        .notif-normal { background: #ffffff; color: #333; border-bottom: 1px solid #ddd; }
+
+        /* منطقة المحتوى */
+        main { padding: 15px; }
+        .page-section { display: none; }
+        .active-section { display: block; }
+        
+        .news-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 5px solid var(--primary); }
+        .news-tag { background: #eee; padding: 3px 10px; border-radius: 12px; font-size: 11px; color: #666; }
+
+        /* شريط التنقل السفلي */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 12px; flex: 1; }
-        .nav-item i { display: block; font-size: 20px; margin-bottom: 2px; }
+        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 12px; flex: 1; position: relative; }
+        .nav-item i { display: block; font-size: 22px; margin-bottom: 2px; font-style: normal; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        /* منطقة المحتوى الرئيسي */
-        main { padding: 20px 20px 80px 20px; }
-        .news-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 4px solid var(--primary); }
-        
-        /* أيقونة المدير (تم إصلاحها لتظهر بشكل ثابت للمخولين) */
-        #adminLink { display: none; background: #e74c3c; color: white; padding: 10px; border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 40px; position: fixed; top: 20px; left: 20px; z-index: 2000; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        /* عداد الرسائل (Badge) */
+        .badge { position: absolute; top: -5px; right: 25%; background: var(--unread); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; display: none; border: 2px solid white; }
+
+        /* قائمة المستخدمين والمجموعات */
+        .list-box { background: white; border-radius: 15px; overflow: hidden; margin-top: 10px; }
+        .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .list-item:active { background: #f9f9f9; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; margin-left: 12px; background: #bdc3c7; }
+        .dot-green { background: var(--green); box-shadow: 0 0 5px var(--green); }
 
         /* نافذة الدردشة المنبثقة */
-        .chat-popup { display: none; position: fixed; bottom: 70px; left: 10px; right: 10px; top: 20px; background: white; z-index: 2001; border-radius: 15px 15px 0 0; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s; }
+        .chat-popup { display: none; position: fixed; bottom: 0; left: 0; right: 0; top: 0; background: white; z-index: 2001; flex-direction: column; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .chat-header { background: var(--primary); color: white; padding: 15px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
-        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; background: #e5ddd5; }
-        
-        /* قائمة المستخدمين والألوان */
-        .user-list-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; margin-left: 10px; }
-        .dot-unread { background: var(--unread); box-shadow: 0 0 5px var(--unread); }
-        .dot-none { background: var(--read); }
+        .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; background: #e5ddd5; display: flex; flex-direction: column; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; position: relative; }
+        .my-msg { align-self: flex-end; background: #dcf8c6; border-bottom-left-radius: 0; }
+        .other-msg { align-self: flex-start; background: white; border-bottom-right-radius: 0; }
 
-        /* وضع العرض للمدير */
-        .desktop-view { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 300px 1fr 350px; }
+        /* وضع الكمبيوتر للمدير */
+        .desktop-mode { display: grid; grid-template-columns: 250px 1fr 350px; max-width: 1200px; margin: auto; gap: 20px; padding-top: 20px; }
     </style>
 </head>
 <body id="appBody">
 
-    <a href="admin.html" id="adminLink">⚙️</a>
+    <a href="admin.html" id="adminLink" title="لوحة الإدارة">⚙️</a>
 
-    <div id="notificationBar" style="display:none; padding:10px; text-align:center; color:white;"></div>
+    <div id="notificationBar"></div>
 
-    <main id="mainContent">
-        <h2 id="viewTitle">الأخبار</h2>
-        <div id="newsList">جاري التحميل...</div>
-        
-        <div id="usersView" style="display:none;">
-            <h3>المحادثات الخاصة</h3>
-            <div id="onlineUsers"></div>
-        </div>
+    <main id="mainContainer">
+        <section id="newsSection" class="page-section active-section">
+            <h2 id="viewTitle">الأخبار الجديدة</h2>
+            <div id="newsList">جاري التحميل...</div>
+        </section>
+
+        <section id="chatsSection" class="page-section">
+            <h2>المحادثات الخاصة</h2>
+            <div class="list-box" id="onlineUsers"></div>
+        </section>
+
+        <section id="groupsSection" class="page-section">
+            <h2>المجموعات المؤقتة</h2>
+            <div class="list-box" id="tempGroupsList"></div>
+        </section>
     </main>
 
     <div id="chatPopup" class="chat-popup">
         <div class="chat-header">
-            <span id="chatTitle">الدردشة العامة</span>
-            <button onclick="closeChat()" style="background:none; border:none; color:white; font-size:20px;">✕</button>
+            <span id="chatTitle">الدردشة</span>
+            <button onclick="closeChat()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">✕</button>
         </div>
         <div id="chatMessages"></div>
-        <div style="padding:10px; display:flex; border-top:1px solid #ddd;">
-            <input type="text" id="chatInput" placeholder="اكتب رسالة..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd;">
-            <button id="sendBtn" style="background:none; border:none; color:var(--primary); font-size:24px;">➤</button>
+        <div style="padding:10px; display:flex; border-top:1px solid #ddd; background:#f0f0f0;">
+            <input type="text" id="chatInput" placeholder="اكتب رسالة..." style="flex:1; padding:12px; border-radius:25px; border:1px solid #ccc; outline:none;">
+            <button id="sendBtn" style="background:none; border:none; color:var(--primary); font-size:28px; margin-right:10px; cursor:pointer;">➤</button>
         </div>
     </div>
 
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="showSection('news')"><i>📰</i>أخبار</div>
-        <div class="nav-item" onclick="showSection('chats')"><i>💬</i>الدردشة</div>
-        <div class="nav-item" id="tempGroupsIcon" onclick="showSection('groups')"><i>👥</i>مجموعات</div>
-        <div class="nav-item" onclick="location.href='profile.html'"><i>👤</i>ملفي</div>
-    </div>
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" onclick="switchSection('news')"><i>📰</i><span>الأخبار</span></div>
+        <div class="nav-item" onclick="switchSection('chats')">
+            <i>💬</i><span>الدردشة</span>
+            <span id="totalUnreadBadge" class="badge">0</span>
+        </div>
+        <div class="nav-item" onclick="switchSection('groups')"><i>👥</i><span>مجموعات</span></div>
+        <div class="nav-item" onclick="location.href='profile.html'"><i>👤</i><span>ملفي</span></div>
+    </nav>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, serverTimestamp, where, collectionGroup, updateDoc, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let currentChatPath = "Messages";
+        let currentChatPath = "";
+        let currentChatId = "";
         let currentUserData = null;
 
+        // --- 1. التحقق من الدخول والصلاحيات ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const snap = await getDoc(doc(db, "Users", user.uid));
                 currentUserData = snap.data();
-                
-                // إظهار أيقونة المدير إذا كان مديراً أو مشرفاً
                 if (currentUserData.role === 'admin' || currentUserData.canPost) {
                     document.getElementById('adminLink').style.display = 'block';
-                    // تطبيق نوع العرض المختار للمدير
-                    if (currentUserData.viewType === 'desktop') {
-                        document.getElementById('appBody').classList.add('desktop-view');
-                    }
+                    if(currentUserData.viewType === 'desktop') document.body.classList.add('desktop-mode');
                 }
-                loadNews();
-                loadOnlineUsers();
+                initApp();
             } else { window.location.href = "index.html"; }
         });
 
-        // تنقل الأقسام (Mobile Style)
-        window.showSection = (section) => {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('newsList').style.display = 'none';
-            document.getElementById('usersView').style.display = 'none';
-            
-            if(section === 'news') {
-                document.getElementById('newsList').style.display = 'block';
-                document.getElementById('viewTitle').innerText = "الأخبار";
-            } else if (section === 'chats') {
-                document.getElementById('usersView').style.display = 'block';
-                document.getElementById('viewTitle').innerText = "الدردشة الخاصة";
-                openChat('public', 'الدردشة العامة');
-            }
+        function initApp() {
+            loadNews();
+            loadOnlineUsers();
+            loadTempGroups();
+            loadNotifications();
+            trackUnreadMessages();
+        }
+
+        // --- 2. تبديل الأقسام (Mobile Style) ---
+        window.switchSection = (id) => {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active-section'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById(id + 'Section').classList.add('active-section');
+            event.currentTarget.classList.add('active');
         };
 
-        // فتح نافذة الدردشة المنبثقة
-        window.openChat = (path, title) => {
-            currentChatPath = path === 'public' ? "Messages" : "PrivateChats/" + path + "/messages";
-            document.getElementById('chatTitle').innerText = title;
-            document.getElementById('chatPopup').style.display = 'flex';
-            loadMessages(currentChatPath);
-        };
+        // --- 3. نظام الإشعارات الملونة ---
+        function loadNotifications() {
+            const q = query(collection(db, "Notifications"), orderBy("createdAt", "desc"), limit(1));
+            onSnapshot(q, (snap) => {
+                const bar = document.getElementById('notificationBar');
+                if (!snap.empty) {
+                    const n = snap.docs[0].data();
+                    if (n.expiry > Date.now()) {
+                        bar.innerText = n.text;
+                        bar.className = 'notif-' + n.type;
+                        bar.style.display = 'block';
+                    } else { bar.style.display = 'none'; }
+                }
+            });
+        }
 
-        window.closeChat = () => {
-            document.getElementById('chatPopup').style.display = 'none';
-        };
+        // --- 4. عداد الرسائل غير المقروءة ---
+        function trackUnreadMessages() {
+            const q = query(collectionGroup(db, 'messages'), where('uid', '!=', auth.currentUser.uid), where('read', '==', false));
+            onSnapshot(q, (snap) => {
+                let count = 0;
+                snap.forEach(d => { if (d.ref.path.includes(auth.currentUser.uid)) count++; });
+                const badge = document.getElementById('totalUnreadBadge');
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            });
+        }
 
-        // جلب المستخدمين مع ميزة (رسالة جديدة/قديمة)
+        // --- 5. الدردشة الخاصة والمجموعات ---
         function loadOnlineUsers() {
             onSnapshot(collection(db, "Users"), (snap) => {
                 const list = document.getElementById('onlineUsers');
                 list.innerHTML = "";
-                snap.forEach(async (uDoc) => {
+                snap.forEach(uDoc => {
                     if (uDoc.id !== auth.currentUser.uid) {
                         const chatId = [auth.currentUser.uid, uDoc.id].sort().join("_");
-                        // فحص وجود رسائل غير مقروءة (تبسيط: سنستخدم حلقة في Firestore للرسائل الخاصة)
-                        const q = query(collection(db, `PrivateChats/${chatId}/messages`), where("uid", "!=", auth.currentUser.uid), where("read", "==", false));
-                        // ملاحظة: اللون الأخضر يعتمد على وجود محادثة سابقة أو رسائل جديدة
                         list.innerHTML += `
-                            <div class="user-list-item" onclick="openChat('${chatId}', '${uDoc.data().fullName}')">
-                                <div class="status-dot dot-none" id="dot-${chatId}"></div>
+                            <div class="list-item" onclick="openPrivateChat('${chatId}', '${uDoc.data().fullName}')">
+                                <div class="status-dot" id="dot-${chatId}"></div>
                                 <span>${uDoc.data().fullName}</span>
                             </div>`;
+                        // تحديث النقطة الخضراء إذا كان هناك رسائل غير مقروءة
+                        checkUnreadForUser(chatId);
                     }
                 });
             });
         }
 
-        // إرسال الرسائل
+        async function checkUnreadForUser(chatId) {
+            const q = query(collection(db, `PrivateChats/${chatId}/messages`), where('read', '==', false), where('uid', '!=', auth.currentUser.uid), limit(1));
+            onSnapshot(q, (snap) => {
+                const dot = document.getElementById(`dot-${chatId}`);
+                if (dot) dot.className = snap.empty ? 'status-dot' : 'status-dot dot-green';
+            });
+        }
+
+        window.openPrivateChat = async (chatId, name) => {
+            currentChatId = chatId;
+            currentChatPath = `PrivateChats/${chatId}/messages`;
+            document.getElementById('chatTitle').innerText = name;
+            document.getElementById('chatPopup').style.display = 'flex';
+            loadMessages(currentChatPath);
+            // تحديث الرسائل كمقروءة
+            const q = query(collection(db, currentChatPath), where('read', '==', false), where('uid', '!=', auth.currentUser.uid));
+            const snap = await getDocs(q);
+            snap.forEach(d => updateDoc(d.ref, { read: true }));
+        };
+
+        function loadTempGroups() {
+            onSnapshot(collection(db, "TempGroups"), (snap) => {
+                const list = document.getElementById('tempGroupsList');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const g = d.data();
+                    if (g.expiry > Date.now()) {
+                        list.innerHTML += `<div class="list-item" onclick="openGroupChat('${d.id}', '${g.name}')"><i>#</i> <span style="margin-right:10px">${g.name}</span></div>`;
+                    }
+                });
+            });
+        }
+
+        window.openGroupChat = (id, name) => {
+            currentChatPath = `TempGroups/${id}/messages`;
+            document.getElementById('chatTitle').innerText = name;
+            document.getElementById('chatPopup').style.display = 'flex';
+            loadMessages(currentChatPath);
+        };
+
+        window.closeChat = () => { document.getElementById('chatPopup').style.display = 'none'; };
+
+        // --- 6. إرسال واستقبال الرسائل ---
         document.getElementById('sendBtn').onclick = async () => {
-            const text = document.getElementById('chatInput').value;
-            if (!text.trim()) return;
+            const txt = document.getElementById('chatInput').value;
+            if (!txt.trim()) return;
             await addDoc(collection(db, currentChatPath), {
-                text,
-                uid: auth.currentUser.uid,
-                sender: currentUserData.fullName,
-                time: serverTimestamp(),
-                read: false
+                text: txt, uid: auth.currentUser.uid, sender: currentUserData.fullName,
+                time: serverTimestamp(), read: false
             });
             document.getElementById('chatInput').value = "";
         };
 
         function loadMessages(path) {
-            const q = query(collection(db, path), orderBy("time", "asc"));
+            const q = query(collection(db, path), orderBy("time", "asc"), limit(50));
             onSnapshot(q, (snap) => {
                 const box = document.getElementById('chatMessages');
                 box.innerHTML = "";
                 snap.forEach(d => {
                     const m = d.data();
                     const isMe = m.uid === auth.currentUser.uid;
-                    box.innerHTML += `<div style="display:flex; flex-direction:column; align-items:${isMe?'flex-start':'flex-end'}">
-                        <div class="msg" style="background:${isMe?'#dcf8c6':'white'}; padding:8px; border-radius:10px; margin:5px;">${m.text}</div>
+                    box.innerHTML += `<div class="msg ${isMe ? 'my-msg' : 'other-msg'}">
+                        ${!isMe ? `<b style="display:block;font-size:10px;color:var(--primary)">${m.sender}</b>` : ''}
+                        ${m.text}
                     </div>`;
                 });
                 box.scrollTop = box.scrollHeight;
             });
         }
 
+        // --- 7. جلب الأخبار ---
         function loadNews() {
-            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
+            const q = query(collection(db, "News"), orderBy("date", "desc"));
+            onSnapshot(q, (snap) => {
                 const list = document.getElementById('newsList');
                 list.innerHTML = "";
                 snap.forEach(d => {
-                    list.innerHTML += `<div class="news-card"><h4>${d.data().title}</h4><p>${d.data().body}</p></div>`;
+                    const n = d.data();
+                    list.innerHTML += `<div class="news-card">
+                        <span class="news-tag">${n.cat || 'عام'}</span>
+                        <h4>${n.title}</h4>
+                        <p>${n.body}</p>
+                    </div>`;
                 });
             });
         }
