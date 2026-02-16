@@ -2,198 +2,71 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | المدير</title>
+    <title>لوحة الإدارة | التحكم الكامل</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #27ae60; --danger: #e74c3c; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        h1 { text-align: center; color: var(--primary); }
-        
-        /* الأقسام */
-        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: var(--secondary); font-size: 1.2rem; }
-        
-        /* المدخلات والأزرار */
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
-        .btn-primary { background: var(--primary); }
-        .btn-accent { background: var(--accent); }
-        .btn-danger { background: var(--danger); padding: 5px 15px; font-size: 0.8rem; }
-        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
-
-        /* القوائم */
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .user-info small { color: #666; display: block; }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .toggle-box { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        button { cursor: pointer; padding: 10px; border-radius: 8px; border: none; }
+        .btn-on { background: #2ecc71; color: white; }
+        .btn-off { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>لوحة التحكم ⚙️</h1>
-
-    <section>
-        <h2>تخصيص العرض للمدير/المشرف</h2>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <select id="viewTypeSelect">
-                <option value="mobile">عرض الجوال (تطبيقي)</option>
-                <option value="desktop">عرض الكمبيوتر (شامل)</option>
-            </select>
-            <button class="btn btn-primary" id="btnSaveView">حفظ النمط</button>
-        </div>
-    </section>
-
-    <div class="grid">
-        <section>
-            <h2>نشر خبر جديد 📰</h2>
-            <input type="text" id="newsTitle" placeholder="عنوان الخبر">
-            <textarea id="newsBody" rows="3" placeholder="محتوى الخبر"></textarea>
-            <select id="newsCatSelect"><option>جاري تحميل التصنيفات...</option></select>
-            <button class="btn btn-primary" id="btnPostNews">نشر الخبر</button>
-        </section>
+    <div style="max-width: 600px; margin: auto;">
+        <h1>إعدادات التطبيق ⚙️</h1>
 
         <section>
-            <h2>إدارة التصنيفات 🏷️</h2>
-            <input type="text" id="newCatInput" placeholder="اسم التصنيف (مثلاً: تنبيهات)">
-            <button class="btn btn-accent" id="btnAddCat">إضافة تصنيف</button>
-            <div id="catsList" style="margin-top:10px; max-height:150px; overflow-y:auto;"></div>
+            <h2>التحكم في الميزات 🛠️</h2>
+            <div class="toggle-box">
+                <span>تفعيل الإعجابات على الأخبار</span>
+                <button id="toggleLikes" class="btn-on">مفعل</button>
+            </div>
+            <div class="toggle-box">
+                <span>تفعيل مشاركة الواتساب</span>
+                <button id="toggleShare" class="btn-on">مفعل</button>
+            </div>
         </section>
+        
+        <p style="text-align:center;"><a href="news.html">← العودة للرئيسية</a></p>
     </div>
 
-    <div class="grid">
-        <section>
-            <h2>إرسال إشعار ملون 📢</h2>
-            <input type="text" id="notifText" placeholder="نص الإشعار يظهر بالأعلى">
-            <select id="notifType">
-                <option value="urgent">عاجل (أحمر)</option>
-                <option value="medium">متوسط (أزرق)</option>
-                <option value="normal">عادي (أبيض)</option>
-            </select>
-            <input type="number" id="notifDuration" placeholder="المدة بالثواني (مثلاً: 10)">
-            <button class="btn btn-danger" style="width:100%" id="btnSendNotif">إرسال الآن</button>
-        </section>
+    <script type="module">
+        import { db } from './config.js';
+        import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        <section>
-            <h2>إنشاء مجموعة مؤقتة 🕒</h2>
-            <input type="text" id="groupName" placeholder="اسم مجموعة النقاش">
-            <label>موعد الإغلاق التلقائي:</label>
-            <input type="datetime-local" id="expiryTime">
-            <button class="btn btn-primary" style="width:100%; background:#6f42c1;" id="btnCreateGroup">إنشاء المجموعة</button>
-        </section>
-    </div>
+        const btns = { likes: document.getElementById('toggleLikes'), share: document.getElementById('toggleShare') };
+        let currentSettings = { likesEnabled: true, shareEnabled: true };
 
-    <section>
-        <h2>إدارة الأعضاء والطلبات 👥</h2>
-        <div id="usersList">جاري التحميل...</div>
-    </section>
-
-    <div style="text-align:center; padding: 20px;">
-        <a href="news.html" style="text-decoration:none; color:var(--primary); font-weight:bold;">← العودة لصفحة الأخبار</a>
-    </div>
-</div>
-
-<script type="module">
-    import { auth, db } from './config.js';
-    import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // --- حماية الصفحة ---
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (!snap.exists() || snap.data().role !== 'admin') {
-                window.location.href = "news.html";
+        async function init() {
+            const snap = await getDoc(doc(db, "Settings", "global"));
+            if(snap.exists()) {
+                currentSettings = snap.data();
+                updateUI();
             }
-        } else { window.location.href = "index.html"; }
-    });
-
-    // --- 1. إعدادات العرض للمدير ---
-    document.getElementById('btnSaveView').onclick = async () => {
-        const type = document.getElementById('viewTypeSelect').value;
-        await updateDoc(doc(db, "Users", auth.currentUser.uid), { viewType: type });
-        alert("تم الحفظ! سيظهر النمط الجديد في الصفحة الرئيسية.");
-    };
-
-    // --- 2. إدارة التصنيفات ---
-    onSnapshot(collection(db, "Categories"), (snap) => {
-        const list = document.getElementById('catsList');
-        const select = document.getElementById('newsCatSelect');
-        list.innerHTML = ""; select.innerHTML = "";
-        snap.forEach(d => {
-            const cat = d.data();
-            list.innerHTML += `<div class="list-item"><span>${cat.name}</span><button class="btn btn-danger" onclick="window.delCat('${d.id}')">حذف</button></div>`;
-            select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-        });
-    });
-
-    document.getElementById('btnAddCat').onclick = async () => {
-        const name = document.getElementById('newCatInput').value;
-        if(name) { await addDoc(collection(db, "Categories"), { name }); document.getElementById('newCatInput').value = ""; }
-    };
-
-    window.delCat = async (id) => { if(confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "Categories", id)); };
-
-    // --- 3. نشر الأخبار ---
-    document.getElementById('btnPostNews').onclick = async () => {
-        const title = document.getElementById('newsTitle').value;
-        const body = document.getElementById('newsBody').value;
-        const cat = document.getElementById('newsCatSelect').value;
-        if(title && body) {
-            await addDoc(collection(db, "News"), { title, body, cat, date: serverTimestamp() });
-            alert("تم النشر!"); document.getElementById('newsTitle').value = ""; document.getElementById('newsBody').value = "";
         }
-    };
 
-    // --- 4. الإشعارات ---
-    document.getElementById('btnSendNotif').onclick = async () => {
-        const text = document.getElementById('notifText').value;
-        const type = document.getElementById('notifType').value;
-        const dur = parseInt(document.getElementById('notifDuration').value);
-        if(text && dur) {
-            await addDoc(collection(db, "Notifications"), { 
-                text, type, duration: dur, 
-                createdAt: serverTimestamp(), 
-                expiry: new Date().getTime() + (dur * 1000) 
-            });
-            alert("تم إرسال الإشعار");
+        function updateUI() {
+            btns.likes.innerText = currentSettings.likesEnabled ? "مفعل" : "معطل";
+            btns.likes.className = currentSettings.likesEnabled ? "btn-on" : "btn-off";
+            btns.share.innerText = currentSettings.shareEnabled ? "مفعل" : "معطل";
+            btns.share.className = currentSettings.shareEnabled ? "btn-on" : "btn-off";
         }
-    };
 
-    // --- 5. المجموعات المؤقتة ---
-    document.getElementById('btnCreateGroup').onclick = async () => {
-        const name = document.getElementById('groupName').value;
-        const exp = document.getElementById('expiryTime').value;
-        if(name && exp) {
-            await addDoc(collection(db, "TempGroups"), { name, expiry: new Date(exp).getTime(), status: 'active' });
-            alert("تم إنشاء المجموعة");
-        }
-    };
+        btns.likes.onclick = async () => {
+            currentSettings.likesEnabled = !currentSettings.likesEnabled;
+            await setDoc(doc(db, "Settings", "global"), currentSettings, {merge: true});
+            updateUI();
+        };
 
-    // --- 6. إدارة الأعضاء ---
-    onSnapshot(collection(db, "Users"), (snap) => {
-        const list = document.getElementById('usersList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const u = d.data();
-            if(u.role !== 'admin') {
-                list.innerHTML += `
-                <div class="list-item">
-                    <div class="user-info">
-                        <strong>${u.fullName}</strong>
-                        <small>${u.phone} | ${u.isActive ? 'نشط' : 'معطل'}</small>
-                    </div>
-                    <button class="btn btn-primary" style="background:${u.isActive?'#666':'#27ae60'}" onclick="window.toggleUser('${d.id}', ${u.isActive})">
-                        ${u.isActive ? 'تعطيل' : 'تفعيل'}
-                    </button>
-                </div>`;
-            }
-        });
-    });
+        btns.share.onclick = async () => {
+            currentSettings.shareEnabled = !currentSettings.shareEnabled;
+            await setDoc(doc(db, "Settings", "global"), currentSettings, {merge: true});
+            updateUI();
+        };
 
-    window.toggleUser = async (id, status) => { await updateDoc(doc(db, "Users", id), { isActive: !status }); };
-
-</script>
+        init();
+    </script>
 </body>
 </html>
