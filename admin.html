@@ -7,40 +7,44 @@
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; }
         section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-group { background: #6f42c1; }
     </style>
 </head>
 <body>
 
-    <section>
-        <h2>إرسال إشعار عام 📢</h2>
-        <textarea id="notifText" placeholder="نص الإشعار..."></textarea>
-        <select id="notifType">
-            <option value="urgent">عاجل (أحمر)</option>
-            <option value="medium">متوسط (أزرق)</option>
-            <option value="normal">عادي (أبيض)</option>
-        </select>
-        <input type="number" id="notifDuration" placeholder="مدة العرض بالثواني (مثلاً 10)">
-        <button class="btn" id="sendNotif">إرسال الإشعار الآن</button>
-    </section>
+    <div style="max-width: 800px; margin: auto;">
+        <h1>لوحة تحكم المدير ⚙️</h1>
+
+        <section>
+            <h2>إنشاء مجموعة دردشة مؤقتة 🕒</h2>
+            <input type="text" id="groupName" placeholder="اسم المجموعة (مثلاً: نقاش فعالية اليوم)">
+            <label>وقت الإغلاق:</label>
+            <input type="datetime-local" id="expiryTime">
+            <button class="btn btn-group" id="createGroup">إنشاء المجموعة</button>
+        </section>
+
+        </div>
 
     <script type="module">
         import { db } from './config.js';
         import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        document.getElementById('sendNotif').onclick = async () => {
-            const text = document.getElementById('notifText').value;
-            const type = document.getElementById('notifType').value;
-            const duration = parseInt(document.getElementById('notifDuration').value);
+        document.getElementById('createGroup').onclick = async () => {
+            const name = document.getElementById('groupName').value;
+            const expiry = document.getElementById('expiryTime').value;
 
-            if (text && duration) {
-                await addDoc(collection(db, "Notifications"), {
-                    text, type, duration,
+            if (name && expiry) {
+                await addDoc(collection(db, "TempGroups"), {
+                    name: name,
+                    expiry: new Date(expiry).getTime(),
                     createdAt: serverTimestamp(),
-                    expiry: new Date().getTime() + (duration * 1000)
+                    status: 'active'
                 });
-                alert("تم إرسال الإشعار!");
-                document.getElementById('notifText').value = "";
+                alert("تم إنشاء المجموعة المؤقتة بنجاح!");
+                document.getElementById('groupName').value = "";
+            } else {
+                alert("يرجى إدخال الاسم وتحديد وقت الانتهاء");
             }
         };
     </script>
