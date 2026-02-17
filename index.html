@@ -29,8 +29,8 @@
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     window.handleLogin = async () => {
         const id = document.getElementById('loginId').value;
@@ -47,16 +47,30 @@
         try {
             const userCred = await signInWithEmailAndPassword(auth, email, pass);
             const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
-            const data = userDoc.data();
-
-            // فحص إذا كان الحساب معطلاً من قبل المدير
-            if (data.status === "disabled") {
+            if (userDoc.data().status === "disabled") {
                 await auth.signOut();
-                alert("عذراً، حسابك معطل حالياً. يرجى التواصل مع الإدارة لتفعيله.");
-            } else {
-                window.location.href = "news.html";
+                alert("حسابك معطل حالياً. يرجى التواصل مع الإدارة.");
+                return;
             }
-        } catch (e) { alert("خطأ في بيانات الدخول"); }
+            window.location.href = "news.html";
+        } catch (e) { alert("بيانات الدخول خاطئة"); }
+    };
+
+    window.forgotPassword = async () => {
+        const phone = prompt("أدخل رقم جوالك المسجل:");
+        if (!phone) return;
+        const q = query(collection(db, "Users"), where("phone", "==", phone));
+        const snap = await getDocs(q);
+        if (snap.empty) return alert("رقم غير مسجل");
+        
+        const user = snap.docs[0].data();
+        if (confirm(`هل تريد إرسال رابط التغيير لإيميلك المسجل؟`)) {
+            await sendPasswordResetEmail(auth, user.email);
+            alert("تم إرسال الرابط.");
+        } else {
+            await addDoc(collection(db, "Requests"), { uid: snap.docs[0].id, type: "password_reset", timestamp: serverTimestamp() });
+            alert("تم إرسال طلب للإدارة.");
+        }
     };
 </script>
 </body>
