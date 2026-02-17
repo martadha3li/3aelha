@@ -2,163 +2,235 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التطبيق | الدردشة والبحث</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق الأخبار الذكي</title>
     <style>
-        :root { --primary: #2c3e50; --unread: #e74c3c; }
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 70px; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
         
-        .chat-overlay { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
-        .search-box { padding: 15px; background: #fff; border-bottom: 1px solid #ddd; }
-        .search-box input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; box-sizing: border-box; }
+        /* شريط الإدارة العلوي (يظهر للمخولين فقط) */
+        #adminTools { display: none; background: var(--primary); color: white; padding: 10px; text-align: center; position: sticky; top: 0; z-index: 1000; }
         
-        .timer-select { font-size: 11px; color: #666; margin-top: 5px; display: flex; gap: 10px; padding: 10px; background: #eee; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
-        .news-item { background: white; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        /* تصميم بطاقة الخبر المختصرة */
+        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; }
+        .news-img-thumb { width: 100px; height: 100px; object-fit: cover; }
+        .news-brief { padding: 10px; flex: 1; }
+        .news-brief h3 { margin: 0; font-size: 16px; color: var(--primary); }
+        .news-brief small { color: #888; font-size: 10px; }
+        
+        /* النافذة المنبثقة للخبر الكامل */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .modal-content { background: white; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; overflow-y: auto; animation: slideUp 0.3s; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .full-img { width: 100%; max-height: 250px; object-fit: cover; }
+        .content-body { padding: 20px; }
+        .actions-bar { display: flex; gap: 20px; padding: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+
+        /* نافذة إضافة/تعديل الخبر */
+        #newsEditorModal { display: none; position: fixed; inset: 0; background: white; z-index: 3000; flex-direction: column; padding: 20px; overflow-y: auto; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-post { background: var(--accent); color: white; width: 100%; }
+        .btn-close { background: var(--danger); color: white; }
     </style>
 </head>
 <body>
 
-    <div id="chatCenter" class="chat-overlay" style="display:none">
-        <div style="background:var(--primary); color:white; padding:15px; display:flex; justify-content:space-between;">
-            <span>مركز المحادثات</span>
-            <button onclick="window.toggleCenter()" style="color:white; background:none; border:none; font-size:20px;">✕</button>
-        </div>
-        
-        <div class="search-box">
-            <input type="text" id="userSearch" placeholder="ابحث بالاسم أو رقم الجوال..." oninput="window.filterUsers()">
-        </div>
-
-        <div id="chatList" style="flex:1; overflow-y:auto;">
-            <div id="groupsList"></div>
-            <div id="privateList"></div>
-        </div>
+    <div id="adminTools">
+        <span>لوحة تحكم الأخبار: </span>
+        <button class="btn" style="background:#fff; color:var(--primary); font-size:12px;" onclick="openNewsEditor()">➕ إضافة خبر جديد</button>
     </div>
 
-    <div id="activeChat" class="chat-overlay">
-        <div id="chatHeader" style="background:var(--primary); color:white; padding:15px;">
-            <div style="display:flex; justify-content:space-between">
-                <span id="chatTitle">الدردشة</span>
-                <button onclick="window.closeChat()" style="color:white; background:none; border:none; font-size:20px;">✕</button>
-            </div>
-            <div id="autoDeleteControl" style="display:none; margin-top:10px; font-size:12px;">
-                حذف الدردشة تلقائياً بعد: 
-                <select id="timerValue" style="background:none; color:white; border:1px solid white; border-radius:5px;">
-                    <option value="0">إيقاف</option>
-                    <option value="1">ساعة واحدة</option>
-                    <option value="2">ساعتين</option>
-                    <option value="3">3 ساعات</option>
-                </select>
-            </div>
+    <main id="newsList">
+        <h2 style="padding: 15px;">آخر الأخبار</h2>
+        </main>
+
+    <div id="newsEditorModal">
+        <h2 id="editorTitle">إضافة خبر جديد</h2>
+        <input type="file" id="newsImgInput" accept="image/*">
+        <img id="newsImgPreview" style="width:100%; height:150px; object-fit:cover; display:none; border-radius:10px;">
+        <input type="text" id="newsTitleInput" placeholder="عنوان الخبر">
+        <textarea id="newsBodyInput" rows="5" placeholder="وصف الخبر بالتفصيل"></textarea>
+        
+        <div style="background:#f9f9f9; padding:10px; border-radius:10px;">
+            <label><input type="checkbox" id="allowComments" checked> تفعيل التعليقات</label><br>
+            <label><input type="checkbox" id="allowLikes" checked> تفعيل الإعجاب</label><br>
+            <label><input type="checkbox" id="allowShare" checked> تفعيل المشاركة</label>
         </div>
-        <div id="chatMessages" style="flex:1; overflow-y:auto; padding:15px; background:#e5ddd5;"></div>
-        <div style="padding:10px; display:flex; background:white;">
-            <input type="text" id="chatInput" style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd;" placeholder="اكتب...">
-            <button id="sendBtn" style="border:none; background:none; font-size:24px;">➤</button>
+        
+        <button class="btn btn-post" id="saveNewsBtn">نشر الخبر الآن</button>
+        <button class="btn btn-close" style="margin-top:10px;" onclick="closeNewsEditor()">إلغاء</button>
+    </div>
+
+    <div id="fullNewsModal" class="modal">
+        <div class="modal-content">
+            <button onclick="closeFullNews()" style="float:left; margin:15px; background:none; border:none; font-size:24px;">✕</button>
+            <img id="fnImg" class="full-img">
+            <div class="content-body">
+                <h2 id="fnTitle"></h2>
+                <small id="fnDate" style="color:#888;"></small>
+                <p id="fnBody" style="line-height:1.6; white-space:pre-wrap;"></p>
+                
+                <div class="actions-bar" id="fnActions">
+                    </div>
+
+                <div id="commentsSection">
+                    <h4>التعليقات</h4>
+                    <div id="commentsList"></div>
+                    <div id="commentInputArea" style="display:flex; gap:5px; margin-top:15px;">
+                        <input type="text" id="newComment" placeholder="أضف تعليقك..." style="margin:0;">
+                        <button id="sendCommentBtn" class="btn btn-primary" style="background:var(--primary); color:white;">➤</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <nav class="bottom-nav">
-        <div onclick="location.reload()">📰 الأخبار</div>
-        <div onclick="window.toggleCenter()">💬 الدردشة</div>
+        <div onclick="location.reload()" style="color:var(--primary); font-weight:bold;">📰 الأخبار</div>
+        <div onclick="window.toggleChatCenter()">💬 الدردشة</div>
         <div onclick="location.href='profile.html'">👤 بروفايل</div>
     </nav>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         let currentUserId = null;
-        let allUsers = [];
+        let currentUserData = null;
+        let selectedNewsImg = "";
 
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUserId = user.uid;
-                loadInitialData();
-            }
+                const snap = await getDoc(doc(db, "Users", user.uid));
+                currentUserData = snap.data();
+                
+                // إظهار أدوات الإدارة للمدير أو من لديه صلاحية
+                if (currentUserData.role === 'admin' || currentUserData.canAdd) {
+                    document.getElementById('adminTools').style.display = 'block';
+                }
+                loadNews();
+            } else { window.location.href = "index.html"; }
         });
 
-        function loadInitialData() {
-            // تحميل المجموعات مع عرض موعد الإغلاق
-            onSnapshot(collection(db, "TempGroups"), (snap) => {
-                const list = document.getElementById('groupsList');
-                list.innerHTML = "<h4 style='padding:10px'>المجموعات</h4>";
+        // --- نظام معالجة صور الأخبار ---
+        document.getElementById('newsImgInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                selectedNewsImg = reader.result;
+                document.getElementById('newsImgPreview').src = selectedNewsImg;
+                document.getElementById('newsImgPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        window.openNewsEditor = () => document.getElementById('newsEditorModal').style.display = 'flex';
+        window.closeNewsEditor = () => document.getElementById('newsEditorModal').style.display = 'none';
+
+        // --- نشر الخبر ---
+        document.getElementById('saveNewsBtn').onclick = async () => {
+            const title = document.getElementById('newsTitleInput').value;
+            const body = document.getElementById('newsBodyInput').value;
+            if(!title || !body) return alert("يرجى إكمال العنوان والوصف");
+
+            await addDoc(collection(db, "News"), {
+                title, body, 
+                img: selectedNewsImg,
+                commentsEnabled: document.getElementById('allowComments').checked,
+                likesEnabled: document.getElementById('allowLikes').checked,
+                shareEnabled: document.getElementById('allowShare').checked,
+                likes: 0, likedBy: [],
+                date: serverTimestamp()
+            });
+            alert("تم نشر الخبر بنجاح");
+            location.reload();
+        };
+
+        // --- جلب الأخبار ---
+        function loadNews() {
+            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
+                const list = document.getElementById('newsList');
+                list.innerHTML = `<h2 style="padding:15px;">آخر الأخبار</h2>`;
                 snap.forEach(d => {
-                    const g = d.data();
-                    if(g.disabled) return;
-                    const item = document.createElement('div');
-                    item.className = 'news-item';
-                    item.innerHTML = `🌐 ${g.name} <br> <small style="color:red">تغلق في: ${new Date(g.expiry).toLocaleString()}</small>`;
-                    item.onclick = () => window.openChat(`TempGroups/${d.id}/messages`, g.name, null, g.expiry);
-                    list.appendChild(item);
+                    const n = d.data();
+                    const card = document.createElement('div');
+                    card.className = 'news-card';
+                    card.onclick = () => openFullNews(d.id);
+                    card.innerHTML = `
+                        <img src="${n.img || 'https://via.placeholder.com/100'}" class="news-img-thumb">
+                        <div class="news-brief">
+                            <h3>${n.title} <small>${n.date?.toDate().toLocaleDateString('ar-SA')}</small></h3>
+                            <p style="font-size:12px; color:#666; margin:5px 0;">${n.body.substring(0,60)}...</p>
+                        </div>
+                    `;
+                    list.appendChild(card);
                 });
             });
-
-            // تحميل المستخدمين للبحث
-            onSnapshot(collection(db, "Users"), (snap) => {
-                allUsers = [];
-                snap.forEach(d => { if(d.id !== currentUserId) allUsers.push({id: d.id, ...d.data()}); });
-                renderUsers(allUsers);
-            });
         }
 
-        window.filterUsers = () => {
-            const term = document.getElementById('userSearch').value.toLowerCase();
-            const filtered = allUsers.filter(u => u.fullName.toLowerCase().includes(term) || u.phone.includes(term));
-            renderUsers(filtered);
-        };
-
-        function renderUsers(users) {
-            const list = document.getElementById('privateList');
-            list.innerHTML = "<h4 style='padding:10px'>خاص</h4>";
-            users.forEach(u => {
-                const chatId = [currentUserId, u.id].sort().join("_");
-                const div = document.createElement('div');
-                div.className = 'news-item';
-                div.innerText = `👤 ${u.fullName} (${u.phone})`;
-                div.onclick = () => window.openChat(`PrivateChats/${chatId}/messages`, u.fullName, chatId);
-                list.appendChild(div);
-            });
-        }
-
-        window.openChat = async (path, title, chatId, expiry = null) => {
-            document.getElementById('activeChat').style.display = 'flex';
-            document.getElementById('chatTitle').innerText = title;
-            document.getElementById('autoDeleteControl').style.display = chatId ? 'block' : 'none';
+        // --- فتح الخبر كاملاً ---
+        window.openFullNews = async (id) => {
+            const snap = await getDoc(doc(db, "News", id));
+            const n = snap.data();
             
-            // نظام الحذف التلقائي
-            if(chatId) {
-                const snap = await getDoc(doc(db, "PrivateChats", chatId));
-                if(snap.exists() && snap.data().deleteAt) {
-                    if(Date.now() > snap.data().deleteAt) {
-                        // حذف الرسائل إذا انتهى الوقت
-                        const msgs = await getDocs(collection(db, path));
-                        msgs.forEach(m => deleteDoc(m.ref));
-                        await updateDoc(doc(db, "PrivateChats", chatId), { deleteAt: null });
-                    }
-                }
+            document.getElementById('fnImg').src = n.img || '';
+            document.getElementById('fnTitle').innerText = n.title;
+            document.getElementById('fnDate').innerText = n.date?.toDate().toLocaleString('ar-SA');
+            document.getElementById('fnBody').innerText = n.body;
+            
+            // إخفاء/إظهار التعليقات حسب إعداد الخبر
+            document.getElementById('commentsSection').style.display = n.commentsEnabled ? 'block' : 'none';
+            
+            // أزرار التحكم للمدير (حذف الخبر)
+            const actions = document.getElementById('fnActions');
+            actions.innerHTML = "";
+            if(currentUserData.role === 'admin' || currentUserData.canDelete) {
+                const delBtn = document.createElement('button');
+                delBtn.innerText = "🗑️ حذف الخبر";
+                delBtn.className = "btn btn-close";
+                delBtn.onclick = async () => { if(confirm("حذف؟")) { await deleteDoc(doc(db, "News", id)); closeFullNews(); } };
+                actions.appendChild(delBtn);
             }
-            startListener(path);
+
+            document.getElementById('fullNewsModal').style.display = 'flex';
+            loadComments(id);
+            
+            document.getElementById('sendCommentBtn').onclick = () => postComment(id);
         };
 
-        // تفعيل مؤقت الحذف عند تغيير الاختيار
-        document.getElementById('timerValue').onchange = async (e) => {
-            const hours = parseInt(e.target.value);
-            if(hours > 0 && currentChatId) {
-                const deleteAt = Date.now() + (hours * 3600 * 1000);
-                await setDoc(doc(db, "PrivateChats", currentChatId), { deleteAt }, {merge: true});
-                alert(`سيتم حذف محتوى هذه الدردشة بعد ${hours} ساعة`);
-            }
-        };
+        window.closeFullNews = () => document.getElementById('fullNewsModal').style.display = 'none';
 
-        window.toggleCenter = () => {
-            const el = document.getElementById('chatCenter');
-            el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-        };
+        // --- التعليقات ---
+        async function postComment(newsId) {
+            const txt = document.getElementById('newComment').value;
+            if(!txt) return;
+            await addDoc(collection(db, `News/${newsId}/Comments`), {
+                text: txt, userName: currentUserData.fullName, uid: currentUserId, time: serverTimestamp()
+            });
+            document.getElementById('newComment').value = "";
+        }
 
-        window.closeChat = () => document.getElementById('activeChat').style.display = 'none';
+        function loadComments(newsId) {
+            onSnapshot(query(collection(db, `News/${newsId}/Comments`), orderBy("time", "asc")), (snap) => {
+                const list = document.getElementById('commentsList');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const c = d.data();
+                    list.innerHTML += `
+                        <div style="border-bottom:1px solid #eee; padding:10px; position:relative;">
+                            <b>${c.userName}</b>: ${c.text}
+                            ${(currentUserData.role === 'admin' || c.uid === currentUserId) ? `<button onclick="deleteComment('${newsId}','${d.id}')" style="float:left; color:red; border:none; background:none; cursor:pointer;">حذف</button>` : ''}
+                        </div>`;
+                });
+            });
+        }
 
-        // ... (بقية دوال المراسلة المستقرة)
+        window.deleteComment = async (nId, cId) => { await deleteDoc(doc(db, `News/${nId}/Comments`, cId)); };
+
     </script>
 </body>
 </html>
