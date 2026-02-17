@@ -3,64 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | الإدارة الشاملة</title>
+    <title>لوحة التحكم الشاملة | الإدارة</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
+        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --blue: #3498db; --pink: #ff69b4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        h2 { border-right: 4px solid var(--accent); padding-right: 10px; color: var(--primary); font-size: 1.1rem; }
-        .active-item { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ffeeba; }
-        .btn { padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-danger { background: var(--danger); }
+        .container { max-width: 1100px; margin: auto; }
+        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; margin-bottom: 20px; font-size: 1.1rem; }
+        
+        /* الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-num { font-size: 28px; font-weight: bold; display: block; margin-bottom: 5px; }
+
+        /* التحكم النشط */
+        .active-item { background: #fff3cd; padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ffeeba; }
+        
+        /* الجداول والقوائم */
+        .user-row { background: #f9f9f9; padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .perm-tag { font-size: 11px; padding: 5px 10px; border-radius: 5px; background: #ddd; cursor: pointer; margin: 2px; }
+        .perm-tag.active { background: var(--accent); color: white; }
+
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; }
+        .btn-danger { background: var(--danger); width: auto; padding: 5px 15px; }
         .btn-primary { background: var(--primary); }
-        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <button onclick="location.href='news.html'" style="margin-bottom:20px; border:none; padding:10px; border-radius:8px; cursor:pointer;">⬅️ العودة للرئيسية</button>
-    <h1>لوحة القيادة المركزية ⚙️</h1>
+<div class="container">
+    <button onclick="location.href='news.html'" style="margin-bottom:20px; padding:10px; border:none; border-radius:8px; cursor:pointer;">⬅️ العودة للرئيسية</button>
+    <h1>لوحة الإدارة الكاملة ⚙️</h1>
 
-    <section>
-        <h2>الإشعارات والرسائل النشطة حالياً 🛑</h2>
+    <section style="background: #fff5f5;">
+        <h2>الإشعارات والرسائل النشطة حالياً (الإيقاف الفوري) 🛑</h2>
         <div id="activeControls">
             <div id="activePopup" class="active-item" style="display:none;">
-                <span>📢 إشعار منبثق (Pop-up) نشط حالياً</span>
-                <button class="btn btn-danger" onclick="window.disableItem('loginPopup')">تعطيل فوراً</button>
+                <span>📢 الإشعار المنبثق (Pop-up) نشط حالياً</span>
+                <button class="btn btn-danger" onclick="window.disableItem('loginPopup')">إيقاف فوراً</button>
             </div>
             <div id="activeStar" class="active-item" style="display:none;">
                 <span>⭐ الرسالة الجماعية (النجمة) نشطة حالياً</span>
-                <button class="btn btn-danger" onclick="window.disableItem('broadcast')">إيقاف الآن</button>
+                <button class="btn btn-danger" onclick="window.disableItem('broadcast')">إيقاف فوراً</button>
             </div>
         </div>
     </section>
 
-    <section>
-        <h2>إنشاء إشعار منبثق (Pop-up)</h2>
-        <textarea id="popText" placeholder="نص الإشعار..."></textarea>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <select id="popType"><option value="white">أبيض</option><option value="red">عاجل</option><option value="green">تبرع</option></select>
-            <input type="number" id="popDur" placeholder="المدة بالثواني">
-        </div>
-        <input type="datetime-local" id="popExp">
-        <button class="btn btn-primary" onclick="window.sendPopup()" style="width:100%; margin-top:10px;">تفعيل الإشعار</button>
-    </section>
+    <div class="stats-grid">
+        <div class="stat-card" style="border-bottom: 5px solid var(--blue);"><span id="mCount" class="stat-num">0</span><span>ذكور 👨</span></div>
+        <div class="stat-card" style="border-bottom: 5px solid var(--pink);"><span id="fCount" class="stat-num">0</span><span>إناث 👩</span></div>
+        <div class="stat-card"> <span id="maxAge" class="stat-num">0</span><span>أكبر عمر 👴</span></div>
+        <div class="stat-card"> <span id="minAge" class="stat-num">0</span><span>أصغر عمر 👶</span></div>
+    </div>
 
     <section>
-        <h2>إنشاء رسالة جماعية (النجمة)</h2>
-        <textarea id="bcText" placeholder="نص الرسالة..."></textarea>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <h2>طلبات تغيير رقم الجوال المعلقة 📱</h2>
+        <div id="requestsList">لا توجد طلبات معلقة.</div>
+    </section>
+
+    <section style="background: #eef7ff;">
+        <h2>إنشاء إشعار منبثق (يظهر لمرة واحدة) 🔔</h2>
+        <textarea id="popText" rows="2" placeholder="اكتب نص الرسالة..."></textarea>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <select id="popType"><option value="white">أبيض</option><option value="red">أحمر (عاجل)</option><option value="green">أخضر (تبرع)</option></select>
+            <input type="number" id="popDur" placeholder="المدة (ثانية)">
+            <input type="datetime-local" id="popExp">
+        </div>
+        <button class="btn btn-primary" onclick="window.sendPopup()" style="margin-top:10px;">تفعيل الإشعار المنبثق</button>
+    </section>
+
+    <section style="background: #fffdf0;">
+        <h2>بث رسالة جماعية (النجمة ⭐)</h2>
+        <textarea id="bcText" rows="2" placeholder="نص الرسالة..."></textarea>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
             <select id="bcGen"><option value="all">الجميع</option><option value="male">ذكور</option><option value="female">إناث</option></select>
+            <input type="number" id="bcMin" placeholder="من عمر">
             <input type="datetime-local" id="bcExp">
         </div>
-        <button class="btn btn-primary" onclick="window.sendBC()" style="width:100%; margin-top:10px;">بث النجمة</button>
+        <button class="btn btn-primary" onclick="window.sendBC()" style="margin-top:10px;">بث الرسالة</button>
     </section>
 
-    <script type="module">
-        import { db } from './config.js';
-        import { doc, setDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <section>
+        <h2>إدارة الأعضاء والصلاحيات 👤</h2>
+        <input type="text" id="userSearch" placeholder="ابحث بالاسم أو الجوال..." oninput="window.filterUsers()">
+        <div id="usersList" style="margin-top:15px;"></div>
+    </section>
+</div>
 
-        // مراقبة العناصر النشطة
+<script type="module">
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    let allUsers = [];
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role === 'admin') initAdmin();
+            else window.location.href = "news.html";
+        }
+    });
+
+    function initAdmin() {
+        // مراقبة الإحصائيات والأعضاء
+        onSnapshot(collection(db, "Users"), (snap) => {
+            allUsers = []; let m=0, f=0, ages=[];
+            snap.forEach(d => {
+                const u = {id: d.id, ...d.data()};
+                allUsers.push(u);
+                if(u.gender === 'male') m++; else if(u.gender === 'female') f++;
+                if(u.dob) ages.push(new Date().getFullYear() - new Date(u.dob).getFullYear());
+            });
+            document.getElementById('mCount').innerText = m;
+            document.getElementById('fCount').innerText = f;
+            document.getElementById('maxAge').innerText = ages.length ? Math.max(...ages) : 0;
+            document.getElementById('minAge').innerText = ages.length ? Math.min(...ages) : 0;
+            renderUsers(allUsers);
+        });
+
+        // مراقبة الإشعارات النشطة
         onSnapshot(doc(db, "Settings", "loginPopup"), (s) => {
             document.getElementById('activePopup').style.display = (s.exists() && s.data().expiry > Date.now()) ? 'flex' : 'none';
         });
@@ -68,32 +130,79 @@
             document.getElementById('activeStar').style.display = (s.exists() && s.data().expiry > Date.now()) ? 'flex' : 'none';
         });
 
-        // تعطيل العناصر
-        window.disableItem = async (type) => {
-            await updateDoc(doc(db, "Settings", type), { expiry: 0 });
-            alert("تم التعطيل بنجاح");
-        };
-
-        window.sendPopup = async () => {
-            const id = "pop_" + Date.now();
-            await setDoc(doc(db, "Settings", "loginPopup"), {
-                id, message: document.getElementById('popText').value,
-                type: document.getElementById('popType').value,
-                duration: parseInt(document.getElementById('popDur').value),
-                expiry: new Date(document.getElementById('popExp').value).getTime()
+        // مراقبة طلبات تغيير الجوال
+        onSnapshot(collection(db, "Requests"), (snap) => {
+            const list = document.getElementById('requestsList');
+            list.innerHTML = "";
+            snap.forEach(async d => {
+                const r = d.data();
+                const uSnap = await getDoc(doc(db, "Users", r.uid));
+                const u = uSnap.data();
+                list.innerHTML += `<div class="user-row"><span><b>${u.fullName}</b> طلب: ${r.requestedPhone}</span><button onclick="window.approvePhone('${d.id}','${r.uid}','${r.requestedPhone}')">موافقة</button></div>`;
             });
-            alert("تم التفعيل");
-        };
+        });
+    }
 
-        window.sendBC = async () => {
-            await setDoc(doc(db, "Settings", "broadcast"), {
-                message: document.getElementById('bcText').value,
-                targetGender: document.getElementById('bcGen').value,
-                minAge: 0, maxAge: 100,
-                expiry: new Date(document.getElementById('bcExp').value).getTime()
-            });
-            alert("تم البث");
-        };
-    </script>
+    // دوال التحكم
+    window.disableItem = async (type) => {
+        await updateDoc(doc(db, "Settings", type), { expiry: 0 });
+        alert("تم الإيقاف فوراً");
+    };
+
+    window.sendPopup = async () => {
+        const id = "pop_" + Date.now();
+        await setDoc(doc(db, "Settings", "loginPopup"), {
+            id, message: document.getElementById('popText').value,
+            type: document.getElementById('popType').value,
+            duration: parseInt(document.getElementById('popDur').value) || 10,
+            expiry: new Date(document.getElementById('popExp').value).getTime()
+        });
+        alert("تم التفعيل");
+    };
+
+    window.sendBC = async () => {
+        await setDoc(doc(db, "Settings", "broadcast"), {
+            message: document.getElementById('bcText').value,
+            targetGender: document.getElementById('bcGen').value,
+            minAge: parseInt(document.getElementById('bcMin').value) || 0,
+            maxAge: 100,
+            expiry: new Date(document.getElementById('bcExp').value).getTime()
+        });
+        alert("تم البث");
+    };
+
+    window.approvePhone = async (reqId, uid, newPhone) => {
+        await updateDoc(doc(db, "Users", uid), { phone: newPhone });
+        await deleteDoc(doc(db, "Requests", reqId));
+        alert("تم تحديث الرقم بنجاح");
+    };
+
+    window.filterUsers = () => {
+        const t = document.getElementById('userSearch').value.toLowerCase();
+        const filtered = allUsers.filter(u => u.fullName.toLowerCase().includes(t) || u.phone.includes(t));
+        renderUsers(filtered);
+    };
+
+    function renderUsers(arr) {
+        const list = document.getElementById('usersList');
+        list.innerHTML = "";
+        arr.forEach(u => {
+            const row = document.createElement('div');
+            row.className = 'user-row';
+            row.innerHTML = `
+                <div><b>${u.fullName}</b><br><small>${u.phone}</small></div>
+                <div>
+                    <span class="perm-tag ${u.canAdd?'active':''}" onclick="window.updatePerm('${u.id}','canAdd',${u.canAdd})">إضافة</span>
+                    <span class="perm-tag ${u.role==='admin'?'active':''}" onclick="window.updatePerm('${u.id}','role','${u.role}')">مدير</span>
+                </div>`;
+            list.appendChild(row);
+        });
+    }
+
+    window.updatePerm = async (uid, field, currentVal) => {
+        let newVal = (field === 'role') ? (currentVal === 'admin' ? 'user' : 'admin') : !currentVal;
+        await updateDoc(doc(db, "Users", uid), { [field]: newVal });
+    };
+</script>
 </body>
 </html>
