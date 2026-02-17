@@ -10,19 +10,19 @@
         .login-card { width: 90%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
         input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
         .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .footer-links { margin-top: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .footer-links { margin-top: 20px; font-size: 13px; display: flex; flex-direction: column; gap: 10px; }
         .footer-links a { color: var(--primary); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="login-card">
     <div class="logo">📱</div>
-    <h2 style="color: var(--primary);">تسجيل الدخول</h2>
+    <h2 style="color: var(--primary);">مرحباً بك</h2>
     <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
     <input type="password" id="loginPass" placeholder="كلمة المرور">
     <button class="btn-login" onclick="handleLogin()">دخول</button>
     <div class="footer-links">
-        <a href="#" style="color: #e74c3c;" onclick="forgotPassword()">نسيت كلمة المرور؟</a>
+        <a href="#" style="color: #e74c3c;" onclick="forgotPass()">نسيت كلمة المرور؟</a>
         <a href="register.html">إنشاء حساب جديد</a>
     </div>
 </div>
@@ -47,29 +47,29 @@
         try {
             const userCred = await signInWithEmailAndPassword(auth, email, pass);
             const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
-            if (userDoc.data().status === "disabled") {
+            const data = userDoc.data();
+
+            if (data.status === "disabled") {
                 await auth.signOut();
-                alert("حسابك معطل حالياً. يرجى التواصل مع الإدارة.");
-                return;
-            }
-            window.location.href = "news.html";
-        } catch (e) { alert("بيانات الدخول خاطئة"); }
+                alert("حسابك معطل حالياً. تواصل مع الإدارة.");
+            } else { window.location.href = "news.html"; }
+        } catch (e) { alert("خطأ في بيانات الدخول"); }
     };
 
-    window.forgotPassword = async () => {
+    window.forgotPass = async () => {
         const phone = prompt("أدخل رقم جوالك المسجل:");
         if (!phone) return;
         const q = query(collection(db, "Users"), where("phone", "==", phone));
         const snap = await getDocs(q);
-        if (snap.empty) return alert("رقم غير مسجل");
+        if (snap.empty) return alert("الرقم غير مسجل");
         
         const user = snap.docs[0].data();
-        if (confirm(`هل تريد إرسال رابط التغيير لإيميلك المسجل؟`)) {
+        if (confirm(`هل نرسل رابط التغيير لإيميلك: ${user.email}؟`)) {
             await sendPasswordResetEmail(auth, user.email);
             alert("تم إرسال الرابط.");
         } else {
             await addDoc(collection(db, "Requests"), { uid: snap.docs[0].id, type: "password_reset", timestamp: serverTimestamp() });
-            alert("تم إرسال طلب للإدارة.");
+            alert("تم إرسال طلب تفعيل دخول طوارئ للإدارة.");
         }
     };
 </script>
