@@ -1,0 +1,128 @@
+/* ملف التنسيق الموحد - مرتضى الناصر 2026 */
+:root {
+    --primary: #007aff; /* لون أزرق آيفون احترافي */
+    --bg-light: #f2f2f7;
+    --white: #ffffff;
+    --text-main: #1c1c1e;
+    --text-muted: #8e8e93;
+    --danger: #ff3b30;
+    --accent: #34c759;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    margin: 0;
+    padding-bottom: 80px; /* مساحة للقائمة السفلية */
+    direction: rtl;
+}
+
+/* الهيدر العلوي الاحترافي */
+.top-bar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px); /* تأثير زجاجي */
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid #d1d1d6;
+}
+
+/* تصميم كروت الأخبار (مثل بوستات التواصل) */
+.news-card {
+    background: var(--white);
+    margin: 15px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.news-img-main {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.news-body-content {
+    padding: 15px;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.author-img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #ddd;
+}
+
+/* القائمة السفلية العائمة */
+.bottom-nav {
+    position: fixed;
+    bottom: 15px;
+    left: 15px;
+    right: 15px;
+    background: var(--white);
+    height: 65px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-radius: 25px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 2000;
+}
+
+.nav-item {
+    text-align: center;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 11px;
+    transition: 0.3s;
+}
+
+.nav-item.active {
+    color: var(--primary);
+}
+
+.nav-icon {
+    font-size: 22px;
+    display: block;
+}
+
+/* أزرار الأكشن */
+.btn-main {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* تصميم الفلوتينج بوتون */
+.floating-btn {
+    position: fixed;
+    bottom: 95px;
+    left: 25px;
+    width: 60px;
+    height: 60px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 28px;
+    box-shadow: 0 6px 16px rgba(0,122,255,0.3);
+    cursor: pointer;
+}
