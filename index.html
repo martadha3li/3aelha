@@ -8,45 +8,35 @@
         :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .login-card { width: 90%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-        .logo { font-size: 50px; margin-bottom: 10px; }
         input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--primary); }
-        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
         .footer-links { margin-top: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
         .footer-links a { color: var(--primary); text-decoration: none; font-weight: bold; }
-        .forgot-pass { color: #e74c3c !important; }
     </style>
 </head>
 <body>
-
 <div class="login-card">
     <div class="logo">📱</div>
-    <h2 style="color: var(--primary); margin: 0;">مرحباً بك</h2>
-    <p style="color: #7f8c8d; margin-bottom: 20px;">سجل دخولك للمتابعة</p>
-
-    <input type="text" id="loginId" placeholder="البريد الإلكتروني أو رقم الجوال">
+    <h2 style="color: var(--primary);">تسجيل الدخول</h2>
+    <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
     <input type="password" id="loginPass" placeholder="كلمة المرور">
-    
     <button class="btn-login" onclick="handleLogin()">دخول</button>
-
     <div class="footer-links">
+        <a href="#" style="color: #e74c3c;" onclick="forgotPassword()">نسيت كلمة المرور؟</a>
         <a href="register.html">إنشاء حساب جديد</a>
-        <a href="#" class="forgot-pass" onclick="resetPassword()">نسيت كلمة المرور؟</a>
     </div>
 </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     window.handleLogin = async () => {
         const id = document.getElementById('loginId').value;
         const pass = document.getElementById('loginPass').value;
-        if(!id || !pass) return alert("يرجى إدخال البيانات");
-
         let email = id;
-        // إذا لم يكن إيميل (أي رقم جوال)، نبحث عن الإيميل المرتبط به
+
         if (!id.includes('@')) {
             const q = query(collection(db, "Users"), where("phone", "==", id));
             const snap = await getDocs(q);
@@ -55,23 +45,18 @@
         }
 
         try {
-            await signInWithEmailAndPassword(auth, email, pass);
-            window.location.href = "news.html";
-        } catch (e) {
-            alert("خطأ في بيانات الدخول، تأكد من كلمة المرور.");
-        }
-    };
+            const userCred = await signInWithEmailAndPassword(auth, email, pass);
+            const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
+            const data = userDoc.data();
 
-    window.resetPassword = async () => {
-        const email = prompt("أدخل بريدك الإلكتروني لتلقي رابط إعادة تعيين كلمة المرور:");
-        if (email) {
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert("تم إرسال رابط التغيير إلى إيميلك.");
-            } catch (e) {
-                alert("تأكد من كتابة البريد بشكل صحيح.");
+            // فحص إذا كان الحساب معطلاً من قبل المدير
+            if (data.status === "disabled") {
+                await auth.signOut();
+                alert("عذراً، حسابك معطل حالياً. يرجى التواصل مع الإدارة لتفعيله.");
+            } else {
+                window.location.href = "news.html";
             }
-        }
+        } catch (e) { alert("خطأ في بيانات الدخول"); }
     };
 </script>
 </body>
