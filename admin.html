@@ -17,7 +17,19 @@
     </style>
 </head>
 <body>
+<div class="top-bar">
+    <div class="top-bar-right">
+        <button class="logout-btn" onclick="window.handleLogout()">🚪</button>
+        <button id="adminLink" class="admin-btn" onclick="location.href='admin.html'">⚙️</button>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <img src="logo.png" style="height: 35px; width: auto; border-radius: 5px;">
+        <span style="font-weight: bold; color: var(--primary); font-size: 14px;">تطبيق الأخبار</span>
+    </div>
 
+    <div id="statusArea"></div>
+</div>
     <div class="nav-menu">
         <a href="admin_users.html" class="nav-btn">👥 إدارة المسجلين</a>
         <a href="admin_requests.html" class="nav-btn">📥 طلبات الأعضاء</a>
