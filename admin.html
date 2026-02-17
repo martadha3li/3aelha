@@ -3,75 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | الإدارة</title>
+    <title>لوحة التحكم الاحترافية</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .back-btn { background: #ddd; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; font-weight: bold; }
+        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --pink: #ff69b4; --blue: #3498db; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
         section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .request-card { border-right: 8px solid #f1c40f; background: #fffdf0; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; }
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; margin-top: 10px; }
+        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; margin-bottom: 20px; }
+        
+        /* كروت الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #eee; }
+        .stat-num { font-size: 24px; font-weight: bold; display: block; }
+        
+        /* البحث والأعضاء */
+        .search-box { margin-bottom: 15px; }
+        .search-box input { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        .user-row { display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 10px; align-items: center; border: 1px solid #eee; }
+        .perm-tag { font-size: 11px; padding: 4px 8px; border-radius: 5px; background: #eee; cursor: pointer; }
+        .perm-tag.active { background: var(--accent); color: white; }
+
+        /* الرسائل الجماعية */
+        .broadcast-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 10px; }
+        
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-primary { background: var(--primary); }
     </style>
 </head>
 <body>
 
-    <button class="back-btn" onclick="location.href='news.html'">⬅️ العودة للرئيسية</button>
-    <h1>لوحة الإدارة المركزية</h1>
+<div class="container">
+    <button onclick="location.href='news.html'" style="margin-bottom:20px; padding:10px; cursor:pointer; border-radius:8px; border:none;">⬅️ العودة للرئيسية</button>
+    <h1>لوحة إدارة التطبيق</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-bottom: 4px solid var(--blue);">
+            <span class="stat-num" id="maleCount">0</span>
+            <span style="color:var(--blue)">عدد الذكور 👨</span>
+        </div>
+        <div class="stat-card" style="border-bottom: 4px solid var(--pink);">
+            <span class="stat-num" id="femaleCount">0</span>
+            <span style="color:var(--pink)">عدد الإناث 👩</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-num" id="maxAge">0</span>
+            <span>أكبر عمر 👴</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-num" id="minAge">0</span>
+            <span>أصغر عمر 👶</span>
+        </div>
+    </div>
+
+    <section class="broadcast-box">
+        <h2>إرسال رسالة جماعية (تظهر كنجمة) ⭐</h2>
+        <textarea id="bcText" placeholder="اكتب نص الرسالة الجماعية هنا..."></textarea>
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+                <label>تاريخ ووقت الانتهاء:</label>
+                <input type="datetime-local" id="bcExpiry">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="window.sendBroadcast()">بث الرسالة لجميع الأعضاء</button>
+    </section>
 
     <section>
         <h2>طلبات تغيير رقم الجوال 📱</h2>
-        <div id="requestsList">جاري تحميل الطلبات...</div>
+        <div id="requestsList">لا يوجد طلبات.</div>
     </section>
 
     <section>
         <h2>إدارة الأعضاء والصلاحيات 👥</h2>
-        <div id="usersList"></div>
+        <div class="search-box">
+            <input type="text" id="userSearch" placeholder="ابحث بالاسم، الجوال، أو البريد..." oninput="window.filterUsers()">
+        </div>
+        <div id="usersList">جاري التحميل...</div>
     </section>
+</div>
 
-    <script type="module">
-        import { auth, db } from './config.js';
-        import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const snap = await getDoc(doc(db, "Users", user.uid));
-                if (snap.data().role !== 'admin') window.location.href = "news.html";
-                loadRequests();
-                loadUsers();
-            }
-        });
+    let allUsers = [];
 
-        function loadRequests() {
-            onSnapshot(collection(db, "Requests"), (snap) => {
-                const list = document.getElementById('requestsList');
-                list.innerHTML = snap.empty ? "لا يوجد طلبات حالياً." : "";
-                snap.forEach(async (d) => {
-                    const r = d.data();
-                    const uSnap = await getDoc(doc(db, "Users", r.uid));
-                    const u = uSnap.data();
-                    const age = new Date().getFullYear() - new Date(u.dob).getFullYear();
-
-                    list.innerHTML += `
-                    <div class="request-card">
-                        <b>المستخدم:</b> ${u.fullName} (${u.gender === 'male' ? 'ذكر' : 'أنثى'})<br>
-                        <b>الإيميل:</b> ${u.email || 'غير مسجل'}<br>
-                        <b>العمر:</b> ${age} سنة<br>
-                        <p>تغيير من <b>${r.currentPhone}</b> ⬅️ إلى <b>${r.requestedPhone}</b></p>
-                        ${u.gender === 'female' ? `<p style="color:red"><b>المعرف:</b> ${u.guardianName} - ${u.guardianPhone}</p>` : ''}
-                        <button class="btn" style="background:var(--accent)" onclick="approve('${d.id}', '${r.uid}', '${r.requestedPhone}')">موافقة وتحديث</button>
-                        <button class="btn" style="background:var(--danger)" onclick="reject('${d.id}')">رفض</button>
-                    </div>`;
-                });
-            });
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role !== 'admin') window.location.href = "news.html";
+            init();
         }
+    });
 
-        window.approve = async (rid, uid, phone) => {
-            await updateDoc(doc(db, "Users", uid), { phone: phone });
-            await deleteDoc(doc(db, "Requests", rid));
-            alert("تم التحديث بنجاح");
-        };
+    function init() {
+        loadUsersAndStats();
+        loadRequests();
+    }
 
-        window.reject = async (rid) => { await deleteDoc(doc(db, "Requests", rid)); };
-    </script>
+    // الإحصائيات + البحث + الصلاحيات
+    function loadUsersAndStats() {
+        onSnapshot(collection(db, "Users"), (snap) => {
+            allUsers = [];
+            let males = 0, females = 0;
+            let ages = [];
+
+            snap.forEach(d => {
+                const u = d.data();
+                allUsers.push({ id: d.id, ...u });
+
+                // إحصائيات الجنس
+                if(u.gender === 'male') males++; else if(u.gender === 'female') females++;
+                
+                // إحصائيات العمر
+                if(u.dob) {
+                    const age = new Date().getFullYear() - new Date(u.dob).getFullYear();
+                    ages.push(age);
+                }
+            });
+
+            document.getElementById('maleCount').innerText = males;
+            document.getElementById('femaleCount').innerText = females;
+            document.getElementById('maxAge').innerText = ages.length ? Math.max(...ages) : 0;
+            document.getElementById('minAge').innerText = ages.length ? Math.min(...ages) : 0;
+
+            renderUsers(allUsers);
+        });
+    }
+
+    window.filterUsers = () => {
+        const term = document.getElementById('userSearch').value.toLowerCase();
+        const filtered = allUsers.filter(u => 
+            u.fullName.toLowerCase().includes(term) || 
+            u.phone.includes(term) || 
+            (u.email && u.email.toLowerCase().includes(term))
+        );
+        renderUsers(filtered);
+    };
+
+    function renderUsers(users) {
+        const list = document.getElementById('usersList');
+        list.innerHTML = "";
+        users.forEach(u => {
+            if(u.role === 'admin') return;
+            const div = document.createElement('div');
+            div.className = 'user-row';
+            div.innerHTML = `
+                <div style="flex:1; min-width:200px;">
+                    <b>${u.fullName}</b> <br> <small>${u.phone} | ${u.gender === 'male' ? 'ذكر' : 'أنثى'}</small>
+                </div>
+                <div class="perm-grid">
+                    <span class="perm-tag ${u.canAdd?'active':''}" onclick="togglePerm('${u.id}', 'canAdd', ${u.canAdd})">إضافة</span>
+                    <span class="perm-tag ${u.canEdit?'active':''}" onclick="togglePerm('${u.id}', 'canEdit', ${u.canEdit})">تعديل</span>
+                    <span class="perm-tag ${u.canDelete?'active':''}" onclick="togglePerm('${u.id}', 'canDelete', ${u.canDelete})">حذف</span>
+                    <span class="perm-tag ${u.role==='admin'?'active':''}" style="border:1px solid red" onclick="togglePerm('${u.id}', 'role', '${u.role}')">مدير</span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    window.togglePerm = async (uid, field, currentVal) => {
+        let newVal;
+        if(field === 'role') newVal = currentVal === 'admin' ? 'user' : 'admin';
+        else newVal = !currentVal;
+        await updateDoc(doc(db, "Users", uid), { [field]: newVal });
+    };
+
+    // الرسائل الجماعية
+    window.sendBroadcast = async () => {
+        const text = document.getElementById('bcText').value;
+        const expiry = document.getElementById('bcExpiry').value;
+        if(!text || !expiry) return alert("يرجى إكمال نص الرسالة وتاريخ الانتهاء");
+
+        await setDoc(doc(db, "Settings", "broadcast"), {
+            message: text,
+            expiry: new Date(expiry).getTime(),
+            createdAt: serverTimestamp()
+        });
+        alert("تم بث الرسالة الجماعية لجميع الأعضاء بنجاح!");
+    };
+
+    // طلبات الجوال
+    function loadRequests() {
+        onSnapshot(collection(db, "Requests"), (snap) => {
+            const list = document.getElementById('requestsList');
+            list.innerHTML = "";
+            snap.forEach(async (d) => {
+                const r = d.data();
+                const uSnap = await getDoc(doc(db, "Users", r.uid));
+                const u = uSnap.data();
+                list.innerHTML += `
+                    <div class="user-row" style="border-right: 5px solid gold;">
+                        <div style="flex:1">
+                            <b>طلب من: ${u.fullName}</b><br>
+                            من: ${r.currentPhone} ⬅️ إلى: ${r.requestedPhone}
+                        </div>
+                        <button class="btn btn-primary" style="background:var(--accent)" onclick="approveReq('${d.id}','${r.uid}','${r.requestedPhone}')">موافقة</button>
+                    </div>`;
+            });
+        });
+    }
+
+    window.approveReq = async (id, uid, phone) => {
+        await updateDoc(doc(db, "Users", uid), { phone: phone });
+        await deleteDoc(doc(db, "Requests", id));
+        alert("تم تحديث الرقم");
+    };
+</script>
 </body>
 </html>
