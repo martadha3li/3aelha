@@ -3,110 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الاحترافية | الإدارة</title>
+    <title>لوحة الإدارة الشاملة</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
-        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        h2 { border-right: 4px solid var(--accent); padding-right: 10px; color: var(--primary); }
-        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 10px; margin-top: 10px; }
-        .control-group { margin-bottom: 15px; }
-        label { font-size: 13px; font-weight: bold; display: block; margin-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; }
+        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --blue: #3498db; --pink: #ff69b4; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; margin-bottom: 20px; font-size: 1.2rem; }
+        
+        /* الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-num { font-size: 28px; font-weight: bold; display: block; margin-bottom: 5px; }
+
+        /* الجداول والقوائم */
+        .user-row { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        .perm-tag { font-size: 11px; padding: 5px 10px; border-radius: 5px; background: #ddd; cursor: pointer; margin: 2px; transition: 0.3s; }
+        .perm-tag.active { background: var(--accent); color: white; }
+
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; }
         .btn-primary { background: var(--primary); }
+        .btn-blue { background: var(--blue); }
+        
+        .request-card { border-right: 8px solid #f1c40f; background: #fffcf0; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div style="max-width: 1000px; margin: auto;">
-    <button onclick="location.href='news.html'" style="margin-bottom:20px; border:none; padding:10px; border-radius:8px; cursor:pointer;">⬅️ عودة</button>
-    <h1>مركز إدارة الاستهداف والإشعارات ⚙️</h1>
+<div class="container">
+    <button onclick="location.href='news.html'" style="margin-bottom:20px; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">⬅️ عودة للأخبار</button>
+    <h1>لوحة التحكم والقيادة المركزية ⚙️</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-bottom: 5px solid var(--blue);"><span id="mCount" class="stat-num">0</span><span style="color:var(--blue)">ذكور 👨</span></div>
+        <div class="stat-card" style="border-bottom: 5px solid var(--pink);"><span id="fCount" class="stat-num">0</span><span style="color:var(--pink)">إناث 👩</span></div>
+        <div class="stat-card"> <span id="maxAge" class="stat-num">0</span><span>أكبر عمر 👴</span></div>
+        <div class="stat-card"> <span id="minAge" class="stat-num">0</span><span>أصغر عمر 👶</span></div>
+    </div>
 
     <section>
-        <h2>إرسال رسالة جماعية (النجمة ⭐) مع استهداف</h2>
-        <textarea id="bcText" rows="3" placeholder="اكتب نص الرسالة هنا..."></textarea>
-        
-        <div class="filter-grid">
-            <div class="control-group">
-                <label>الفئة المستهدفة:</label>
-                <select id="bcTargetGender">
-                    <option value="all">الجميع</option>
-                    <option value="male">الذكور فقط</option>
-                    <option value="female">الإناث فقط</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>أكبر من عمر:</label>
-                <input type="number" id="bcMinAge" value="0">
-            </div>
-            <div class="control-group">
-                <label>أقل من عمر:</label>
-                <input type="number" id="bcMaxAge" value="100">
-            </div>
-            <div class="control-group">
-                <label>وقت الانتهاء:</label>
-                <input type="datetime-local" id="bcExpiry">
-            </div>
-        </div>
-        <button class="btn btn-primary" onclick="window.sendBroadcast()" style="margin-top:15px;">بث الرسالة المخصصة</button>
+        <h2>طلبات تغيير رقم الجوال المعلقة</h2>
+        <div id="requestsList">لا توجد طلبات.</div>
     </section>
 
-    <section style="background: #e8f4fd;">
-        <h2>إشعار تسجيل الدخول المنبثق 🔔</h2>
-        <textarea id="popText" rows="2" placeholder="اكتب نص الإشعار الذي سيظهر وسط الشاشة..."></textarea>
-        
-        <div class="filter-grid">
-            <div class="control-group">
-                <label>نوع الإشعار (اللون):</label>
-                <select id="popType">
-                    <option value="white">عادي (أبيض)</option>
-                    <option value="red">عاجل (أحمر)</option>
-                    <option value="green">تبرع (أخضر)</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>مدة الظهور (بالثواني):</label>
-                <input type="number" id="popDuration" value="10">
-            </div>
-            <div class="control-group">
-                <label>تاريخ انتهاء الإشعار:</label>
-                <input type="datetime-local" id="popExpiry">
-            </div>
+    <section style="background: #eef7ff;">
+        <h2>إشعار تسجيل الدخول (يظهر لمرة واحدة) 🔔</h2>
+        <textarea id="popText" rows="2" placeholder="اكتب نص الرسالة المنبثقة..."></textarea>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <div><label>اللون:</label><select id="popType"><option value="white">أبيض</option><option value="red">أحمر (عاجل)</option><option value="green">أخضر (تبرع)</option></select></div>
+            <div><label>المدة (ثانية):</label><input type="number" id="popDur" value="10"></div>
+            <div><label>ينتهي في:</label><input type="datetime-local" id="popExp"></div>
         </div>
-        <button class="btn" style="background: #007bff; margin-top:15px;" onclick="window.sendPopup()">تفعيل الإشعار المنبثق</button>
+        <button class="btn btn-blue" onclick="window.sendPopup()" style="margin-top:10px;">تفعيل الإشعار المنبثق</button>
+    </section>
+
+    <section style="background: #fffdf0;">
+        <h2>الرسالة الجماعية (النجمة) مع استهداف</h2>
+        <textarea id="bcText" rows="2" placeholder="نص الرسالة..."></textarea>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px;">
+            <div><label>الفئة:</label><select id="bcGen"><option value="all">الجميع</option><option value="male">ذكور</option><option value="female">إناث</option></select></div>
+            <div><label>من عمر:</label><input type="number" id="bcMin" value="0"></div>
+            <div><label>إلى عمر:</label><input type="number" id="bcMax" value="100"></div>
+            <div><label>ينتهي في:</label><input type="datetime-local" id="bcExp"></div>
+        </div>
+        <button class="btn btn-primary" onclick="window.sendBC()" style="margin-top:10px;">بث النجمة المستهدفة</button>
+    </section>
+
+    <section>
+        <h2>إدارة الأعضاء والصلاحيات</h2>
+        <input type="text" id="userSearch" placeholder="ابحث بالاسم، الجوال، أو البريد..." oninput="window.filterUsers()">
+        <div id="usersList" style="margin-top:15px;"></div>
     </section>
 </div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // إرسال النجمة المستهدفة
-    window.sendBroadcast = async () => {
-        const data = {
-            message: document.getElementById('bcText').value,
-            targetGender: document.getElementById('bcTargetGender').value,
-            minAge: parseInt(document.getElementById('bcMinAge').value),
-            maxAge: parseInt(document.getElementById('bcMaxAge').value),
-            expiry: new Date(document.getElementById('bcExpiry').value).getTime(),
-            updatedAt: serverTimestamp()
-        };
-        await setDoc(doc(db, "Settings", "broadcast"), data);
-        alert("تم إرسال الرسالة الجماعية المستهدفة بنجاح!");
+    let allUsers = [];
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role === 'admin') initAdmin();
+            else window.location.href = "news.html";
+        }
+    });
+
+    function initAdmin() {
+        loadUsersStats();
+        loadRequests();
+    }
+
+    function loadUsersStats() {
+        onSnapshot(collection(db, "Users"), (snap) => {
+            allUsers = [];
+            let m=0, f=0, ages=[];
+            snap.forEach(d => {
+                const u = {id: d.id, ...d.data()};
+                allUsers.push(u);
+                if(u.gender === 'male') m++; else if(u.gender === 'female') f++;
+                if(u.dob) ages.push(new Date().getFullYear() - new Date(u.dob).getFullYear());
+            });
+            document.getElementById('mCount').innerText = m;
+            document.getElementById('fCount').innerText = f;
+            document.getElementById('maxAge').innerText = ages.length ? Math.max(...ages) : 0;
+            document.getElementById('minAge').innerText = ages.length ? Math.min(...ages) : 0;
+            renderUsers(allUsers);
+        });
+    }
+
+    window.filterUsers = () => {
+        const t = document.getElementById('userSearch').value.toLowerCase();
+        const filtered = allUsers.filter(u => u.fullName.toLowerCase().includes(t) || u.phone.includes(t));
+        renderUsers(filtered);
     };
 
-    // إرسال الإشعار المنبثق
+    function renderUsers(arr) {
+        const list = document.getElementById('usersList');
+        list.innerHTML = "";
+        arr.forEach(u => {
+            if(u.role === 'admin') return;
+            const row = document.createElement('div');
+            row.className = 'user-row';
+            row.innerHTML = `
+                <div><b>${u.fullName}</b><br><small>${u.phone} | ${u.gender}</small></div>
+                <div>
+                    <span class="perm-tag ${u.canAdd?'active':''}" onclick="togglePerm('${u.id}','canAdd',${u.canAdd})">إضافة</span>
+                    <span class="perm-tag ${u.canEdit?'active':''}" onclick="togglePerm('${u.id}','canEdit',${u.canEdit})">تعديل</span>
+                    <span class="perm-tag ${u.role==='admin'?'active':''}" onclick="togglePerm('${u.id}','role','${u.role}')">مدير</span>
+                </div>`;
+            list.appendChild(row);
+        });
+    }
+
+    window.togglePerm = async (uid, f, val) => {
+        let n = (f === 'role') ? (val==='admin'?'user':'admin') : !val;
+        await updateDoc(doc(db, "Users", uid), { [f]: n });
+    };
+
     window.sendPopup = async () => {
-        const data = {
+        const id = "pop_" + Date.now(); // معرف فريد لكل إشعار جديد
+        await setDoc(doc(db, "Settings", "loginPopup"), {
+            id,
             message: document.getElementById('popText').value,
             type: document.getElementById('popType').value,
-            duration: parseInt(document.getElementById('popDuration').value),
-            expiry: new Date(document.getElementById('popExpiry').value).getTime(),
-            updatedAt: serverTimestamp()
-        };
-        await setDoc(doc(db, "Settings", "loginPopup"), data);
-        alert("تم تفعيل إشعار تسجيل الدخول المنبثق!");
+            duration: parseInt(document.getElementById('popDur').value),
+            expiry: new Date(document.getElementById('popExp').value).getTime()
+        });
+        alert("تم التفعيل!");
+    };
+
+    window.sendBC = async () => {
+        await setDoc(doc(db, "Settings", "broadcast"), {
+            message: document.getElementById('bcText').value,
+            targetGender: document.getElementById('bcGen').value,
+            minAge: parseInt(document.getElementById('bcMin').value),
+            maxAge: parseInt(document.getElementById('bcMax').value),
+            expiry: new Date(document.getElementById('bcExp').value).getTime()
+        });
+        alert("تم البث!");
+    };
+
+    function loadRequests() {
+        onSnapshot(collection(db, "Requests"), (snap) => {
+            const list = document.getElementById('requestsList');
+            list.innerHTML = "";
+            snap.forEach(async d => {
+                const r = d.data();
+                const u = (await getDoc(doc(db, "Users", r.uid))).data();
+                list.innerHTML += `<div class="request-card"><b>${u.fullName}</b> طلب تغيير إلى ${r.requestedPhone} <button onclick="approve('${d.id}','${r.uid}','${r.requestedPhone}')">موافقة</button></div>`;
+            });
+        });
+    }
+    window.approve = async (id, uid, p) => {
+        await updateDoc(doc(db, "Users", uid), { phone: p });
+        await deleteDoc(doc(db, "Requests", id));
     };
 </script>
 </body>
