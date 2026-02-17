@@ -3,110 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تطبيق التواصل الذكي</title>
+    <title>الرئيسية</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --twitter-blue: #1DA1F2; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --twitter-blue: #1da1f2; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 70px; }
         
-        /* تصميم الإشعار المنبثق وسط الشاشة */
-        .login-popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .login-popup-content { width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; text-align: center; position: relative; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* الإشعار المنبثق */
+        .pop-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .pop-card { width: 100%; max-width: 350px; padding: 25px; border-radius: 20px; text-align: center; position: relative; animation: popUp 0.3s ease-out; }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .pop-white { background: white; color: #333; }
+        .pop-red { background: var(--danger); color: white; }
+        .pop-green { background: var(--accent); color: white; }
         
-        /* ألوان الإشعار حسب النوع */
-        .popup-white { background: white; color: #333; }
-        .popup-red { background: var(--danger); color: white; }
-        .popup-green { background: var(--accent); color: white; }
-        
-        .popup-close-btn { margin-top: 15px; padding: 8px 20px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: rgba(0,0,0,0.1); }
-
-        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .star-broadcast { color: #ffc107; font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); sticky: top; z-index: 1000; }
+        .star-bc { color: #ffc107; font-size: 24px; cursor: pointer; display: none; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
     </style>
 </head>
 <body>
 
-    <div id="loginPopupOverlay" class="login-popup-overlay">
-        <div id="loginPopupContent" class="login-popup-content">
-            <h3 id="popTitle">📢 تنبيه من الإدارة</h3>
-            <p id="popMessage"></p>
-            <button class="popup-close-btn" onclick="closeLoginPopup()">إغلاق</button>
+    <div id="loginPopupOverlay" class="pop-overlay">
+        <div id="loginPopupCard" class="pop-card">
+            <h3 id="popTitle">🔔 تنبيه الإدارة</h3>
+            <p id="popMsg"></p>
+            <button onclick="closePopup()" style="margin-top:15px; padding:8px 20px; border-radius:20px; border:none; cursor:pointer;">إغلاق</button>
         </div>
     </div>
 
     <div class="top-bar">
-        <button onclick="location.href='index.html'" style="background:none; border:none; font-size:20px;">🚪</button>
-        <div id="broadcastStar" class="star-broadcast" onclick="showBroadcast()">⭐</div>
-        <span style="font-weight:bold;">الرئيسية</span>
+        <button onclick="signOutUser()" style="background:none; border:none; font-size:20px;">🚪</button>
+        <div id="broadcastStar" class="star-bc" onclick="showBC()">⭐</div>
+        <span id="pageTitle" style="font-weight:bold;">الرئيسية</span>
     </div>
+
+    <main id="newsContainer"></main>
 
     <script type="module">
         import { auth, db } from './config.js';
         import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let userUID = null;
-        let userData = null;
-        let currentAge = 0;
+        let userUID, userData, userAge;
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 userUID = user.uid;
                 const snap = await getDoc(doc(db, "Users", user.uid));
                 userData = snap.data();
-                currentAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
+                userAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
                 
-                checkBroadcastTargeting();
-                checkLoginPopup();
+                checkPopup();
+                checkStarBC();
             }
         });
 
-        // 1. فحص استهداف النجمة الذهبية
-        function checkBroadcastTargeting() {
-            onSnapshot(doc(db, "Settings", "broadcast"), (snap) => {
-                if(snap.exists()) {
-                    const data = snap.data();
-                    const now = Date.now();
-                    
-                    // شروط الاستهداف
-                    const genderMatch = (data.targetGender === 'all' || data.targetGender === userData.gender);
-                    const ageMatch = (currentAge >= data.minAge && currentAge <= data.maxAge);
-                    const timeMatch = (data.expiry > now);
-
-                    if(genderMatch && ageMatch && timeMatch) {
-                        document.getElementById('broadcastStar').style.display = 'block';
-                        window.activeMsg = data.message;
-                    } else {
-                        document.getElementById('broadcastStar').style.display = 'none';
-                    }
-                }
-            });
-        }
-        window.showBroadcast = () => alert("📢 رسالة جماعية:\n\n" + window.activeMsg);
-
-        // 2. فحص وإظهار الإشعار المنبثق
-        function checkLoginPopup() {
+        // فحص الإشعار المنبثق لمرة واحدة
+        function checkPopup() {
             onSnapshot(doc(db, "Settings", "loginPopup"), (snap) => {
                 if(snap.exists()) {
                     const data = snap.data();
-                    if(data.expiry > Date.now()) {
-                        const overlay = document.getElementById('loginPopupOverlay');
-                        const content = document.getElementById('loginPopupContent');
-                        
-                        document.getElementById('popMessage').innerText = data.message;
-                        content.className = `login-popup-content popup-${data.type}`;
-                        overlay.style.display = 'flex';
-
-                        // إغلاق تلقائي بعد المدة المحددة
-                        setTimeout(() => { closeLoginPopup(); }, data.duration * 1000);
+                    const lastSeenID = localStorage.getItem('last_popup_id');
+                    
+                    // يظهر إذا كان: 1. لم ينتهِ وقته 2. المعرف الخاص به يختلف عن آخر إشعار شاهده المستخدم
+                    if(data.expiry > Date.now() && data.id !== lastSeenID) {
+                        showPopup(data);
                     }
                 }
             });
         }
 
-        window.closeLoginPopup = () => {
-            document.getElementById('loginPopupOverlay').style.display = 'none';
-        };
+        function showPopup(data) {
+            const overlay = document.getElementById('loginPopupOverlay');
+            const card = document.getElementById('loginPopupCard');
+            document.getElementById('popMsg').innerText = data.message;
+            card.className = `pop-card pop-${data.type}`;
+            overlay.style.display = 'flex';
+            
+            // تخزين المعرف لمنع الظهور مرة أخرى
+            localStorage.setItem('last_popup_id', data.id);
+            
+            if(data.duration > 0) {
+                setTimeout(() => { closePopup(); }, data.duration * 1000);
+            }
+        }
+
+        window.closePopup = () => document.getElementById('loginPopupOverlay').style.display = 'none';
+
+        function checkStarBC() {
+            onSnapshot(doc(db, "Settings", "broadcast"), (snap) => {
+                if(snap.exists()) {
+                    const d = snap.data();
+                    const match = (d.targetGender === 'all' || d.targetGender === userData.gender) && 
+                                  (userAge >= d.minAge && userAge <= d.maxAge) && (d.expiry > Date.now());
+                    document.getElementById('broadcastStar').style.display = match ? 'block' : 'none';
+                    window.bcMessage = d.message;
+                }
+            });
+        }
+        window.showBC = () => alert("📢 " + window.bcMessage);
     </script>
 </body>
 </html>
