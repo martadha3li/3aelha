@@ -2,106 +2,121 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الرئيسية</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --gold: #ffc107; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
-        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .news-card { background: white; margin: 12px; border-radius: 15px; display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 70px; }
+        .top-bar { background: white; padding: 12px; display: flex; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .news-card { background: white; margin: 12px; border-radius: 15px; display: flex; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
         .news-img { width: 100px; height: 100px; object-fit: cover; }
-        .overlay-full { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .chat-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        
+        /* النافذة المنبثقة للخبر */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .modal-content { background: white; width: 100%; max-height: 90vh; border-radius: 25px 25px 0 0; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .full-img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
+        .actions { display: flex; gap: 15px; margin: 15px 0; padding: 10px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .btn-wa { background: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <button onclick="signOutNow()" style="background:none; border:none; font-size:22px;">🚪</button>
-        <div id="starBC" style="color:var(--gold); font-size:24px; display:none; cursor:pointer;" onclick="alert(bcMsg)">⭐</div>
-        <span id="userPerms" style="font-size:12px; font-weight:bold; color:var(--primary);"></span>
-        <span style="font-weight:bold;">الرئيسية</span>
+        <button onclick="location.href='admin.html'" id="adminIcon" style="display:none; border:none; background:none; font-size:20px;">⚙️</button>
+        <span style="font-weight:bold;">آخر الأخبار</span>
     </div>
 
     <div id="newsContainer"></div>
 
-    <div id="chatOverlay" class="overlay-full">
-        <div style="background:var(--primary); color:white; padding:15px; display:flex; justify-content:space-between;">
-            <span>مركز المحادثات</span>
-            <button onclick="toggleChat(false)" style="color:white; background:none; border:none; font-size:24px;">✕</button>
-        </div>
-        <div style="padding:10px; flex:1; overflow-y:auto;">
-            <div class="chat-item" onclick="openChat('Messages', 'الدردشة العامة')">🌐 الدردشة العامة</div>
-            <h4 style="margin:10px;">مجموعاتك المستهدفة</h4>
-            <div id="tempGroupsArea"></div>
-            <h4 style="margin:10px;">محادثة خاصة</h4>
-            <input type="number" id="pSearch" placeholder="رقم الجوال..." style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
-            <button onclick="searchPrivate()" style="width:100%; margin-top:5px; padding:10px; background:var(--primary); color:white; border:none; border-radius:10px;">بحث وبدء محادثة</button>
-            <div id="prevChats"></div>
+    <div id="newsModal" class="modal">
+        <div class="modal-content">
+            <button onclick="closeModal()" style="float:left; border:none; background:none; font-size:24px;">✕</button>
+            <img id="mImg" class="full-img">
+            <h2 id="mTitle"></h2>
+            <p id="mBody" style="line-height:1.6; color:#34495e;"></p>
+            
+            <div class="actions">
+                <button id="likeBtn" style="border:none; background:none; font-size:20px;">🕊️ <span id="mLikeCount">0</span></button>
+                <button class="btn-wa" id="waBtn">🟢 مشاركة واتساب</button>
+            </div>
+
+            <div id="commentsArea">
+                <h4>التعليقات</h4>
+                <div id="mCommentsList"></div>
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <input type="text" id="cInput" placeholder="اكتب تعليقاً..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
+                    <button id="sendC" style="border:none; background:var(--primary); color:white; border-radius:10px; padding:0 15px;">إرسال</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <div onclick="location.reload()">📰<br>الأخبار</div>
-        <div onclick="toggleChat(true)">💬<br>الدردشة</div>
-        <div onclick="location.href='profile.html'">👤<br>بروفايل</div>
-    </nav>
-
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, serverTimestamp, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let userUID, userData, bcMsg;
-
-        auth.onAuthStateChanged(async (user) => {
+        auth.onAuthStateChanged(async user => {
             if (user) {
-                userUID = user.uid;
                 const snap = await getDoc(doc(db, "Users", user.uid));
-                userData = snap.data();
-                if(userData.role === 'admin') document.getElementById('userPerms').innerText = "المدير";
+                if(snap.data().role === 'admin') document.getElementById('adminIcon').style.display = 'block';
                 loadNews();
-                loadGroups();
-                checkStar();
-            } else { window.location.href = "index.html"; }
+            }
         });
 
-        // جلب المجموعات المستهدفة فقط
-        function loadGroups() {
-            onSnapshot(collection(db, "TempGroups"), (snap) => {
-                const area = document.getElementById('tempGroupsArea');
-                area.innerHTML = "";
-                snap.forEach(d => {
-                    const g = d.data();
-                    const isAllowed = g.targetType === 'all' || (g.allowedUsers && g.allowedUsers.includes(userUID));
-                    if(g.expiry > Date.now() && !g.disabled && isAllowed) {
-                        area.innerHTML += `<div class="chat-item" onclick="openChat('TempGroups/${d.id}/messages', '${g.name}')">👥 ${g.name}</div>`;
-                    }
-                });
-            });
-        }
-
         function loadNews() {
-            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
-                const container = document.getElementById('newsContainer');
-                container.innerHTML = "";
+            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), snap => {
+                const cont = document.getElementById('newsContainer');
+                cont.innerHTML = "";
                 snap.forEach(d => {
                     const n = d.data();
-                    container.innerHTML += `
-                        <div class="news-card">
-                            <img src="${n.img || 'https://via.placeholder.com/100'}" class="news-img">
-                            <div style="padding:10px;">
-                                <h3 style="margin:0; font-size:15px;">${n.title}</h3>
-                                <div style="font-size:11px; color:#888;">🕊️ ${n.likes} | 💬 تعليقات</div>
-                            </div>
-                        </div>`;
+                    const card = document.createElement('div');
+                    card.className = 'news-card';
+                    card.onclick = () => openNews(d.id);
+                    card.innerHTML = `<img src="${n.img}" class="news-img"><div style="padding:10px;"><h3>${n.title}</h3><small>🕊️ ${n.likes || 0}</small></div>`;
+                    cont.appendChild(card);
                 });
             });
         }
 
-        window.toggleChat = (show) => document.getElementById('chatOverlay').style.display = show ? 'flex' : 'none';
-        window.signOutNow = () => auth.signOut();
-        // (بقية وظائف المراسلة تتبع نفس منطق الأكواد المستقرة السابقة)
+        window.openNews = async (id) => {
+            const snap = await getDoc(doc(db, "News", id));
+            const n = snap.data();
+            document.getElementById('mImg').src = n.img;
+            document.getElementById('mTitle').innerText = n.title;
+            document.getElementById('mBody').innerText = n.body;
+            document.getElementById('mLikeCount').innerText = n.likes || 0;
+            
+            // إصلاح المشاركة عبر الواتساب
+            document.getElementById('waBtn').onclick = () => {
+                const text = `*${n.title}*\n${n.body.substring(0,100)}...\n\nلمزيد من التفاصيل تابعنا على التطبيق!`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            };
+
+            document.getElementById('newsModal').style.display = 'flex';
+            loadComments(id);
+            document.getElementById('sendC').onclick = () => postComment(id);
+        };
+
+        window.closeModal = () => document.getElementById('newsModal').style.display = 'none';
+
+        async function postComment(id) {
+            const val = document.getElementById('cInput').value;
+            if(!val) return;
+            await addDoc(collection(db, `News/${id}/Comments`), {
+                text: val, sender: auth.currentUser.displayName || "عضو", time: serverTimestamp()
+            });
+            document.getElementById('cInput').value = "";
+        }
+
+        function loadComments(id) {
+            onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("time", "asc")), snap => {
+                const list = document.getElementById('mCommentsList');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    list.innerHTML += `<div style="font-size:13px; margin-bottom:5px;"><b>${d.data().sender}:</b> ${d.data().text}</div>`;
+                });
+            });
+        }
     </script>
 </body>
 </html>
