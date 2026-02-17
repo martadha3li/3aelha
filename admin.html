@@ -3,122 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | الإدارة</title>
+    <title>تسجيل الدخول</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
-        .container { max-width: 1000px; margin: auto; }
-        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; font-size: 1.1rem; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; }
-        .user-tag { background: var(--primary); color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; margin: 3px; display: inline-block; }
-        .search-results { max-height: 150px; overflow-y: auto; border: 1px solid #eee; margin-top: 5px; }
-        .user-row { padding: 8px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
-        .user-row:hover { background: #f0f0f0; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { width: 90%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .footer-links { margin-top: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .footer-links a { color: var(--primary); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <button onclick="location.href='news.html'" style="margin-bottom:15px; padding:8px 15px; border-radius:8px; cursor:pointer; border:none;">⬅️ العودة</button>
-    <h1>لوحة الإدارة المركزية ⚙️</h1>
+<div class="login-card">
+    <div class="logo">📱</div>
+    <h2 style="color: var(--primary);">مرحباً بك</h2>
+    <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
+    <input type="password" id="loginPass" placeholder="كلمة المرور">
+    <button class="btn-login" onclick="handleLogin()">دخول</button>
 
-    <section style="background: #f0fdf4;">
-        <h2>إنشاء مجموعة مؤقتة مستهدفة 👥</h2>
-        <input type="text" id="groupName" placeholder="اسم المجموعة">
-        <input type="datetime-local" id="groupExp">
-        
-        <div style="margin: 10px 0;">
-            <label><input type="radio" name="target" value="all" checked onclick="toggleGroupSearch(false)"> للجميع</label>
-            <label><input type="radio" name="target" value="specific" onclick="toggleGroupSearch(true)"> أشخاص محددين</label>
-        </div>
-
-        <div id="groupSearchArea" style="display:none; padding:10px; border:1px solid #ddd; border-radius:10px; background:white;">
-            <input type="text" id="userGroupSearch" placeholder="ابحث بالاسم أو الجوال..." oninput="searchUsersForGroup()">
-            <div id="searchResults" class="search-results"></div>
-            <div id="selectedUsersArea" style="margin-top:10px;"></div>
-        </div>
-        <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="createNewGroup()">إنشاء وبث المجموعة</button>
-    </section>
-
+    <div class="footer-links">
+        <a href="#" style="color: #e74c3c;" onclick="forgotPassword()">نسيت كلمة المرور؟</a>
+        <a href="register.html">إنشاء حساب جديد</a>
     </div>
+</div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let allUsers = [];
-    let selectedUIDs = [];
+    window.handleLogin = async () => {
+        const id = document.getElementById('loginId').value;
+        const pass = document.getElementById('loginPass').value;
+        let email = id;
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.data().role !== 'admin') window.location.href = "news.html";
-            loadAllUsers();
+        // البحث عن المستخدم بالجوال
+        const q = query(collection(db, "Users"), where("phone", "==", id));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+            const userData = snap.docs[0].data();
+            // تحقق إذا كان المدير وافق على دخول العضو بدون باسورد لتغييره
+            if (userData.resetMode === true && pass === "ADMIN_RESET") {
+                localStorage.setItem("forceReset", "true");
+                window.location.href = "reset-password.html";
+                return;
+            }
+            email = userData.email;
         }
-    });
 
-    async function loadAllUsers() {
-        const snap = await getDocs(collection(db, "Users"));
-        snap.forEach(d => allUsers.push({id: d.id, ...d.data()}));
-    }
-
-    window.toggleGroupSearch = (show) => {
-        document.getElementById('groupSearchArea').style.display = show ? 'block' : 'none';
-        if(!show) selectedUIDs = [];
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+            window.location.href = "news.html";
+        } catch (e) { alert("بيانات الدخول غير صحيحة"); }
     };
 
-    window.searchUsersForGroup = () => {
-        const term = document.getElementById('userGroupSearch').value.toLowerCase();
-        const res = document.getElementById('searchResults');
-        res.innerHTML = "";
-        if(term.length < 2) return;
+    window.forgotPassword = async () => {
+        const phone = prompt("أدخل رقم جوالك المسجل في النظام:");
+        if (!phone) return;
 
-        allUsers.filter(u => u.fullName.toLowerCase().includes(term) || u.phone.includes(term)).forEach(u => {
-            const d = document.createElement('div');
-            d.className = 'user-row';
-            d.innerText = `➕ ${u.fullName} (${u.phone})`;
-            d.onclick = () => {
-                if(!selectedUIDs.includes(u.id)) {
-                    selectedUIDs.push(u.id);
-                    renderSelected();
-                }
-            };
-            res.appendChild(d);
-        });
-    };
+        const q = query(collection(db, "Users"), where("phone", "==", phone));
+        const snap = await getDocs(q);
 
-    function renderSelected() {
-        const area = document.getElementById('selectedUsersArea');
-        area.innerHTML = "";
-        selectedUIDs.forEach(uid => {
-            const u = allUsers.find(x => x.id === uid);
-            area.innerHTML += `<span class="user-tag" onclick="removeUser('${uid}')">${u.fullName} ✕</span>`;
-        });
-    }
-
-    window.removeUser = (uid) => {
-        selectedUIDs = selectedUIDs.filter(id => id !== uid);
-        renderSelected();
-    };
-
-    window.createNewGroup = async () => {
-        const name = document.getElementById('groupName').value;
-        const exp = document.getElementById('groupExp').value;
-        const target = document.querySelector('input[name="target"]:checked').value;
-        if(!name || !exp) return alert("أكمل البيانات");
-
-        await addDoc(collection(db, "TempGroups"), {
-            name,
-            expiry: new Date(exp).getTime(),
-            targetType: target,
-            allowedUsers: selectedUIDs,
-            createdAt: serverTimestamp(),
-            disabled: false
-        });
-        alert("تم إنشاء المجموعة المستهدفة بنجاح");
-        location.reload();
+        if (snap.empty) {
+            alert("رقم الجوال هذا غير مسجل لدينا.");
+        } else {
+            const user = snap.docs[0].data();
+            const choice = confirm(`تم العثور على حسابك.\nهل تريد إرسال رابط التغيير إلى إيميلك: ${user.email.replace(/(.{3})(.*)(?=@)/, "$1***")}؟\n\nاضغط "إلغاء" لإرسال طلب يدوي للإدارة.`);
+            
+            if (choice) {
+                await sendPasswordResetEmail(auth, user.email);
+                alert("تم إرسال الرابط لإيميلك بنجاح.");
+            } else {
+                await addDoc(collection(db, "Requests"), {
+                    uid: snap.docs[0].id,
+                    type: "password_reset",
+                    phone: phone,
+                    timestamp: serverTimestamp(),
+                    status: "pending"
+                });
+                alert("تم إرسال طلبك للإدارة. سيتم التواصل معك قريباً.");
+            }
+        }
     };
 </script>
 </body>
