@@ -2,101 +2,49 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم | الإحصائيات</title>
+    <title>لوحة الإدارة | الإحصائيات</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 4px solid var(--primary); }
-        .stat-card h3 { margin: 0; font-size: 14px; color: #7f8c8d; }
-        .stat-card p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: var(--primary); }
-        .nav-menu { background: white; padding: 15px; border-radius: 15px; display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-        .nav-btn { padding: 10px 20px; background: var(--primary); color: white; border-radius: 10px; text-decoration: none; font-size: 14px; }
-        section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
-        .admin-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .stat-box { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); }
+        .admin-nav { display: flex; gap: 10px; padding: 15px; overflow-x: auto; }
+        .nav-card { background: var(--primary); color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; white-space: nowrap; }
     </style>
 </head>
 <body>
-<div class="top-bar">
-    <div class="top-bar-right">
-        <button class="logout-btn" onclick="window.handleLogout()">🚪</button>
-        <button id="adminLink" class="admin-btn" onclick="location.href='admin.html'">⚙️</button>
-    </div>
-    
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <img src="logo.png" style="height: 35px; width: auto; border-radius: 5px;">
-        <span style="font-weight: bold; color: var(--primary); font-size: 14px;">تطبيق الأخبار</span>
+    <div class="top-bar">
+        <b>⚙️ لوحة الإدارة</b>
+        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
     </div>
 
-    <div id="statusArea"></div>
-</div>
-    <div class="nav-menu">
-        <a href="admin_users.html" class="nav-btn">👥 إدارة المسجلين</a>
-        <a href="admin_requests.html" class="nav-btn">📥 طلبات الأعضاء</a>
-        <a href="admin_categories.html" class="nav-btn">📁 إدارة التصنيفات</a>
-        <a href="news.html" class="nav-btn" style="background:#7f8c8d;">🏠 العودة للتطبيق</a>
+    <div class="admin-nav">
+        <a href="admin_users.html" class="nav-card">👥 إدارة الأعضاء</a>
+        <a href="admin_requests.html" class="nav-card">📥 طلبات التفعيل</a>
+        <a href="admin_categories.html" class="nav-card">📁 التصنيفات</a>
     </div>
 
-    <div class="grid-stats">
-        <div class="stat-card"><h3>عدد الذكور</h3><p id="mCount">0</p></div>
-        <div class="stat-card"><h3>عدد الإناث</h3><p id="fCount">0</p></div>
-        <div class="stat-card"><h3>أكبر عمر</h3><p id="maxAge">0</p></div>
-        <div class="stat-card"><h3>أصغر عمر</h3><p id="minAge">0</p></div>
-        <div class="stat-card"><h3>إجمالي الأخبار</h3><p id="newsCount">0</p></div>
+    <div class="stat-grid">
+        <div class="stat-box"><h3>الذكور</h3><p id="mCount" style="font-size:24px; font-weight:bold; color:var(--primary);">0</p></div>
+        <div class="stat-box"><h3>الإناث</h3><p id="fCount" style="font-size:24px; font-weight:bold; color:var(--primary);">0</p></div>
+        <div class="stat-box"><h3>أكبر عمر</h3><p id="maxAge" style="font-size:24px; font-weight:bold;">0</p></div>
+        <div class="stat-box"><h3>أصغر عمر</h3><p id="minAge" style="font-size:24px; font-weight:bold;">0</p></div>
     </div>
-
-    <section>
-        <h2>🔝 نشاط الأعضاء</h2>
-        <p>الأكثر نشراً: <b id="topPoster">-</b></p>
-        <p>الأكثر تعديلاً: <b id="topEditor">-</b></p>
-    </section>
-
-    <section>
-        <h2>🛡️ فريق الإدارة (أصحاب الصلاحيات)</h2>
-        <div id="adminTeamList"></div>
-    </section>
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, onSnapshot, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     onSnapshot(collection(db, "Users"), snap => {
-        let m=0, f=0, ages=[], admins=[];
+        let m=0, f=0, ages=[];
         snap.forEach(d => {
             const u = d.data();
             if(u.gender === 'male') m++; else f++;
             if(u.dob) ages.push(new Date().getFullYear() - new Date(u.dob).getFullYear());
-            if(u.role && u.role !== 'user') admins.push({id: d.id, ...u});
         });
         document.getElementById('mCount').innerText = m;
         document.getElementById('fCount').innerText = f;
         document.getElementById('maxAge').innerText = ages.length ? Math.max(...ages) : 0;
         document.getElementById('minAge').innerText = ages.length ? Math.min(...ages) : 0;
-        
-        renderTeam(admins);
-    });
-
-    function renderTeam(team) {
-        const list = document.getElementById('adminTeamList');
-        list.innerHTML = "";
-        team.forEach(u => {
-            list.innerHTML += `
-                <div class="admin-row">
-                    <div><b>${u.fullName}</b> <small>(${u.role})</small></div>
-                    <button onclick="revokerole('${u.id}')" style="color:red; cursor:pointer; background:none; border:1px solid red; border-radius:5px; padding:2px 10px;">إلغاء الصلاحية</button>
-                </div>`;
-        });
-    }
-
-    window.revokerole = async (id) => {
-        if(confirm("هل تريد سحب كافة الصلاحيات والعودة لعضو عادي؟")) {
-            await updateDoc(doc(db, "Users", id), { role: 'user' });
-        }
-    };
-    
-    // جلب إحصائيات الأخبار
-    onSnapshot(collection(db, "News"), snap => {
-        document.getElementById('newsCount').innerText = snap.size;
     });
 </script>
 </body>
