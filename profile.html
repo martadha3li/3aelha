@@ -2,39 +2,29 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ملفي الشخصي</title>
+    <title>الملف الشخصي</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .p-card { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; }
-        .readonly { background: #eee; cursor: not-allowed; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
+        .p-card { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-save { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .alert-phone { font-size: 12px; color: #e74c3c; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="p-card">
-    <h2 style="text-align:center;">إدارة ملفي الشخصي 👤</h2>
-    
-    <label>الاسم الكامل:</label>
-    <input type="text" id="pName">
+    <h2>بياناتي الشخصية 👤</h2>
+    <img id="pPreview" class="profile-pic" src="https://via.placeholder.com/120">
+    <input type="file" accept="image/*" onchange="uploadProfileImg()">
+    <input type="hidden" id="pImgBase64">
 
-    <label>رقم الجوال (للتغيير تواصل مع الإدارة):</label>
-    <span class="alert-phone">* لا يمكن تعديل الجوال مباشرة لأسباب أمنية</span>
-    <input type="text" id="pPhone" class="readonly" readonly>
+    <input type="text" id="pName" placeholder="الاسم الكامل">
+    <input type="text" id="pPhone" readonly style="background:#eee;" placeholder="رقم الجوال (تعديل من الإدارة)">
+    <input type="email" id="pEmail" placeholder="البريد الإلكتروني">
+    <input type="password" id="pPass" placeholder="كلمة مرور جديدة">
 
-    <label>البريد الإلكتروني:</label>
-    <input type="email" id="pEmail">
-
-    <label>كلمة المرور الجديدة:</label>
-    <input type="text" id="pPass" placeholder="اتركه فارغاً إذا لا تريد التغيير">
-
-    <label>تاريخ الميلاد:</label>
-    <input type="date" id="pDOB">
-
-    <button class="btn-save" onclick="saveProfile()">حفظ التعديلات</button>
-    <button onclick="location.href='news.html'" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#777;">العودة للرئيسية</button>
+    <button class="btn-save" onclick="updateProfile()">حفظ التغييرات</button>
 </div>
 
 <script type="module">
@@ -49,33 +39,36 @@
             document.getElementById('pName').value = u.fullName;
             document.getElementById('pPhone').value = u.phone;
             document.getElementById('pEmail').value = u.email;
-            document.getElementById('pDOB').value = u.dob || "";
+            if(u.profileImg) {
+                document.getElementById('pPreview').src = u.profileImg;
+                document.getElementById('pImgBase64').value = u.profileImg;
+            }
         }
     });
 
-    window.saveProfile = async () => {
+    window.uploadProfileImg = () => {
+        const file = document.querySelector('input[type=file]').files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            document.getElementById('pPreview').src = reader.result;
+            document.getElementById('pImgBase64').value = reader.result;
+        }
+        if (file) reader.readAsDataURL(file);
+    };
+
+    window.updateProfile = async () => {
         const user = auth.currentUser;
         const newName = document.getElementById('pName').value;
-        const newEmail = document.getElementById('pEmail').value;
+        const newImg = document.getElementById('pImgBase64').value;
         const newPass = document.getElementById('pPass').value;
-        const newDOB = document.getElementById('pDOB').value;
 
-        try {
-            // تحديث البيانات في Firestore
-            await updateDoc(doc(db, "Users", user.uid), {
-                fullName: newName,
-                email: newEmail,
-                dob: newDOB
-            });
+        await updateDoc(doc(db, "Users", user.uid), {
+            fullName: newName,
+            profileImg: newImg
+        });
 
-            // تحديث الإيميل والباسوورد في Auth (يتطلب تسجيل دخول حديث)
-            if(newEmail !== user.email) await updateEmail(user, newEmail);
-            if(newPass) await updatePassword(user, newPass);
-
-            alert("تم تحديث بياناتك بنجاح!");
-        } catch (e) {
-            alert("خطأ: " + e.message + " (قد يتطلب الأمر إعادة تسجيل الدخول لتغيير البيانات الحساسة)");
-        }
+        if(newPass) await updatePassword(user, newPass);
+        alert("تم تحديث البيانات بنجاح!");
     };
 </script>
 </body>
