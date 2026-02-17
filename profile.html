@@ -6,127 +6,60 @@
     <title>الملف الشخصي</title>
     <style>
         :root { --primary: #2c3e50; --accent: #2ecc71; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 80px; }
-        .profile-container { max-width: 500px; margin: auto; background: white; min-height: 100vh; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        
-        .avatar-box { text-align: center; padding: 20px 0; }
-        .avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: #eee; }
-        
-        /* دائرة العمر */
-        .age-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 10px auto; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .age-number { font-size: 22px; line-height: 1; }
-        .age-text { font-size: 10px; }
-        .gender-male { background-color: #3498db; } /* أزرق */
-        .gender-female { background-color: #ff69b4; } /* وردي */
-
-        .info-row { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .info-row label { color: #888; font-size: 14px; }
-        .info-row span { font-weight: bold; color: var(--primary); text-align: left; }
-        
-        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-change { background: var(--primary); color: white; }
-        .btn-req { background: #f39c12; color: white; }
-        
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .back-btn { background: #eee; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
+        .profile-card { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; text-align: center; }
+        .age-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 10px auto; color: white; font-weight: bold; }
+        .gender-male { background-color: #3498db; }
+        .gender-female { background-color: #ff69b4; }
     </style>
 </head>
 <body>
 
-<div class="profile-container">
-    <div class="avatar-box">
-        <img src="" id="userPhoto" class="avatar-img" alt="الصورة الشخصية">
+    <button class="back-btn" onclick="location.href='news.html'">⬅️ عودة</button>
+
+    <div class="profile-card">
+        <img id="userPhoto" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">
         <div id="ageContainer" class="age-circle">
-            <span id="uAgeNum" class="age-number">-</span>
-            <span class="age-text">سنة</span>
+            <span id="uAgeNum" style="font-size:22px;">-</span>
+            <span style="font-size:10px;">سنة</span>
         </div>
-        <input type="file" id="photoInput" style="display:none" accept="image/*">
-        <button class="btn-action" style="width:auto; padding:5px 15px;" onclick="document.getElementById('photoInput').click()">تغيير الصورة</button>
+        <h2 id="uName">جاري التحميل...</h2>
+        <div id="uPhone" style="color:#666; margin-bottom:20px;">-</div>
+        <button class="back-btn" style="width:100%; background:var(--primary); color:white;" id="reqPhoneBtn">طلب تعديل رقم الجوال</button>
     </div>
 
-    <div class="info-row"><label>الاسم الكامل</label><span id="uName">-</span></div>
-    <div class="info-row"><label>الجنس</label><span id="uGender">-</span></div>
-    <div class="info-row"><label>رقم الجوال</label><span id="uPhone">-</span></div>
-    <div class="info-row"><label>البريد الإلكتروني</label><span id="uEmail">-</span></div>
-    
-    <div id="guardianSection" style="display:none; background: #fff0f5; border-radius: 10px; margin-top: 10px;">
-        <div class="info-row"><label>اسم المعرف</label><span id="uGName">-</span></div>
-        <div class="info-row"><label>جوال المعرف</label><span id="uGPhone">-</span></div>
-    </div>
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <button class="btn-action btn-req" id="reqPhoneBtn">طلب تعديل رقم الجوال</button>
-    
-    <div style="margin-top:20px;">
-        <input type="password" id="newPass" placeholder="كلمة مرور جديدة" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing: border-box;">
-        <button class="btn-action btn-change" id="updatePassBtn">تحديث كلمة المرور</button>
-    </div>
-</div>
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const snap = await getDoc(doc(db, "Users", user.uid));
+                const data = snap.data();
+                document.getElementById('uName').innerText = data.fullName;
+                document.getElementById('uPhone').innerText = data.phone;
+                document.getElementById('userPhoto').src = data.photoBase64 || '';
+                
+                const age = new Date().getFullYear() - new Date(data.dob).getFullYear();
+                document.getElementById('uAgeNum').innerText = age;
+                const circle = document.getElementById('ageContainer');
+                circle.className = 'age-circle ' + (data.gender === 'male' ? 'gender-male' : 'gender-female');
+            }
+        });
 
-<nav class="bottom-nav">
-    <div onclick="location.href='news.html'" style="cursor:pointer"><i>📰</i><br>الأخبار</div>
-    <div onclick="location.reload()" style="color:var(--primary); font-weight:bold; cursor:pointer;"><i>👤</i><br>البروفايل</div>
-</nav>
-
-<script type="module">
-    import { auth, db } from './config.js';
-    import { doc, getDoc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.exists()) render(snap.data());
-        } else { window.location.href = "index.html"; }
-    });
-
-    function render(data) {
-        document.getElementById('uName').innerText = data.fullName;
-        document.getElementById('uPhone').innerText = data.phone;
-        document.getElementById('uEmail').innerText = auth.currentUser.email;
-        document.getElementById('uGender').innerText = data.gender === 'male' ? 'ذكر' : 'أنثى';
-        
-        if(data.photoBase64) document.getElementById('userPhoto').src = data.photoBase64;
-        
-        // حساب العمر ودائرة اللون
-        if (data.dob) {
-            const age = new Date().getFullYear() - new Date(data.dob).getFullYear();
-            document.getElementById('uAgeNum').innerText = age;
-            const circle = document.getElementById('ageContainer');
-            circle.className = 'age-circle ' + (data.gender === 'male' ? 'gender-male' : 'gender-female');
-        }
-
-        // إظهار بيانات المعرف للأنثى
-        if (data.gender === 'female') {
-            document.getElementById('guardianSection').style.display = 'block';
-            document.getElementById('uGName').innerText = data.guardianName || 'غير مسجل';
-            document.getElementById('uGPhone').innerText = data.guardianPhone || 'غير مسجل';
-        }
-    }
-
-    // رفع الصورة Base64
-    document.getElementById('photoInput').onchange = function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onloadend = async function() {
-            await updateDoc(doc(db, "Users", auth.currentUser.uid), { photoBase64: reader.result });
-            document.getElementById('userPhoto').src = reader.result;
-        }
-        if(file) reader.readAsDataURL(file);
-    };
-
-    // طلب تعديل الجوال
-    document.getElementById('reqPhoneBtn').onclick = async () => {
-        const newP = prompt("أدخل رقم الجوال الجديد:");
-        if(newP) {
-            await addDoc(collection(db, "Requests"), {
-                uid: auth.currentUser.uid,
-                currentPhone: document.getElementById('uPhone').innerText,
-                requestedPhone: newP,
-                status: 'pending',
-                timestamp: new Date()
-            });
-            alert("تم إرسال الطلب للمدير بنجاح.");
-        }
-    };
-</script>
+        document.getElementById('reqPhoneBtn').onclick = async () => {
+            const newP = prompt("أدخل رقم الجوال الجديد:");
+            if(newP) {
+                await addDoc(collection(db, "Requests"), {
+                    uid: auth.currentUser.uid,
+                    currentPhone: document.getElementById('uPhone').innerText,
+                    requestedPhone: newP,
+                    status: 'pending'
+                });
+                alert("تم إرسال الطلب بنجاح");
+            }
+        };
+    </script>
 </body>
 </html>
