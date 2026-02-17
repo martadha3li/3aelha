@@ -14,21 +14,21 @@
 </head>
 <body>
 <div class="card">
-    <h2>استعادة الحساب</h2>
-    <input type="number" id="fPhone" placeholder="رقم الجوال المسجل">
-    <input type="email" id="fEmail" placeholder="البريد الإلكتروني المسجل">
-    <button class="btn" style="background:var(--primary); color:white;" onclick="verifyUser()">تحقق من البيانات</button>
+    <h2 style="color: var(--primary);">استعادة الحساب 🔑</h2>
+    <p style="font-size: 13px; color: #666;">أدخل بياناتك المسجلة للتحقق</p>
+    <input type="number" id="fPhone" placeholder="رقم الجوال">
+    <input type="email" id="fEmail" placeholder="البريد الإلكتروني">
+    <button class="btn" style="background:var(--primary); color:white;" onclick="verifyUser()">تحقق من هويتي</button>
 
     <div id="recoveryOptions" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-        <p style="font-size:13px; color:#666;">تم التحقق بنجاح، اختر طريقة الاستعادة:</p>
-        <button class="btn" style="background:var(--accent); color:white;" onclick="sendResetEmail()">1. استعادة عبر الإيميل (رابط مباشر)</button>
-        <button class="btn" style="background:#3498db; color:white;" onclick="sendAdminRequest()">2. طلب استعادة من الإدارة</button>
+        <button class="btn" style="background:var(--accent); color:white;" onclick="sendResetEmail()">تغيير عبر الإيميل (رابط)</button>
+        <button class="btn" style="background:#3498db; color:white;" onclick="sendAdminRequest()">طلب مساعدة من الإدارة</button>
     </div>
-    <a href="index.html" style="display:block; margin-top:15px; font-size:13px; color:var(--primary); text-decoration:none;">العودة للدخول</a>
+    <a href="index.html" style="display:block; margin-top:15px; font-size:13px; color:var(--primary); text-decoration:none;">العودة للخلف</a>
 </div>
 
 <script type="module">
-    import { auth, db } from './config.js';
+    import { db, auth } from './config.js';
     import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -37,7 +37,6 @@
     window.verifyUser = async () => {
         const phone = document.getElementById('fPhone').value;
         const email = document.getElementById('fEmail').value;
-
         const q = query(collection(db, "Users"), where("phone", "==", phone), where("email", "==", email));
         const snap = await getDocs(q);
 
@@ -45,26 +44,23 @@
             matchedUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
             document.getElementById('recoveryOptions').style.display = 'block';
         } else {
-            alert("البيانات غير متطابقة، تأكد من رقم الجوال والإيميل.");
+            alert("البيانات لا تتطابق مع سجلاتنا.");
         }
     };
 
     window.sendResetEmail = async () => {
-        await sendPasswordResetEmail(auth, matchedUser.email);
-        alert("تم إرسال رابط تغيير كلمة المرور إلى إيميلك.");
+        try {
+            await sendPasswordResetEmail(auth, matchedUser.email);
+            alert("تم إرسال رابط التغيير إلى إيميلك بنجاح.");
+        } catch (e) { alert("حدث خطأ."); }
     };
 
     window.sendAdminRequest = async () => {
         await addDoc(collection(db, "Requests"), {
-            uid: matchedUser.id,
-            fullName: matchedUser.fullName,
-            phone: matchedUser.phone,
-            email: matchedUser.email,
-            gender: matchedUser.gender,
-            type: "password_reset",
-            timestamp: serverTimestamp()
+            uid: matchedUser.id, fullName: matchedUser.fullName, phone: matchedUser.phone,
+            gender: matchedUser.gender, type: "password_reset", timestamp: serverTimestamp()
         });
-        alert("تم إرسال طلبك للإدارة، سيتم تزويدك بكلمة مرور مؤقتة قريباً.");
+        alert("تم إرسال طلبك. ستصلك رسالة واتساب بكلمة مرور جديدة قريباً.");
     };
 </script>
 </body>
