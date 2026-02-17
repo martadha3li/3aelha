@@ -5,187 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تطبيق التواصل الذكي</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --twitter-blue: #1DA1F2; --gold: #ffc107; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --twitter-blue: #1DA1F2; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; }
         
-        /* الشريط العلوي */
+        /* تصميم الإشعار المنبثق وسط الشاشة */
+        .login-popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .login-popup-content { width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; text-align: center; position: relative; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* ألوان الإشعار حسب النوع */
+        .popup-white { background: white; color: #333; }
+        .popup-red { background: var(--danger); color: white; }
+        .popup-green { background: var(--accent); color: white; }
+        
+        .popup-close-btn { margin-top: 15px; padding: 8px 20px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: rgba(0,0,0,0.1); }
+
         .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .star-broadcast { color: var(--gold); font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
+        .star-broadcast { color: #ffc107; font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        .user-perms-badge { font-size: 11px; color: var(--twitter-blue); font-weight: bold; background: #e8f4fd; padding: 4px 10px; border-radius: 12px; }
-
-        /* البحث والأخبار */
-        .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
-        .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; box-sizing: border-box; }
-        
-        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.08); cursor: pointer; display: flex; }
-        .news-img-thumb { width: 110px; height: 110px; object-fit: cover; }
-        .news-brief { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .news-brief h3 { margin: 0; font-size: 15px; color: var(--primary); }
-        .news-meta { font-size: 11px; color: #888; display: flex; gap: 10px; }
-
-        /* مركز المحادثات */
-        .overlay-full { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
-        .overlay-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-selector-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; margin: 5px 10px; border-radius: 10px; }
-        
-        /* أدوات الإدارة */
-        .admin-nav { display: none; background: #fff; padding: 10px; border-bottom: 1px solid #eee; justify-content: space-around; }
-        .admin-btn { border: none; background: #eee; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; color: var(--primary); }
-
-        /* نافذة الدردشة النشطة */
-        .active-chat-window { display: none; position: fixed; inset: 0; background: #e5ddd5; z-index: 5000; flex-direction: column; }
-        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
-        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; }
-        .my-msg { align-self: flex-end; background: #dcf8c6; }
-        .other-msg { align-self: flex-start; background: white; }
-
-        /* الشريط السفلي */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 11px; position: relative; }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <button id="logoutBtn" style="background:none; border:none; font-size:20px; color:var(--danger); cursor:pointer;">🚪</button>
-        <div id="broadcastStar" class="star-broadcast" onclick="showBroadcastMsg()">⭐</div>
-        <div id="permsBadge" class="user-perms-badge" style="display:none;"></div>
-        <span style="font-weight:bold;">الرئيسية</span>
-    </div>
-
-    <div id="adminNav" class="admin-nav">
-        <button id="manageAppBtn" class="admin-btn" onclick="location.href='admin.html'" style="display:none">⚙️ إدارة التطبيق</button>
-        <button id="manageNewsBtn" class="admin-btn" onclick="window.openNewsEditor()" style="display:none">➕ إضافة خبر</button>
-    </div>
-
-    <div class="search-container">
-        <input type="text" id="newsSearchInp" class="search-input" placeholder="ابحث في الأخبار..." oninput="window.filterNews()">
-    </div>
-
-    <main id="newsList">
-        <div id="newsContainer"></div>
-    </main>
-
-    <div id="chatCenterOverlay" class="overlay-full">
-        <div class="overlay-header"><span>مركز المحادثات</span><button onclick="window.toggleChatCenter()" style="background:none; border:none; color:white; font-size:24px;">✕</button></div>
-        <div style="padding: 10px; background: #f0f2f5; flex: 1; overflow-y: auto;">
-            <div class="chat-selector-item" onclick="window.openChat('Messages', 'الدردشة العامة')"><span>🌐 الدردشة العامة</span></div>
-            <h4 style="margin: 15px 10px 5px;">البحث عن مستخدم</h4>
-            <div style="display:flex; padding:10px;"><input type="number" id="searchPhone" placeholder="رقم الجوال..." style="flex:1; padding:10px; border-radius:10px; border:1px solid #ddd;"><button onclick="window.searchByPhone()" style="background:var(--primary); color:white; border:none; padding:10px 15px; border-radius:10px; margin-right:5px;">بحث</button></div>
-            <h4 style="margin: 15px 10px 5px;">محادثاتك السابقة</h4>
-            <div id="previousChatsList"></div>
+    <div id="loginPopupOverlay" class="login-popup-overlay">
+        <div id="loginPopupContent" class="login-popup-content">
+            <h3 id="popTitle">📢 تنبيه من الإدارة</h3>
+            <p id="popMessage"></p>
+            <button class="popup-close-btn" onclick="closeLoginPopup()">إغلاق</button>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item" onclick="location.reload()">📰<br>الأخبار</div>
-        <div class="nav-item" onclick="window.toggleChatCenter()">💬<br>الدردشة <span id="chatBadge" class="badge" style="display:none;">0</span></div>
-        <div class="nav-item" onclick="location.href='profile.html'">👤<br>بروفايل</div>
-    </nav>
+    <div class="top-bar">
+        <button onclick="location.href='index.html'" style="background:none; border:none; font-size:20px;">🚪</button>
+        <div id="broadcastStar" class="star-broadcast" onclick="showBroadcast()">⭐</div>
+        <span style="font-weight:bold;">الرئيسية</span>
+    </div>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, where, collectionGroup, getDocs, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         let userUID = null;
         let userData = null;
-        let allNews = [];
+        let currentAge = 0;
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 userUID = user.uid;
                 const snap = await getDoc(doc(db, "Users", user.uid));
                 userData = snap.data();
+                currentAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
                 
-                // 1. تفعيل أدوات الإدارة
-                showAdminTools();
-                // 2. جلب الأخبار
-                loadNews();
-                // 3. جلب الرسالة الجماعية
-                checkBroadcast();
-                // 4. المحادثات السابقة
-                loadPreviousChats();
-            } else { window.location.href = "index.html"; }
+                checkBroadcastTargeting();
+                checkLoginPopup();
+            }
         });
 
-        // إظهار الأدوات حسب الصلاحية
-        function showAdminTools() {
-            const badge = document.getElementById('permsBadge');
-            let p = [];
-            if(userData.role === 'admin') p.push("مدير");
-            if(userData.canAdd) p.push("إضافة");
-            
-            if(p.length > 0) {
-                badge.innerText = p.join(" | ");
-                badge.style.display = 'block';
-                document.getElementById('adminNav').style.display = 'flex';
-                if(userData.role === 'admin') document.getElementById('manageAppBtn').style.display = 'block';
-                if(userData.canAdd || userData.role === 'admin') document.getElementById('manageNewsBtn').style.display = 'block';
-            }
-        }
-
-        // جلب الأخبار (إصلاح جوهري)
-        function loadNews() {
-            const q = query(collection(db, "News"), orderBy("date", "desc"));
-            onSnapshot(q, (snap) => {
-                allNews = [];
-                const container = document.getElementById('newsContainer');
-                container.innerHTML = "";
-                snap.forEach(d => {
-                    const n = d.data();
-                    allNews.push({id: d.id, ...n});
-                    container.innerHTML += `
-                        <div class="news-card" onclick="window.openFullNews('${d.id}')">
-                            <img src="${n.img || 'https://via.placeholder.com/110'}" class="news-img-thumb">
-                            <div class="news-brief">
-                                <h3>${n.title}</h3>
-                                <div class="news-meta">
-                                    <span>🕊️ ${n.likes || 0}</span>
-                                    <span>📅 ${n.date?.toDate().toLocaleDateString('ar-SA')}</span>
-                                </div>
-                            </div>
-                        </div>`;
-                });
-            });
-        }
-
-        // البحث برقم الجوال
-        window.searchByPhone = async () => {
-            const phone = document.getElementById('searchPhone').value;
-            const q = query(collection(db, "Users"), where("phone", "==", phone), limit(1));
-            const snap = await getDocs(q);
-            if(!snap.empty) {
-                const other = snap.docs[0];
-                const chatId = [userUID, other.id].sort().join("_");
-                window.openChat(`PrivateChats/${chatId}/messages`, other.data().fullName, chatId);
-            } else { alert("لا يوجد مستخدم بهذا الرقم"); }
-        };
-
-        // النجمة الذهبية
-        let activeBC = "";
-        function checkBroadcast() {
+        // 1. فحص استهداف النجمة الذهبية
+        function checkBroadcastTargeting() {
             onSnapshot(doc(db, "Settings", "broadcast"), (snap) => {
-                if(snap.exists() && snap.data().expiry > Date.now()) {
-                    activeBC = snap.data().message;
-                    document.getElementById('broadcastStar').style.display = 'block';
-                } else { document.getElementById('broadcastStar').style.display = 'none'; }
+                if(snap.exists()) {
+                    const data = snap.data();
+                    const now = Date.now();
+                    
+                    // شروط الاستهداف
+                    const genderMatch = (data.targetGender === 'all' || data.targetGender === userData.gender);
+                    const ageMatch = (currentAge >= data.minAge && currentAge <= data.maxAge);
+                    const timeMatch = (data.expiry > now);
+
+                    if(genderMatch && ageMatch && timeMatch) {
+                        document.getElementById('broadcastStar').style.display = 'block';
+                        window.activeMsg = data.message;
+                    } else {
+                        document.getElementById('broadcastStar').style.display = 'none';
+                    }
+                }
             });
         }
-        window.showBroadcastMsg = () => alert("📢 رسالة الإدارة:\n\n" + activeBC);
+        window.showBroadcast = () => alert("📢 رسالة جماعية:\n\n" + window.activeMsg);
 
-        // وظائف المحادثات السابقة والدردشة (كما برمجناها سابقاً مع التأكد من الربط)
-        window.toggleChatCenter = () => {
-            const el = document.getElementById('chatCenterOverlay');
-            el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        // 2. فحص وإظهار الإشعار المنبثق
+        function checkLoginPopup() {
+            onSnapshot(doc(db, "Settings", "loginPopup"), (snap) => {
+                if(snap.exists()) {
+                    const data = snap.data();
+                    if(data.expiry > Date.now()) {
+                        const overlay = document.getElementById('loginPopupOverlay');
+                        const content = document.getElementById('loginPopupContent');
+                        
+                        document.getElementById('popMessage').innerText = data.message;
+                        content.className = `login-popup-content popup-${data.type}`;
+                        overlay.style.display = 'flex';
+
+                        // إغلاق تلقائي بعد المدة المحددة
+                        setTimeout(() => { closeLoginPopup(); }, data.duration * 1000);
+                    }
+                }
+            });
+        }
+
+        window.closeLoginPopup = () => {
+            document.getElementById('loginPopupOverlay').style.display = 'none';
         };
-
-        // إضافة سجل تسجيل الخروج
-        document.getElementById('logoutBtn').onclick = () => { if(confirm("خروج؟")) signOut(auth); };
-
-        // (يتم استكمال بقية وظائف فتح الدردشة والحذف التلقائي هنا بنفس المنطق السابق)
     </script>
 </body>
 </html>
