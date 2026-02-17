@@ -4,33 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { width: 90%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn-login { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .footer-links { margin-top: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
-        .footer-links a { color: var(--primary); text-decoration: none; font-weight: bold; }
+        .login-card { max-width: 380px; margin: 100px auto; background: white; padding: 30px; border-radius: 30px; text-align: center; box-shadow: var(--shadow); }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 15px; box-sizing: border-box; }
     </style>
 </head>
 <body>
     <div class="login-card">
-    <img src="logo.png" style="width: 80px; height: auto; margin-bottom: 10px; border-radius: 15px;">
-    <h2 style="color: var(--primary); margin-top: 0;">تسجيل الدخول</h2>
-    ...
-</div>
-<div class="login-card">
-    <div class="logo">📱</div>
-    <h2 style="color: var(--primary);">تسجيل الدخول</h2>
-    <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
-    <input type="password" id="loginPass" placeholder="كلمة المرور">
-    <button class="btn-login" onclick="handleLogin()">دخول</button>
-    <div class="footer-links">
-        <a href="forgot.html" style="color: #e74c3c;">نسيت كلمة المرور؟</a>
-        <a href="register.html">إنشاء حساب جديد</a>
+        <img src="logo.png" style="width: 100px; border-radius: 20px; margin-bottom: 20px;">
+        <h2>تسجيل الدخول</h2>
+        <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
+        <input type="password" id="loginPass" placeholder="كلمة المرور">
+        <button class="btn-main" style="width:100%; background:var(--primary); color:white; border:none; padding:15px; border-radius:15px; font-weight:bold;" onclick="handleLogin()">دخول</button>
+        <div style="margin-top:20px; font-size:14px;">
+            <a href="forgot.html" style="color:var(--danger); text-decoration:none;">نسيت كلمة المرور؟</a> | 
+            <a href="register.html" style="color:var(--primary); text-decoration:none;">حساب جديد</a>
+        </div>
     </div>
-</div>
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -42,44 +33,21 @@
         const pass = document.getElementById('loginPass').value;
         let email = id;
 
-        if(!id || !pass) return alert("يرجى إدخال البيانات كاملة");
-
-        // البحث عن الإيميل إذا أدخل المستخدم رقم جواله
         if (!id.includes('@')) {
             const q = query(collection(db, "Users"), where("phone", "==", id));
             const snap = await getDocs(q);
-            if (snap.empty) return alert("رقم الجوال غير مسجل");
+            if (snap.empty) return alert("الرقم غير مسجل");
             email = snap.docs[0].data().email;
         }
 
         try {
             const userCred = await signInWithEmailAndPassword(auth, email, pass);
-            
-            // --- الإضافة الجديدة: التحقق من الصلاحية وإظهار التنبيه ---
             const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
-            const userData = userDoc.data();
-
-            // التأكد من حالة الحساب أولاً
-            if (userData.status === "disabled") {
-                await auth.signOut();
-                alert("عذراً، حسابك معطل حالياً. يرجى التواصل مع الإدارة.");
-                return;
-            }
-
-            // عرض نوع الصلاحية
-            const role = userData.role || "عضو عادي";
-            alert("مرحباً بك.. صلاحيتك الحالية هي: " + role);
-            
-            // الانتقال لصفحة الأخبار
+            const role = userDoc.data().role || "عضو";
+            alert("مرحباً بك.. صلاحيتك: " + role);
             window.location.href = "news.html";
-            // -----------------------------------------------------
-
-        } catch (e) { 
-            console.error(e);
-            alert("بيانات الدخول غير صحيحة أو توجد مشكلة في الاتصال."); 
-        }
+        } catch (e) { alert("خطأ في الدخول"); }
     };
 </script>
 </body>
 </html>
-
