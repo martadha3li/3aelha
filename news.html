@@ -17,29 +17,21 @@
 
         /* أيقونة إضافة خبر العائمة (➕) */
         .floating-btn {
-            position: fixed;
-            bottom: 85px; 
-            left: 20px;
-            width: 55px;
-            height: 55px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
-            z-index: 2000;
-            display: none; /* مخفية افتراضياً */
+            position: fixed; bottom: 85px; left: 20px; width: 55px; height: 55px;
+            background: var(--primary); color: white; border: none; border-radius: 50%;
+            font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer;
+            z-index: 2000; display: none;
         }
 
         /* تصميم كرت الخبر */
-        .news-card { background: white; margin: 12px; border-radius: 15px; display: flex; flex-direction: row; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee; transition: 0.2s; }
-        .news-img-small { width: 100px; height: 100px; object-fit: cover; }
+        .news-card { background: white; margin: 12px; border-radius: 15px; display: flex; flex-direction: row; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .news-img-small { width: 100px; height: 100px; object-fit: cover; background: #eee; }
         .news-content { padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .news-content h3 { margin: 0; font-size: 15px; color: var(--primary); line-height: 1.3; }
         .news-content p { margin: 5px 0; font-size: 12px; color: #666; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .news-stats { display: flex; gap: 12px; font-size: 11px; color: #888; margin-top: 5px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
+        
+        .news-stats { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #888; margin-top: 5px; border-top: 1px solid #f9f9f9; padding-top: 5px; }
+        .author-tag { font-size: 10px; color: var(--primary); font-weight: bold; margin-bottom: 3px; }
 
         /* النافذة المنبثقة للخبر */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: flex-end; }
@@ -78,13 +70,6 @@
                 <button id="likeBtn" style="border:none; background:#f0f0f0; padding:8px 15px; border-radius:20px;">❤️ <span id="lCount">0</span></button>
                 <button onclick="shareNews()" style="border:none; background:#25D366; color:white; padding:8px 15px; border-radius:20px;">واتساب 📱</button>
             </div>
-            <div id="commentsSection" style="margin-top:20px;">
-                <div id="commList" style="max-height:150px; overflow-y:auto; margin-bottom:10px;"></div>
-                <div id="commInputArea" style="display:flex; gap:8px;">
-                    <input type="text" id="cInp" placeholder="اكتب تعليقك..." style="flex:1; padding:10px; border-radius:10px; border:1px solid #ddd;">
-                    <button id="sendC" style="border:none; background:var(--primary); color:white; padding:0 15px; border-radius:10px;">نشر</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -103,9 +88,9 @@
 <script type="module">
     import { auth, db } from './config.js';
     import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, increment, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData, currentNewsId;
+    let userUID, userData;
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -113,15 +98,12 @@
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
             
-            // إدارة الصلاحيات لإظهار الأزرار الحساسة
-            if (userData.role === 'admin') {
-                document.getElementById('adminLink').style.display = 'block';
+            if (userData.role === 'admin' || userData.role === 'editor' || userData.role === 'moderator') {
                 document.getElementById('addNewsBtn').style.display = 'block';
-                userData.status = 'active'; 
-            } else if (userData.role === 'editor') {
-                document.getElementById('addNewsBtn').style.display = 'block';
-                userData.status = 'active';
-            } else if (userData.status !== 'active') {
+                if(userData.role === 'admin') document.getElementById('adminLink').style.display = 'block';
+            }
+            
+            if (userData.status !== 'active' && userData.role !== 'admin') {
                 document.getElementById('statusArea').innerHTML = `<span class="wait-label">⏳ بانتظار التفعيل</span>`;
                 document.getElementById('chatBtn').classList.add('restricted');
             }
@@ -131,43 +113,47 @@
         }
     });
 
-    window.handleLogout = async () => {
-        if (confirm("هل تريد تسجيل الخروج؟")) {
-            await signOut(auth);
-            window.location.href = "index.html";
-        }
-    };
-
     function loadNews() {
         onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
             const cont = document.getElementById('newsContainer');
             cont.innerHTML = "";
             snap.forEach((d) => {
                 const n = d.data();
+                // شرط التحكم: هل هو صاحب الخبر أم المدير؟
+                const canControl = (userUID === n.authorId) || (userData.role === 'admin');
+
                 const card = document.createElement('div');
                 card.className = 'news-card';
-                card.onclick = () => openNews(d.id);
-                
-                onSnapshot(collection(db, `News/${d.id}/Comments`), (cSnap) => {
-                    card.innerHTML = `
-                        <img src="${n.img || 'https://via.placeholder.com/100'}" class="news-img-small">
-                        <div class="news-content">
+                card.innerHTML = `
+                    <img src="${n.img}" class="news-img-small" onclick="openNews('${d.id}')">
+                    <div class="news-content">
+                        <div onclick="openNews('${d.id}')">
+                            <div class="author-tag">✍️ المحرر: ${n.authorName || 'إدارة التطبيق'}</div>
                             <h3>${n.title}</h3>
                             <p>${n.body}</p>
-                            <div class="news-stats">
-                                <div class="stat-item">❤️ <span>${n.likes || 0}</span></div>
-                                <div class="stat-item">💬 <span>${cSnap.size}</span></div>
-                                <div class="stat-item">📅 <span>${n.date ? new Date(n.date.toDate()).toLocaleDateString('ar-SA') : ''}</span></div>
-                            </div>
-                        </div>`;
-                });
+                        </div>
+                        <div class="news-stats">
+                            <span>❤️ ${n.likes || 0}</span>
+                            ${canControl ? `
+                                <button onclick="deleteNews('${d.id}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">🗑️ حذف</button>
+                            ` : ''}
+                        </div>
+                    </div>`;
                 cont.appendChild(card);
             });
         });
     }
 
+    window.deleteNews = async (id) => {
+        if(confirm("هل تريد حذف هذا الخبر نهائياً؟")) {
+            try {
+                await deleteDoc(doc(db, "News", id));
+                alert("تم حذف الخبر.");
+            } catch (e) { alert("خطأ في الحذف."); }
+        }
+    };
+
     window.openNews = async (id) => {
-        currentNewsId = id;
         const s = await getDoc(doc(db, "News", id));
         const n = s.data();
         document.getElementById('mImg').src = n.img;
@@ -175,69 +161,19 @@
         document.getElementById('mBody').innerText = n.body;
         document.getElementById('lCount').innerText = n.likes || 0;
         document.getElementById('newsModal').style.display = 'flex';
-        loadComments(id);
+    };
+
+    window.handleLogout = async () => {
+        if (confirm("خروج من الحساب؟")) { await signOut(auth); window.location.href = "index.html"; }
     };
 
     window.goToChat = () => {
-        if(userData && userData.status === 'active') window.location.href = "chat.html";
-        else alert("يجب تفعيل حسابك أولاً.");
+        if(userData && (userData.status === 'active' || userData.role === 'admin')) window.location.href = "chat.html";
+        else alert("حسابك بانتظار التفعيل.");
     };
 
     window.closeModal = () => document.getElementById('newsModal').style.display = 'none';
     window.shareNews = () => window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('mTitle').innerText)}`);
-
-    function loadComments(id) {
-        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (snap) => {
-            const list = document.getElementById('commList');
-            list.innerHTML = "";
-            snap.forEach(d => {
-                const c = d.data();
-                list.innerHTML += `<div style="margin-bottom:8px; background:#f9f9f9; padding:8px; border-radius:8px;">
-                    <b style="font-size:11px; color:var(--primary);">${c.userName}</b>
-                    <p style="margin:2px 0; font-size:12px;">${c.text}</p>
-                </div>`;
-            });
-        });
-    }
-
-    document.getElementById('sendC').onclick = async () => {
-        const txt = document.getElementById('cInp').value;
-        if(!txt || userData.status !== 'active') return;
-        await addDoc(collection(db, `News/${currentNewsId}/Comments`), {
-            text: txt, userName: userData.fullName, uid: userUID, timestamp: serverTimestamp()
-        });
-        document.getElementById('cInp').value = "";
-    };
-    <script type="module">
-    // ... الكود السابق ...
-    snap.forEach((d) => {
-        const n = d.data();
-        // التحقق: هل هو صاحب الخبر أم المدير؟
-        const canControl = (userUID === n.authorId) || (userData.role === 'admin');
-
-        const card = document.createElement('div');
-        card.className = 'news-card';
-        card.innerHTML = `
-            <img src="${n.img}" class="news-img-small">
-            <div class="news-content">
-                <h3>${n.title}</h3>
-                <div style="font-size:10px; color:var(--primary);">✍️ المحرر: ${n.authorName}</div>
-                <p>${n.body}</p>
-                <div class="news-stats">
-                    <span>❤️ ${n.likes || 0}</span>
-                    ${canControl ? `
-                        <button onclick="deleteNews('${d.id}')" style="color:red; border:none; background:none;">🗑️ حذف</button>
-                    ` : ''}
-                </div>
-            </div>`;
-        cont.appendChild(card);
-    });
-
-    window.deleteNews = async (id) => {
-        if(confirm("هل تريد حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id));
-    };
-</script>
 </script>
 </body>
 </html>
-
