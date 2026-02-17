@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة الشاملة</title>
+    <title>لوحة التحكم المركزية | الإدارة</title>
     <style>
         :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; --blue: #3498db; --pink: #ff69b4; --gold: #f1c40f; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
@@ -37,7 +37,7 @@
 
 <div class="container">
     <button class="btn btn-primary" onclick="location.href='news.html'" style="margin-bottom:20px;">⬅️ عودة للأخبار</button>
-    <h1>لوحة التحكم المركزية ⚙️</h1>
+    <h1>لوحة التحكم الشاملة ⚙️</h1>
 
     <div class="stats-grid">
         <div class="stat-card" style="border-bottom: 5px solid var(--blue);"><span id="mCount" class="stat-num">0</span><span style="color:var(--blue)">ذكور 👨</span></div>
@@ -49,12 +49,12 @@
     <section style="background: #fff5f5;">
         <h2>التحكم الفوري بالإشعارات النشطة 🛑</h2>
         <div id="activePopup" class="active-item" style="display:none;">
-            <span>📢 إشعار Pop-up نشط الآن</span>
-            <button class="btn btn-danger" onclick="disableItem('loginPopup')">إيقاف</button>
+            <span>📢 إشعار Pop-up (المنبثق) نشط الآن</span>
+            <button class="btn btn-danger" onclick="window.disableItem('loginPopup')">إيقاف الآن</button>
         </div>
         <div id="activeStar" class="active-item" style="display:none;">
-            <span>⭐ رسالة النجمة نشطة الآن</span>
-            <button class="btn btn-danger" onclick="disableItem('broadcast')">إيقاف</button>
+            <span>⭐ رسالة النجمة (الجماعية) نشطة الآن</span>
+            <button class="btn btn-danger" onclick="window.disableItem('broadcast')">إيقاف الآن</button>
         </div>
     </section>
 
@@ -64,33 +64,47 @@
     </section>
 
     <section style="background: #f0fdf4;">
-        <h2>إنشاء مجموعة مؤقتة مستهدفة 👥</h2>
+        <h2>إنشاء مجموعة مؤقتة (مستهدفة) 👥</h2>
         <input type="text" id="groupName" placeholder="اسم المجموعة">
         <input type="datetime-local" id="groupExp">
         <div style="margin: 10px 0;">
             <label><input type="radio" name="target" value="all" checked onclick="toggleGSearch(false)"> للجميع</label>
             <label><input type="radio" name="target" value="specific" onclick="toggleGSearch(true)"> أشخاص محددين</label>
         </div>
-        <div id="groupSearchArea" style="display:none; padding:10px; border:1px solid #ddd; border-radius:10px; background:white;">
-            <input type="text" id="uSearchG" placeholder="ابحث بالاسم أو الجوال لضم عضو..." oninput="searchUsersG()">
-            <div id="gResults" style="max-height:100px; overflow-y:auto; border-bottom:1px solid #eee;"></div>
-            <div id="selectedUsers" style="margin-top:10px;"></div>
+        <div id="groupSearchArea" style="display:none; padding:15px; border:1px solid #ddd; border-radius:12px; background:white;">
+            <input type="text" id="uSearchG" placeholder="ابحث بالاسم أو الجوال لإضافة عضو للمجموعة..." oninput="searchUsersG()">
+            <div id="gResults" style="max-height:120px; overflow-y:auto; border-bottom:1px solid #eee; margin-bottom:10px;"></div>
+            <div id="selectedUsers"></div>
         </div>
         <button class="btn btn-accent" onclick="createGroup()" style="width:100%; margin-top:10px;">إنشاء وبث المجموعة</button>
     </section>
 
     <section style="background: #eef7ff;">
-        <h2>الإشعارات الجماعية (تنبيهات / نجمة) 🔔</h2>
-        <textarea id="popText" rows="2" placeholder="نص الإشعار/النجمة..."></textarea>
+        <h2>إعدادات الإشعارات (Pop-up / نجمة ⭐)</h2>
+        <textarea id="popText" rows="2" placeholder="اكتب نص الإشعار هنا..."></textarea>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+                <label style="font-size:12px;">نوع الإشعار المنبثق:</label>
+                <select id="popType">
+                    <option value="white">عادي (أبيض)</option>
+                    <option value="red">عاجل (أحمر)</option>
+                    <option value="green">تبرع (أخضر)</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:12px;">تاريخ انتهاء الإشعار:</label>
+                <input type="datetime-local" id="popExp">
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
             <button class="btn btn-primary" onclick="sendPopup()">تفعيل كـ إشعار منبثق</button>
             <button class="btn btn-accent" onclick="sendStar()">تفعيل كـ نجمة ⭐</button>
         </div>
     </section>
 
     <section>
-        <h2>إدارة الأعضاء والصلاحيات 👥</h2>
-        <input type="text" id="uSearchMain" placeholder="ابحث بالاسم أو الجوال..." oninput="filterUsersMain()">
+        <h2>إدارة الأعضاء والصلاحيات والبحث 👤</h2>
+        <input type="text" id="uSearchMain" placeholder="ابحث عن عضو بالاسم، الجوال، أو البريد..." oninput="filterUsersMain()">
         <div id="usersList" style="margin-top:15px;"></div>
     </section>
 </div>
@@ -110,7 +124,7 @@
     });
 
     function initAdmin() {
-        // الإحصائيات والأعضاء
+        // تحديث الإحصائيات لحظياً
         onSnapshot(collection(db, "Users"), (snap) => {
             allUsers = []; let m=0, f=0, ages=[];
             snap.forEach(d => {
@@ -124,31 +138,35 @@
             renderUsers(allUsers);
         });
 
-        // مراقبة النشط
+        // مراقبة الإشعارات النشطة للتعطيل
         onSnapshot(doc(db, "Settings", "loginPopup"), s => document.getElementById('activePopup').style.display = (s.exists() && s.data().expiry > Date.now()) ? 'flex' : 'none');
         onSnapshot(doc(db, "Settings", "broadcast"), s => document.getElementById('activeStar').style.display = (s.exists() && s.data().expiry > Date.now()) ? 'flex' : 'none');
 
-        // الطلبات
+        // جلب طلبات الجوال واستعادة كلمة المرور
         onSnapshot(collection(db, "Requests"), snap => {
             const list = document.getElementById('requestsList'); list.innerHTML = "";
             snap.forEach(async d => {
                 const r = d.data();
-                const u = (await getDoc(doc(db, "Users", r.uid))).data();
-                const typeText = r.type === "password_reset" ? "🔑 استعادة باسوورد" : "📱 تغيير جوال";
-                list.innerHTML += `<div class="card-row"><span><b>${u.fullName}</b> | ${typeText}</span>
-                    <button class="btn btn-accent" onclick="approveReq('${d.id}','${r.uid}','${r.type}','${r.requestedPhone || ''}')">موافقة</button></div>`;
+                const uSnap = await getDoc(doc(db, "Users", r.uid));
+                if(!uSnap.exists()) return;
+                const u = uSnap.data();
+                const typeText = r.type === "password_reset" ? "🔑 استعادة كلمة مرور" : "📱 تغيير رقم جوال";
+                list.innerHTML += `<div class="card-row">
+                    <span><b>${u.fullName}</b> | ${typeText} ${r.requestedPhone ? 'إلى '+r.requestedPhone : ''}</span>
+                    <button class="btn btn-accent" onclick="approveReq('${d.id}','${r.uid}','${r.type}','${r.requestedPhone || ''}')">موافقة</button>
+                </div>`;
             });
         });
     }
 
-    // دوال المجموعات
+    // إدارة المجموعات المؤقتة
     window.toggleGSearch = (s) => { document.getElementById('groupSearchArea').style.display = s ? 'block' : 'none'; if(!s) selectedUIDs=[]; };
     window.searchUsersG = () => {
         const t = document.getElementById('uSearchG').value.toLowerCase();
         const res = document.getElementById('gResults'); res.innerHTML = "";
         if(t.length < 2) return;
         allUsers.filter(u => u.fullName.toLowerCase().includes(t) || u.phone.includes(t)).forEach(u => {
-            const d = document.createElement('div'); d.style.padding="8px"; d.innerText = `➕ ${u.fullName}`;
+            const d = document.createElement('div'); d.className="user-row"; d.style.padding="8px"; d.style.cursor="pointer"; d.innerText = `➕ ${u.fullName}`;
             d.onclick = () => { if(!selectedUIDs.includes(u.id)) { selectedUIDs.push(u.id); renderSelected(); } };
             res.appendChild(d);
         });
@@ -163,38 +181,47 @@
     window.createGroup = async () => {
         const name = document.getElementById('groupName').value;
         const exp = document.getElementById('groupExp').value;
-        if(!name || !exp) return alert("بيانات ناقصة");
+        const type = document.querySelector('input[name="target"]:checked').value;
+        if(!name || !exp) return alert("أكمل البيانات");
         await addDoc(collection(db, "TempGroups"), {
-            name, expiry: new Date(exp).getTime(), targetType: selectedUIDs.length ? 'specific' : 'all',
+            name, expiry: new Date(exp).getTime(), targetType: type,
             allowedUsers: selectedUIDs, createdAt: serverTimestamp(), disabled: false
         });
-        alert("تم إنشاء المجموعة"); location.reload();
+        alert("تم إنشاء المجموعة وبثها"); location.reload();
     };
 
-    // دوال الإشعارات والطلبات
+    // إرسال الإشعارات
     window.disableItem = async (t) => await updateDoc(doc(db, "Settings", t), { expiry: 0 });
     window.sendPopup = async () => {
+        const text = document.getElementById('popText').value;
+        const exp = document.getElementById('popExp').value;
+        if(!text || !exp) return alert("أكمل النص والتاريخ");
         await setDoc(doc(db, "Settings", "loginPopup"), {
-            id: "pop_"+Date.now(), message: document.getElementById('popText').value,
-            type: "white", duration: 10, expiry: Date.now() + 86400000 // افتراضي يوم
+            id: "pop_"+Date.now(), message: text,
+            type: document.getElementById('popType').value,
+            duration: 10, expiry: new Date(exp).getTime()
         });
-        alert("تم التفعيل");
+        alert("تم تفعيل الإشعار المنبثق");
     };
     window.sendStar = async () => {
+        const text = document.getElementById('popText').value;
+        const exp = document.getElementById('popExp').value;
+        if(!text || !exp) return alert("أكمل النص والتاريخ");
         await setDoc(doc(db, "Settings", "broadcast"), {
-            message: document.getElementById('popText').value, targetGender: "all",
-            minAge: 0, maxAge: 100, expiry: Date.now() + 86400000
+            message: text, targetGender: "all", minAge: 0, maxAge: 100, expiry: new Date(exp).getTime()
         });
-        alert("تم البث");
+        alert("تم بث النجمة ⭐");
     };
 
+    // الموافقة على الطلبات
     window.approveReq = async (rid, uid, type, phone) => {
         if(type === "password_reset") await updateDoc(doc(db, "Users", uid), { resetMode: true });
         else await updateDoc(doc(db, "Users", uid), { phone: phone });
         await deleteDoc(doc(db, "Requests", rid));
-        alert("تم تنفيذ الطلب");
+        alert("تم تنفيذ الطلب بنجاح");
     };
 
+    // إدارة الأعضاء والبحث
     window.filterUsersMain = () => {
         const t = document.getElementById('uSearchMain').value.toLowerCase();
         renderUsers(allUsers.filter(u => u.fullName.toLowerCase().includes(t) || u.phone.includes(t)));
@@ -203,9 +230,13 @@
         const list = document.getElementById('usersList'); list.innerHTML = "";
         arr.forEach(u => {
             if(u.role === 'admin') return;
-            list.innerHTML += `<div class="card-row"><div><b>${u.fullName}</b><br><small>${u.phone}</small></div>
-                <div><span class="perm-tag ${u.canAdd?'active':''}" onclick="updateP('${u.id}','canAdd',${u.canAdd})">إضافة</span>
-                <span class="perm-tag ${u.role==='admin'?'active':''}" onclick="updateP('${u.id}','role','${u.role}')">مدير</span></div></div>`;
+            list.innerHTML += `<div class="card-row">
+                <div><b>${u.fullName}</b><br><small>${u.phone} | ${u.email}</small></div>
+                <div>
+                    <span class="perm-tag ${u.canAdd?'active':''}" onclick="updateP('${u.id}','canAdd',${u.canAdd})">إضافة خبر</span>
+                    <span class="perm-tag ${u.role==='admin'?'active':''}" onclick="updateP('${u.id}','role','${u.role}')">مدير</span>
+                </div>
+            </div>`;
         });
     }
     window.updateP = async (uid, f, v) => {
