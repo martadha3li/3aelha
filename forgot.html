@@ -6,62 +6,82 @@
     <title>استعادة كلمة المرور</title>
     <style>
         :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { width: 90%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 15px; }
+        .card { width: 100%; max-width: 380px; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; border-top: 5px solid var(--primary); }
+        h2 { color: var(--primary); margin-bottom: 10px; }
+        p { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; outline: none; font-size: 15px; }
+        input:focus { border-color: var(--primary); }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.3s; }
+        .btn-verify { background: var(--primary); color: white; }
+        .btn-verify:disabled { background: #ccc; cursor: not-allowed; }
+        .footer-link { display: block; margin-top: 20px; font-size: 14px; color: var(--primary); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2 style="color: var(--primary);">استعادة الحساب 🔑</h2>
-    <p style="font-size: 13px; color: #666;">أدخل بياناتك المسجلة للتحقق</p>
-    <input type="number" id="fPhone" placeholder="رقم الجوال">
-    <input type="email" id="fEmail" placeholder="البريد الإلكتروني">
-    <button class="btn" style="background:var(--primary); color:white;" onclick="verifyUser()">تحقق من هويتي</button>
 
-    <div id="recoveryOptions" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-        <button class="btn" style="background:var(--accent); color:white;" onclick="sendResetEmail()">تغيير عبر الإيميل (رابط)</button>
-        <button class="btn" style="background:#3498db; color:white;" onclick="sendAdminRequest()">طلب مساعدة من الإدارة</button>
-    </div>
-    <a href="index.html" style="display:block; margin-top:15px; font-size:13px; color:var(--primary); text-decoration:none;">العودة للخلف</a>
+<div class="card">
+    <div style="font-size: 40px; margin-bottom: 10px;">🔑</div>
+    <h2>نسيت كلمة المرور؟</h2>
+    <p>أدخل الإيميل ورقم الجوال المسجلين في حسابك لنتمكن من إرسال رابط استعادة الوصول.</p>
+    
+    <input type="email" id="fEmail" placeholder="البريد الإلكتروني المسجل">
+    <input type="number" id="fPhone" placeholder="رقم الجوال المسجل">
+    
+    <button class="btn btn-verify" id="btnAction" onclick="handleRecovery()">إرسال رابط الاستعادة</button>
+    
+    <a href="index.html" class="footer-link">⬅️ العودة لصفحة الدخول</a>
 </div>
 
 <script type="module">
-    import { db, auth } from './config.js';
-    import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './config.js';
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let matchedUser = null;
+    window.handleRecovery = async () => {
+        const email = document.getElementById('fEmail').value.trim();
+        const phone = document.getElementById('fPhone').value.trim();
+        const btn = document.getElementById('btnAction');
 
-    window.verifyUser = async () => {
-        const phone = document.getElementById('fPhone').value;
-        const email = document.getElementById('fEmail').value;
-        const q = query(collection(db, "Users"), where("phone", "==", phone), where("email", "==", email));
-        const snap = await getDocs(q);
+        if (!email || !phone) {
+            return alert("يرجى إدخال الإيميل ورقم الجوال معاً.");
+        }
 
-        if (!snap.empty) {
-            matchedUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
-            document.getElementById('recoveryOptions').style.display = 'block';
-        } else {
-            alert("البيانات لا تتطابق مع سجلاتنا.");
+        btn.disabled = true;
+        btn.innerText = "جاري التحقق...";
+
+        try {
+            // 1. التأكد من أن الإيميل والجوال يخصان نفس الشخص في قاعدة البيانات
+            const q = query(
+                collection(db, "Users"), 
+                where("email", "==", email), 
+                where("phone", "==", phone)
+            );
+            
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                btn.disabled = false;
+                btn.innerText = "إرسال رابط الاستعادة";
+                return alert("عذراً، البيانات المدخلة لا تتطابق مع سجلاتنا. تأكد من صحة الإيميل ورقم الجوال.");
+            }
+
+            // 2. إذا كانت البيانات صحيحة، نرسل رابط إعادة تعيين كلمة المرور للإيميل
+            await sendPasswordResetEmail(auth, email);
+            
+            // 3. توضيح للمستخدم بنجاح العملية
+            alert("تم التحقق بنجاح! أرسلنا لك الآن رسالة إعادة تعيين كلمة المرور على إيميلك المسجل. يرجى مراجعة صندوق الوارد (أو الـ Spam).");
+            
+            window.location.href = "index.html";
+
+        } catch (error) {
+            btn.disabled = false;
+            btn.innerText = "إرسال رابط الاستعادة";
+            console.error(error);
+            alert("حدث خطأ أثناء المحاولة: " + error.message);
         }
     };
-
-    window.sendResetEmail = async () => {
-        try {
-            await sendPasswordResetEmail(auth, matchedUser.email);
-            alert("تم إرسال رابط التغيير إلى إيميلك بنجاح.");
-        } catch (e) { alert("حدث خطأ."); }
-    };
-
-    window.sendAdminRequest = async () => {
-        await addDoc(collection(db, "Requests"), {
-            uid: matchedUser.id, fullName: matchedUser.fullName, phone: matchedUser.phone,
-            gender: matchedUser.gender, type: "password_reset", timestamp: serverTimestamp()
-        });
-        alert("تم إرسال طلبك. ستصلك رسالة واتساب بكلمة مرور جديدة قريباً.");
-    };
 </script>
+
 </body>
 </html>
