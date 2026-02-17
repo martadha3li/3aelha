@@ -13,6 +13,10 @@
         .user-perms { font-size: 11px; background: #e8f4fd; color: var(--twitter-blue); padding: 4px 10px; border-radius: 15px; font-weight: bold; }
         .logout-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--danger); }
 
+        /* شريط البحث */
+        .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; box-sizing: border-box; font-family: inherit; }
+
         /* أيقونات الإدارة */
         .admin-nav { display: none; background: #fff; padding: 10px; border-bottom: 1px solid #eee; justify-content: space-around; }
         .admin-btn { border: none; background: #eee; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; color: var(--primary); }
@@ -44,9 +48,13 @@
 <body>
 
     <div class="top-bar">
-        <button class="logout-btn" id="logoutBtn" title="تسجيل الخروج">🚪</button>
+        <button class="logout-btn" id="logoutBtn">🚪</button>
         <div id="permsBadge" class="user-perms" style="display:none;"></div>
         <span style="font-weight:bold; color:var(--primary);">الرئيسية</span>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="newsSearchInp" class="search-input" placeholder="ابحث عن خبر بالكلمات..." oninput="window.filterNews()">
     </div>
 
     <div id="adminNav" class="admin-nav">
@@ -55,7 +63,8 @@
     </div>
 
     <main id="newsList">
-        <h2 style="padding: 15px;">آخر الأخبار</h2>
+        <h2 style="padding: 15px 15px 0 15px;" id="newsTitleHeader">آخر الأخبار</h2>
+        <div id="newsContainer"></div>
     </main>
 
     <div id="newsEditor">
@@ -77,17 +86,17 @@
                 <p id="fnBody" style="line-height:1.7; white-space:pre-wrap;"></p>
                 <div class="reaction-bar">
                     <button id="birdLikeBtn" class="bird-btn">🕊️ <span id="fnLikeCount" style="font-size:14px;">0</span></button>
-                    <button id="waShareBtn" style="background:#25D366; color:white; border:none; padding:8px 15px; border-radius:20px;">🟢 مشاركة</button>
+                    <button id="waShareBtn" style="background:#25D366; color:white; border:none; padding:8px 15px; border-radius:20px; font-weight:bold;">🟢 مشاركة</button>
                 </div>
-                <button onclick="closeFullNews()" style="width:100%; margin-top:20px; padding:12px; border:none; background:#eee; border-radius:10px;">عودة للأخبار</button>
+                <button onclick="closeFullNews()" style="width:100%; margin-top:20px; padding:12px; border:none; background:#eee; border-radius:10px; font-weight:bold;">عودة للأخبار</button>
             </div>
         </div>
     </div>
 
     <nav class="bottom-nav">
-        <div onclick="location.reload()" style="color:var(--primary); font-weight:bold;">📰 الأخبار</div>
-        <div onclick="window.toggleChat()">💬 الدردشة</div>
-        <div onclick="location.href='profile.html'">👤 بروفايل</div>
+        <div onclick="location.reload()" style="color:var(--primary); font-weight:bold; cursor:pointer;">📰 الأخبار</div>
+        <div onclick="window.toggleChat()" style="cursor:pointer;">💬 الدردشة</div>
+        <div onclick="location.href='profile.html'" style="cursor:pointer;">👤 بروفايل</div>
     </nav>
 
     <script type="module">
@@ -98,6 +107,7 @@
         let userUID = null;
         let userData = null;
         let newsImgBase64 = "";
+        let allNews = [];
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -109,11 +119,10 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // إظهار الصلاحيات في الأعلى
         function displayPerms() {
             const badge = document.getElementById('permsBadge');
             let perms = [];
-            if(userData.role === 'admin') perms.push("مدير النظام");
+            if(userData.role === 'admin') perms.push("مدير");
             if(userData.canAdd) perms.push("إضافة");
             if(userData.canEdit) perms.push("تعديل");
             if(userData.canDelete) perms.push("حذف");
@@ -127,12 +136,8 @@
             }
         }
 
-        // تسجيل الخروج
-        document.getElementById('logoutBtn').onclick = () => {
-            if(confirm("هل تريد تسجيل الخروج؟")) signOut(auth);
-        };
+        document.getElementById('logoutBtn').onclick = () => { if(confirm("خروج؟")) signOut(auth); };
 
-        // إدارة الخبر المنبثق
         window.openNewsEditor = () => document.getElementById('newsEditor').style.display = 'flex';
         window.closeNewsEditor = () => document.getElementById('newsEditor').style.display = 'none';
 
@@ -150,43 +155,80 @@
                 title: t, body: b, img: newsImgBase64,
                 likes: 0, likedBy: [], date: serverTimestamp()
             });
-            alert("تم النشر بنجاح");
+            alert("تم النشر");
             location.reload();
         };
 
-        // تحميل الأخبار
+        // وظيفة جلب الأخبار وتخزينها محلياً للبحث
         function loadNews() {
             onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
-                const list = document.getElementById('newsList');
-                list.innerHTML = `<h2 style="padding:15px;">آخر الأخبار</h2>`;
-                snap.forEach(d => {
-                    const n = d.data();
-                    const card = document.createElement('div');
-                    card.className = 'news-card';
-                    card.onclick = () => openFullNews(d.id);
-                    card.innerHTML = `
-                        <img src="${n.img || 'https://via.placeholder.com/110'}" class="news-img-thumb">
-                        <div class="news-brief">
-                            <h3>${n.title}</h3>
-                            <div class="news-meta-mini">
-                                <span>🕊️ ${n.likes || 0}</span>
-                                <span>📅 ${n.date?.toDate().toLocaleDateString('ar-SA')}</span>
-                            </div>
-                        </div>`;
-                    list.appendChild(card);
-                });
+                allNews = [];
+                snap.forEach(d => { allNews.push({ id: d.id, ...d.data() }); });
+                renderNewsList(allNews);
             });
         }
+
+        // رندر القائمة
+        function renderNewsList(newsArray) {
+            const container = document.getElementById('newsContainer');
+            container.innerHTML = "";
+            newsArray.forEach(n => {
+                const card = document.createElement('div');
+                card.className = 'news-card';
+                card.onclick = () => openFullNews(n.id);
+                card.innerHTML = `
+                    <img src="${n.img || 'https://via.placeholder.com/110'}" class="news-img-thumb">
+                    <div class="news-brief">
+                        <h3>${n.title}</h3>
+                        <div class="news-meta-mini">
+                            <span>🕊️ ${n.likes || 0}</span>
+                            <span>📅 ${n.date?.toDate().toLocaleDateString('ar-SA')}</span>
+                        </div>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        // وظيفة البحث اللحظي
+        window.filterNews = () => {
+            const term = document.getElementById('newsSearchInp').value.toLowerCase();
+            const filtered = allNews.filter(n => 
+                n.title.toLowerCase().includes(term) || 
+                n.body.toLowerCase().includes(term)
+            );
+            renderNewsList(filtered);
+            document.getElementById('newsTitleHeader').innerText = term ? "نتائج البحث" : "آخر الأخبار";
+        };
 
         window.openFullNews = async (id) => {
             const snap = await getDoc(doc(db, "News", id));
             const n = snap.data();
+            const isLiked = n.likedBy?.includes(userUID);
             document.getElementById('fnImg').src = n.img || '';
             document.getElementById('fnTitle').innerText = n.title;
             document.getElementById('fnBody').innerText = n.body;
             document.getElementById('fnLikeCount').innerText = n.likes || 0;
+            
+            const btn = document.getElementById('birdLikeBtn');
+            btn.className = isLiked ? 'bird-btn active' : 'bird-btn';
+            btn.onclick = () => handleLike(id, isLiked);
+
+            document.getElementById('waShareBtn').onclick = () => {
+                const shareTxt = `*${n.title}*\n${n.body.substring(0,100)}...\n\nرابط التطبيق:\n${window.location.origin}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareTxt)}`);
+            };
+
             document.getElementById('fullNewsModal').style.display = 'flex';
         };
+
+        async function handleLike(id, liked) {
+            const ref = doc(db, "News", id);
+            await updateDoc(ref, {
+                likes: increment(liked ? -1 : 1),
+                likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID)
+            });
+            openFullNews(id); // تحديث النافذة
+        }
 
         window.closeFullNews = () => document.getElementById('fullNewsModal').style.display = 'none';
     </script>
