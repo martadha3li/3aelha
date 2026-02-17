@@ -8,65 +8,56 @@
         .form-card { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
         .btn-post { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        #preview { width: 100%; max-height: 150px; object-fit: cover; border-radius: 10px; margin: 10px 0; display: none; }
     </style>
 </head>
 <body>
 
 <div class="form-card">
     <h2 style="text-align:center;">نشر خبر جديد 📰</h2>
-    
     <input type="text" id="newsTitle" placeholder="عنوان الخبر">
     
-    <label style="font-size: 13px; color: #666;">اختر تصنيف الخبر:</label>
-    <select id="newsCategory">
-        <option value="">-- اختر التصنيف --</option>
-    </select>
-    
-    <input type="text" id="newsImg" placeholder="رابط صورة الخبر">
-    <textarea id="newsBody" rows="5" placeholder="تفاصيل الخبر..."></textarea>
-    
+    <label>صورة الخبر (من الجهاز):</label>
+    <input type="file" id="newsImgFile" accept="image/*" onchange="processImage()">
+    <img id="preview">
+    <input type="hidden" id="newsImgBase64"> <textarea id="newsBody" rows="5" placeholder="تفاصيل الخبر..."></textarea>
     <button class="btn-post" onclick="publishNews()">نشر الخبر الآن</button>
-    <button onclick="history.back()" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#777;">إلغاء</button>
 </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. جلب التصنيفات من قاعدة البيانات فور تحميل الصفحة
-    const catSelect = document.getElementById('newsCategory');
-    onSnapshot(collection(db, "Categories"), (snap) => {
-        catSelect.innerHTML = '<option value="">-- اختر التصنيف --</option>';
-        snap.forEach(doc => {
-            const cat = doc.data();
-            catSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-        });
-    });
+    window.processImage = () => {
+        const file = document.getElementById('newsImgFile').files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            document.getElementById('newsImgBase64').value = reader.result;
+            document.getElementById('preview').src = reader.result;
+            document.getElementById('preview').style.display = 'block';
+        }
+        if (file) reader.readAsDataURL(file);
+    };
 
-    // 2. دالة النشر
     window.publishNews = async () => {
         const title = document.getElementById('newsTitle').value;
-        const category = document.getElementById('newsCategory').value;
-        const img = document.getElementById('newsImg').value;
+        const imgData = document.getElementById('newsImgBase64').value;
         const body = document.getElementById('newsBody').value;
 
-        if(!title || !category || !body) return alert("يرجى ملء الحقول الأساسية واختيار التصنيف");
+        if(!title || !imgData || !body) return alert("أكمل البيانات واختر صورة");
 
-        try {
-            await addDoc(collection(db, "News"), {
-                title,
-                category,
-                img: img || "https://via.placeholder.com/150",
-                body,
-                author: auth.currentUser.uid,
-                date: serverTimestamp(),
-                likes: 0
-            });
-            alert("تم نشر الخبر بنجاح في تصنيف " + category);
-            window.location.href = "news.html";
-        } catch (e) {
-            alert("حدث خطأ أثناء النشر");
-        }
+        const uSnap = await getDoc(doc(db, "Users", auth.currentUser.uid));
+        const uName = uSnap.data().fullName;
+
+        await addDoc(collection(db, "News"), {
+            title, img: imgData, body,
+            authorId: auth.currentUser.uid,
+            authorName: uName, // اسم المحرر
+            date: serverTimestamp(),
+            likes: 0
+        });
+        alert("تم النشر بنجاح");
+        window.location.href = "news.html";
     };
 </script>
 </body>
