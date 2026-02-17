@@ -208,6 +208,36 @@
         });
         document.getElementById('cInp').value = "";
     };
+    <script type="module">
+    // ... الكود السابق ...
+    snap.forEach((d) => {
+        const n = d.data();
+        // التحقق: هل هو صاحب الخبر أم المدير؟
+        const canControl = (userUID === n.authorId) || (userData.role === 'admin');
+
+        const card = document.createElement('div');
+        card.className = 'news-card';
+        card.innerHTML = `
+            <img src="${n.img}" class="news-img-small">
+            <div class="news-content">
+                <h3>${n.title}</h3>
+                <div style="font-size:10px; color:var(--primary);">✍️ المحرر: ${n.authorName}</div>
+                <p>${n.body}</p>
+                <div class="news-stats">
+                    <span>❤️ ${n.likes || 0}</span>
+                    ${canControl ? `
+                        <button onclick="deleteNews('${d.id}')" style="color:red; border:none; background:none;">🗑️ حذف</button>
+                    ` : ''}
+                </div>
+            </div>`;
+        cont.appendChild(card);
+    });
+
+    window.deleteNews = async (id) => {
+        if(confirm("هل تريد حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id));
+    };
+</script>
 </script>
 </body>
 </html>
+
