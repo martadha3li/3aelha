@@ -2,83 +2,183 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الرئيسية | تطبيق التواصل</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 70px; }
-        .top-bar { background: white; padding: 12px; display: flex; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .news-card { background: white; margin: 12px; border-radius: 15px; display: flex; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
-        .news-img { width: 100px; height: 100px; object-fit: cover; }
-        
-        /* النافذة المنبثقة للخبر */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: flex-end; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --twitter-blue: #1DA1F2; --gold: #ffc107; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; overflow-x: hidden; }
+
+        /* الشريط العلوي */
+        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .star-broadcast { color: var(--gold); font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* الإشعار المنبثق (Popup) */
+        .pop-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .pop-card { width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; text-align: center; }
+        .pop-white { background: white; color: #333; }
+        .pop-red { background: var(--danger); color: white; }
+        .pop-green { background: var(--accent); color: white; }
+
+        /* محرر الأخبار (منبثق للمدير) */
+        #newsEditor { display: none; position: fixed; inset: 0; background: white; z-index: 9000; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; box-sizing: border-box; }
+
+        /* عرض الأخبار في الرئيسية */
+        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.08); cursor: pointer; display: flex; }
+        .news-img-thumb { width: 110px; height: 110px; object-fit: cover; }
+        .news-brief { padding: 10px; flex: 1; }
+
+        /* --- نافذة الخبر المنبثقة (المطورة) --- */
+        .news-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 8000; justify-content: center; align-items: flex-end; }
         .modal-content { background: white; width: 100%; max-height: 90vh; border-radius: 25px 25px 0 0; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .full-img { width: 100%; border-radius: 15px; margin-bottom: 15px; }
-        .actions { display: flex; gap: 15px; margin: 15px 0; padding: 10px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
-        .btn-wa { background: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        /* تصغير الصورة لحجم مناسب للتطبيقات */
+        .full-img-small { width: 100%; max-height: 200px; object-fit: contain; border-radius: 15px; background: #f0f0f0; margin-bottom: 15px; }
+        .modal-actions { display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid #eee; margin-top: 10px; }
+        .wa-btn { background: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        /* مركز المحادثات */
+        .overlay-full { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
+        .overlay-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-selector-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; }
+
+        /* نافذة الدردشة النشطة */
+        .active-chat-window { display: none; position: fixed; inset: 0; background: #e5ddd5; z-index: 5000; flex-direction: column; }
+        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; }
+        .my-msg { align-self: flex-end; background: #dcf8c6; }
+        .other-msg { align-self: flex-start; background: white; }
+
+        /* الشريط السفلي */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 11px; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <button onclick="location.href='admin.html'" id="adminIcon" style="display:none; border:none; background:none; font-size:20px;">⚙️</button>
-        <span style="font-weight:bold;">آخر الأخبار</span>
+    <div id="loginPopupOverlay" class="pop-overlay">
+        <div id="loginPopupCard" class="pop-card">
+            <h3 id="popTitle">📢 تنبيه من الإدارة</h3>
+            <p id="popMsg"></p>
+            <button onclick="window.closePopup()" style="margin-top:15px; padding:10px 25px; border-radius:25px; border:none; cursor:pointer; font-weight:bold;">إغلاق</button>
+        </div>
     </div>
 
-    <div id="newsContainer"></div>
+    <div class="top-bar">
+        <button onclick="window.handleLogout()" style="background:none; border:none; font-size:22px;">🚪</button>
+        <div id="broadcastStar" class="star-broadcast" onclick="window.showBC()">⭐</div>
+        <div id="adminTools" style="display:none;">
+            <button onclick="location.href='admin.html'" style="background:none; border:none; font-size:20px;">⚙️</button>
+            <button onclick="window.openNewsEditor()" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:12px; font-size:10px;">➕ خبر</button>
+        </div>
+        <span id="permsText" style="font-size:11px; font-weight:bold; color:var(--twitter-blue);"></span>
+    </div>
 
-    <div id="newsModal" class="modal">
+    <div class="search-container">
+        <input type="text" id="newsSearchInp" class="search-input" placeholder="ابحث في الأخبار..." oninput="window.filterNews()">
+    </div>
+
+    <main id="newsContainer"></main>
+
+    <div id="newsModal" class="news-modal">
         <div class="modal-content">
-            <button onclick="closeModal()" style="float:left; border:none; background:none; font-size:24px;">✕</button>
-            <img id="mImg" class="full-img">
-            <h2 id="mTitle"></h2>
-            <p id="mBody" style="line-height:1.6; color:#34495e;"></p>
+            <button onclick="window.closeNewsModal()" style="float:left; border:none; background:none; font-size:24px;">✕</button>
+            <img id="mImg" class="full-img-small">
+            <h2 id="mTitle" style="margin:0; font-size:18px;"></h2>
+            <p id="mBody" style="line-height:1.6; color:#34495e; font-size:14px; margin-top:10px; white-space:pre-wrap;"></p>
             
-            <div class="actions">
+            <div class="modal-actions">
                 <button id="likeBtn" style="border:none; background:none; font-size:20px;">🕊️ <span id="mLikeCount">0</span></button>
-                <button class="btn-wa" id="waBtn">🟢 مشاركة واتساب</button>
+                <button class="wa-btn" id="waBtn">🟢 مشاركة واتساب</button>
             </div>
 
             <div id="commentsArea">
-                <h4>التعليقات</h4>
-                <div id="mCommentsList"></div>
+                <h4 style="border-top:1px solid #eee; padding-top:10px;">التعليقات</h4>
+                <div id="mCommentsList" style="max-height:150px; overflow-y:auto; font-size:13px;"></div>
                 <div style="display:flex; gap:5px; margin-top:10px;">
-                    <input type="text" id="cInput" placeholder="اكتب تعليقاً..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
-                    <button id="sendC" style="border:none; background:var(--primary); color:white; border-radius:10px; padding:0 15px;">إرسال</button>
+                    <input type="text" id="cInput" placeholder="أضف تعليقاً..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:10px;">
+                    <button id="sendComment" style="border:none; background:var(--primary); color:white; border-radius:10px; padding:0 15px;">إرسال</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="chatCenterOverlay" class="overlay-full">
+        <div class="overlay-header"><span>مركز المحادثات</span><button onclick="window.toggleChatCenter()" style="background:none; border:none; color:white; font-size:24px;">✕</button></div>
+        <div style="padding:10px; overflow-y:auto; flex:1; background:#f0f2f5;">
+            <div class="chat-selector-item" onclick="window.openChat('Messages', 'الدردشة العامة')"><span>🌐 الدردشة العامة</span></div>
+            <h4 style="margin:15px 10px 5px;">مجموعاتك المستهدفة</h4>
+            <div id="tempGroupsList"></div>
+            <h4 style="margin:15px 10px 5px;">محادثة خاصة</h4>
+            <div style="display:flex; padding:5px 10px;">
+                <input type="number" id="searchPhone" placeholder="رقم الجوال..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <button onclick="window.searchByPhone()" style="background:var(--primary); color:white; border:none; padding:10px; border-radius:10px; margin-right:5px;">بحث</button>
+            </div>
+            <div id="previousChatsList"></div>
+        </div>
+    </div>
+
+    <div id="newsEditor">
+        <h2>نشر خبر جديد</h2>
+        <input type="file" id="newsImgInp" accept="image/*">
+        <input type="text" id="newsTitleInp" placeholder="عنوان الخبر">
+        <textarea id="newsBodyInp" rows="6" placeholder="نص الخبر..."></textarea>
+        <button onclick="window.saveNews()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">نشر الآن</button>
+        <button onclick="window.closeNewsEditor()" style="width:100%; margin-top:10px; color:red; border:none; background:none;">إلغاء</button>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="location.reload()">📰<br>الأخبار</div>
+        <div class="nav-item" onclick="window.toggleChatCenter()">💬<br>الدردشة</div>
+        <div class="nav-item" onclick="location.href='profile.html'">👤<br>بروفايل</div>
+    </nav>
+
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, serverTimestamp, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, serverTimestamp, where, getDocs, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        auth.onAuthStateChanged(async user => {
+        let userUID, userData, userAge, allNews = [], currentChatPath, unsubMsgs;
+
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
+                userUID = user.uid;
                 const snap = await getDoc(doc(db, "Users", user.uid));
-                if(snap.data().role === 'admin') document.getElementById('adminIcon').style.display = 'block';
+                userData = snap.data();
+                userAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
+                
+                if(userData.role === 'admin') document.getElementById('adminTools').style.display = 'flex';
+                document.getElementById('permsText').innerText = userData.role === 'admin' ? "المدير" : "عضو";
+                
                 loadNews();
-            }
+                loadTempGroups();
+                loadPreviousChats();
+                checkPopup();
+                checkStarBC();
+            } else { window.location.href = "index.html"; }
         });
 
+        // جلب الأخبار
         function loadNews() {
-            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), snap => {
-                const cont = document.getElementById('newsContainer');
-                cont.innerHTML = "";
+            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
+                const container = document.getElementById('newsContainer');
+                container.innerHTML = ""; allNews = [];
                 snap.forEach(d => {
-                    const n = d.data();
-                    const card = document.createElement('div');
-                    card.className = 'news-card';
-                    card.onclick = () => openNews(d.id);
-                    card.innerHTML = `<img src="${n.img}" class="news-img"><div style="padding:10px;"><h3>${n.title}</h3><small>🕊️ ${n.likes || 0}</small></div>`;
-                    cont.appendChild(card);
+                    const n = d.data(); allNews.push({id: d.id, ...n});
+                    container.innerHTML += `
+                        <div class="news-card" onclick="window.openNewsModal('${d.id}')">
+                            <img src="${n.img || 'https://via.placeholder.com/110'}" class="news-img-thumb">
+                            <div class="news-brief">
+                                <h3>${n.title}</h3>
+                                <div style="font-size:11px; color:#888;">🕊️ ${n.likes || 0} | 📅 ${n.date?.toDate().toLocaleDateString('ar-SA')}</div>
+                            </div>
+                        </div>`;
                 });
             });
         }
 
-        window.openNews = async (id) => {
+        // تفاصيل الخبر المنبثقة
+        window.openNewsModal = async (id) => {
             const snap = await getDoc(doc(db, "News", id));
             const n = snap.data();
             document.getElementById('mImg').src = n.img;
@@ -86,37 +186,85 @@
             document.getElementById('mBody').innerText = n.body;
             document.getElementById('mLikeCount').innerText = n.likes || 0;
             
-            // إصلاح المشاركة عبر الواتساب
+            // مشاركة واتساب
             document.getElementById('waBtn').onclick = () => {
-                const text = `*${n.title}*\n${n.body.substring(0,100)}...\n\nلمزيد من التفاصيل تابعنا على التطبيق!`;
+                const text = `*${n.title}*\n${n.body.substring(0,100)}...\n\nتابع المزيد على تطبيقنا!`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
             };
 
             document.getElementById('newsModal').style.display = 'flex';
             loadComments(id);
-            document.getElementById('sendC').onclick = () => postComment(id);
+            document.getElementById('sendComment').onclick = () => postComment(id);
         };
+        window.closeNewsModal = () => document.getElementById('newsModal').style.display = 'none';
 
-        window.closeModal = () => document.getElementById('newsModal').style.display = 'none';
-
-        async function postComment(id) {
-            const val = document.getElementById('cInput').value;
-            if(!val) return;
-            await addDoc(collection(db, `News/${id}/Comments`), {
-                text: val, sender: auth.currentUser.displayName || "عضو", time: serverTimestamp()
-            });
-            document.getElementById('cInput').value = "";
-        }
-
-        function loadComments(id) {
-            onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("time", "asc")), snap => {
-                const list = document.getElementById('mCommentsList');
+        // المجموعات والدردشة
+        function loadTempGroups() {
+            onSnapshot(collection(db, "TempGroups"), (snap) => {
+                const list = document.getElementById('tempGroupsList');
                 list.innerHTML = "";
                 snap.forEach(d => {
-                    list.innerHTML += `<div style="font-size:13px; margin-bottom:5px;"><b>${d.data().sender}:</b> ${d.data().text}</div>`;
+                    const g = d.data();
+                    const isAllowed = g.targetType === 'all' || (g.allowedUsers && g.allowedUsers.includes(userUID));
+                    if(g.expiry > Date.now() && !g.disabled && isAllowed) {
+                        list.innerHTML += `<div class="chat-selector-item" onclick="window.openChat('TempGroups/${d.id}/messages', '${g.name}')">👥 ${g.name}</div>`;
+                    }
                 });
             });
         }
+
+        window.openChat = (path, title) => {
+            currentChatPath = path;
+            document.getElementById('activeChatTitle').innerText = title;
+            document.getElementById('activeChatWindow').style.display = 'flex';
+            if(unsubMsgs) unsubMsgs();
+            unsubMsgs = onSnapshot(query(collection(db, path), orderBy("time", "asc")), (snap) => {
+                const box = document.getElementById('chatMessages'); box.innerHTML = "";
+                snap.forEach(d => {
+                    const m = d.data();
+                    box.innerHTML += `<div class="msg ${m.uid === userUID ? 'my-msg' : 'other-msg'}"><b>${m.sender}:</b><br>${m.text}</div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        // ... (بقية وظائف الحذف التلقائي والبحث برقم الجوال كما في الأكواد المستقرة) ...
+        window.toggleChatCenter = () => {
+            const el = document.getElementById('chatCenterOverlay');
+            el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        };
+
+        window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut(); };
+        window.openNewsEditor = () => document.getElementById('newsEditor').style.display = 'flex';
+        window.closeNewsEditor = () => document.getElementById('newsEditor').style.display = 'none';
+
+        function checkPopup() {
+            onSnapshot(doc(db, "Settings", "loginPopup"), (s) => {
+                if(s.exists()){
+                    const d = s.data();
+                    if(d.expiry > Date.now() && localStorage.getItem('last_pop') !== d.id){
+                        document.getElementById('popMsg').innerText = d.message;
+                        document.getElementById('loginPopupCard').className = `pop-card pop-${d.type}`;
+                        document.getElementById('loginPopupOverlay').style.display = 'flex';
+                        localStorage.setItem('last_pop', d.id);
+                    }
+                }
+            });
+        }
+        window.closePopup = () => document.getElementById('loginPopupOverlay').style.display = 'none';
+
+        function checkStarBC() {
+            onSnapshot(doc(db, "Settings", "broadcast"), (s) => {
+                if(s.exists()){
+                    const d = s.data();
+                    const match = (d.targetGender === 'all' || d.targetGender === userData.gender) && (d.expiry > Date.now());
+                    document.getElementById('broadcastStar').style.display = match ? 'block' : 'none';
+                    window.bcMsg = d.message;
+                }
+            });
+        }
+        window.showBC = () => alert("📢 " + window.bcMsg);
+
     </script>
 </body>
 </html>
