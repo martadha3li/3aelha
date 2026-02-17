@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>طلبات الأعضاء</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .req-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
+        .bulk-actions { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; position: sticky; top: 0; }
+    </style>
+</head>
+<body>
+    <a href="admin.html">⬅️ العودة</a>
+    <h1>طلبات تغيير كلمة المرور</h1>
+
+    <div class="bulk-actions">
+        <label><input type="checkbox" id="selectAll" onclick="toggleAll()"> تحديد الكل</label>
+        <button onclick="approveSelected()" style="background:#27ae60; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">موافقة جماعية على المحددة</button>
+    </div>
+
+    <div id="requestsList"></div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    onSnapshot(collection(db, "Requests"), snap => {
+        const list = document.getElementById('requestsList');
+        list.innerHTML = "";
+        snap.forEach(d => {
+            const r = d.data();
+            list.innerHTML += `
+                <div class="req-card">
+                    <input type="checkbox" class="req-check" value="${d.id}" data-uid="${r.uid}">
+                    <div><b>${r.fullName}</b> | ${r.phone} <br> <small>نوع الطلب: ${r.type}</small></div>
+                </div>`;
+        });
+    });
+
+    window.toggleAll = () => {
+        const checked = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.req-check').forEach(c => c.checked = checked);
+    };
+
+    window.approveSelected = async () => {
+        const selected = document.querySelectorAll('.req-check:checked');
+        if(selected.length === 0) return alert("حدد طلبات أولاً");
+        
+        for (let item of selected) {
+            const rid = item.value;
+            const uid = item.dataset.uid;
+            // تنفيذ الموافقة (مثلاً تفعيل resetMode)
+            await updateDoc(doc(db, "Users", uid), { resetMode: true });
+            await deleteDoc(doc(db, "Requests", rid));
+        }
+        alert("تمت معالجة الطلبات المختارة بنجاح");
+    };
+</script>
+</body>
+</html>
