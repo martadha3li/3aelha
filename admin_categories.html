@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>إدارة التصنيفات</title>
+</head>
+<body>
+    <a href="admin.html">⬅️ العودة</a>
+    <h1>إدارة تصنيفات الأخبار</h1>
+    <input type="text" id="catName" placeholder="اسم التصنيف الجديد">
+    <button onclick="addCategory()">إضافة تصنيف</button>
+    
+    <div id="catsList" style="margin-top:20px;"></div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    onSnapshot(collection(db, "Categories"), snap => {
+        const list = document.getElementById('catsList');
+        list.innerHTML = "";
+        snap.forEach(d => {
+            list.innerHTML += `<div>📁 ${d.data().name} <button onclick="deleteCat('${d.id}')">حذف</button></div>`;
+        });
+    });
+
+    window.addCategory = async () => {
+        const name = document.getElementById('catName').value;
+        if(!name) return;
+        await addDoc(collection(db, "Categories"), { name: name });
+        document.getElementById('catName').value = "";
+    };
+
+    window.deleteCat = async (id) => { if(confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "Categories", id)); };
+</script>
+</body>
+</html>
