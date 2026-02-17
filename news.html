@@ -8,27 +8,33 @@
         :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --twitter-blue: #1DA1F2; --gold: #ffc107; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
         
-        /* شريط علوي */
+        /* الشريط العلوي */
         .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
         .star-broadcast { color: var(--gold); font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-        /* البطاقات والأخبار */
+        /* البحث والأخبار */
         .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
         .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; box-sizing: border-box; }
         .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.08); cursor: pointer; display: flex; }
         .news-img-thumb { width: 110px; height: 110px; object-fit: cover; }
         .news-brief { padding: 10px; flex: 1; }
 
-        /* مركز المحادثات (النافذة المصلحة) */
+        /* مركز المحادثات المنبثق */
         .overlay-full { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
         .overlay-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .chat-selector-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; margin: 5px 10px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        /* نافذة الدردشة النشطة */
+        /* قسم البحث عن مستخدم جديد */
+        .new-chat-search { padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
+        .new-chat-search input { width: 70%; padding: 10px; border-radius: 20px 0 0 20px; border: 1px solid #ddd; outline: none; }
+        .new-chat-search button { width: 28%; padding: 10px; border-radius: 0 20px 20px 0; border: none; background: var(--primary); color: white; cursor: pointer; }
+
+        /* نافذة الدردشة النشطة والحذف التلقائي */
         .active-chat-window { display: none; position: fixed; inset: 0; background: #e5ddd5; z-index: 5000; flex-direction: column; }
+        .auto-delete-bar { background: #fff3cd; padding: 8px 15px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ffeeba; }
         #chatMessages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
-        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .my-msg { align-self: flex-end; background: #dcf8c6; }
         .other-msg { align-self: flex-start; background: white; }
 
@@ -41,7 +47,7 @@
 <body>
 
     <div class="top-bar">
-        <button class="logout-btn" id="logoutBtn" style="background:none; border:none; font-size:20px; color:var(--danger);">🚪</button>
+        <button id="logoutBtn" style="background:none; border:none; font-size:20px; color:var(--danger); cursor:pointer;">🚪</button>
         <div id="broadcastStar" class="star-broadcast" onclick="showBroadcastMsg()">⭐</div>
         <div id="permsBadge" style="font-size:11px; color:var(--twitter-blue); font-weight:bold;"></div>
         <span style="font-weight:bold;">الرئيسية</span>
@@ -60,16 +66,21 @@
             <span>مركز المحادثات</span>
             <button onclick="window.toggleChatCenter()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
-        <div style="padding: 10px; background: #f0f2f5; flex: 1; overflow-y: auto;">
-            <div class="chat-selector-item" onclick="window.openChat('Messages', 'الدردشة العامة')">
+        <div style="padding: 0; background: #f0f2f5; flex: 1; overflow-y: auto;">
+            <div class="chat-selector-item" style="margin-top:15px;" onclick="window.openChat('Messages', 'الدردشة العامة')">
                 <span>🌐 الدردشة العامة</span>
             </div>
-            <h4 style="margin: 15px 10px 5px;">المجموعات النشطة</h4>
-            <div id="groupsListContainer"></div>
+
+            <div class="new-chat-search">
+                <h4 style="margin:0 0 10px 0; font-size:14px;">بدء محادثة جديدة (ابحث برقم الجوال)</h4>
+                <div style="display:flex;">
+                    <input type="number" id="searchUserPhone" placeholder="رقم الجوال...">
+                    <button onclick="window.searchByPhone()">بحث</button>
+                </div>
+            </div>
             
-            <h4 style="margin: 15px 10px 5px;">المحادثات الخاصة</h4>
-            <input type="text" id="userSearchInp" placeholder="بحث بالاسم أو الجوال..." style="width:90%; margin: 10px auto; display:block; padding:10px; border-radius:20px; border:1px solid #ddd;" oninput="window.filterPrivateUsers()">
-            <div id="privateUsersListContainer"></div>
+            <h4 style="margin: 15px 15px 5px;">محادثاتك السابقة</h4>
+            <div id="previousChatsList"></div>
         </div>
     </div>
 
@@ -78,9 +89,18 @@
             <span id="activeChatTitle">الدردشة</span>
             <button onclick="window.closeActiveChat()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
+        <div id="autoDeleteBar" class="auto-delete-bar" style="display:none;">
+            <span>🧹 الحذف التلقائي:</span>
+            <select id="autoDeleteSelect" onchange="window.updateAutoDeleteSettings()">
+                <option value="0">إيقاف</option>
+                <option value="1">بعد ساعة</option>
+                <option value="24">بعد يوم</option>
+                <option value="168">بعد أسبوع</option>
+            </select>
+        </div>
         <div id="chatMessages"></div>
         <div style="padding:10px; background:white; display:flex;">
-            <input type="text" id="chatInput" style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd;" placeholder="اكتب رسالة...">
+            <input type="text" id="chatInput" style="flex:1; padding:12px; border-radius:20px; border:1px solid #ddd;" placeholder="اكتب رسالة...">
             <button id="sendMsgBtn" style="background:none; border:none; color:var(--primary); font-size:24px; margin-right:10px;">➤</button>
         </div>
     </div>
@@ -95,13 +115,13 @@
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, serverTimestamp, where, collectionGroup, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, where, collectionGroup, getDocs, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         let userUID = null;
         let userData = null;
         let currentChatPath = "";
-        let allUsers = [];
+        let currentChatID = null;
         let unsubMessages = null;
 
         auth.onAuthStateChanged(async (user) => {
@@ -110,14 +130,74 @@
                 const snap = await getDoc(doc(db, "Users", user.uid));
                 userData = snap.data();
                 loadNews();
-                loadGroups();
-                loadUsersForChat();
+                loadPreviousChats();
                 trackUnread();
                 checkBroadcast();
             } else { window.location.href = "index.html"; }
         });
 
-        // --- إصلاحات مركز المحادثات ---
+        // 1. البحث برقم الجوال لبدء محادثة جديدة
+        window.searchByPhone = async () => {
+            const phone = document.getElementById('searchUserPhone').value;
+            if(!phone) return;
+            const q = query(collection(db, "Users"), where("phone", "==", phone), limit(1));
+            const snap = await getDocs(q);
+            if(snap.empty) {
+                alert("لا يوجد مستخدم مسجل بهذا الرقم");
+            } else {
+                const otherUser = snap.docs[0].data();
+                const otherUID = snap.docs[0].id;
+                const chatId = [userUID, otherUID].sort().join("_");
+                window.openChat(`PrivateChats/${chatId}/messages`, otherUser.fullName, chatId);
+            }
+        };
+
+        // 2. تحميل المحادثات السابقة فقط
+        function loadPreviousChats() {
+            onSnapshot(collection(db, "PrivateChats"), (snap) => {
+                const list = document.getElementById('previousChatsList');
+                list.innerHTML = "";
+                snap.forEach(async (d) => {
+                    if(d.id.includes(userUID)) {
+                        const otherUID = d.id.replace(userUID, "").replace("_", "");
+                        const uSnap = await getDoc(doc(db, "Users", otherUID));
+                        if(uSnap.exists()) {
+                            const u = uSnap.data();
+                            const item = document.createElement('div');
+                            item.className = 'chat-selector-item';
+                            item.innerHTML = `<span>👤 ${u.fullName}</span>`;
+                            item.onclick = () => window.openChat(`PrivateChats/${d.id}/messages`, u.fullName, d.id);
+                            list.appendChild(item);
+                        }
+                    }
+                });
+            });
+        }
+
+        // 3. نظام الحذف التلقائي
+        window.updateAutoDeleteSettings = async () => {
+            if(!currentChatID) return;
+            const hours = document.getElementById('autoDeleteSelect').value;
+            await setDoc(doc(db, "PrivateChats", currentChatID), {
+                autoDeleteHours: parseInt(hours),
+                lastUpdatedBy: userUID
+            }, { merge: true });
+            alert("تم تحديث وقت الحذف التلقائي");
+        };
+
+        async function cleanOldMessages(path, chatId) {
+            const snap = await getDoc(doc(db, "PrivateChats", chatId));
+            if(!snap.exists() || !snap.data().autoDeleteHours) return;
+            const hours = snap.data().autoDeleteHours;
+            if(hours === 0) return;
+
+            const expiryTime = Date.now() - (hours * 60 * 60 * 1000);
+            const q = query(collection(db, path), where("time", "<", new Date(expiryTime)));
+            const oldMsgs = await getDocs(q);
+            oldMsgs.forEach(m => deleteDoc(m.ref));
+        }
+
+        // 4. فتح وإغلاق الدردشة
         window.toggleChatCenter = () => {
             const el = document.getElementById('chatCenterOverlay');
             el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
@@ -125,14 +205,18 @@
 
         window.openChat = async (path, title, chatId = null) => {
             currentChatPath = path;
+            currentChatID = chatId;
             document.getElementById('activeChatTitle').innerText = title;
             document.getElementById('activeChatWindow').style.display = 'flex';
             
-            // تحديث الرسائل كمقروءة إذا كانت خاصة
+            const deleteBar = document.getElementById('autoDeleteBar');
             if(chatId) {
-                const q = query(collection(db, path), where('read', '==', false), where('uid', '!=', userUID));
-                const snap = await getDocs(q);
-                snap.forEach(d => updateDoc(d.ref, { read: true }));
+                deleteBar.style.display = 'flex';
+                const cSnap = await getDoc(doc(db, "PrivateChats", chatId));
+                document.getElementById('autoDeleteSelect').value = cSnap.exists() ? (cSnap.data().autoDeleteHours || 0) : 0;
+                cleanOldMessages(path, chatId); // تنظيف عند الفتح
+            } else {
+                deleteBar.style.display = 'none';
             }
             startMessageListener(path);
         };
@@ -142,6 +226,7 @@
             if(unsubMessages) unsubMessages();
         };
 
+        // --- (بقية الوظائف الأساسية المستقرة) ---
         function startMessageListener(path) {
             if(unsubMessages) unsubMessages();
             const q = query(collection(db, path), orderBy("time", "asc"));
@@ -162,65 +247,19 @@
 
         document.getElementById('sendMsgBtn').onclick = async () => {
             const inp = document.getElementById('chatInput');
-            if(!inp.value.trim() || !currentChatPath) return;
+            if(!inp.value.trim()) return;
+            // إنشاء سجل المحادثة إذا لم يوجد
+            if(currentChatID) await setDoc(doc(db, "PrivateChats", currentChatID), { active: true }, { merge: true });
+            
             await addDoc(collection(db, currentChatPath), {
-                text: inp.value,
-                sender: userData.fullName,
-                uid: userUID,
-                time: serverTimestamp(),
-                read: false
+                text: inp.value, sender: userData.fullName, uid: userUID, time: serverTimestamp(), read: false
             });
             inp.value = "";
         };
 
-        function loadGroups() {
-            onSnapshot(collection(db, "TempGroups"), (snap) => {
-                const list = document.getElementById('groupsListContainer');
-                list.innerHTML = "";
-                snap.forEach(d => {
-                    const g = d.data();
-                    if(g.expiry > Date.now() && !g.disabled) {
-                        const item = document.createElement('div');
-                        item.className = 'chat-selector-item';
-                        item.innerHTML = `<span>👥 ${g.name}</span> <small style="color:red">ينتهي ${new Date(g.expiry).getHours()}:00</small>`;
-                        item.onclick = () => window.openChat(`TempGroups/${d.id}/messages`, g.name);
-                        list.appendChild(item);
-                    }
-                });
-            });
-        }
-
-        function loadUsersForChat() {
-            onSnapshot(collection(db, "Users"), (snap) => {
-                allUsers = [];
-                snap.forEach(d => { if(d.id !== userUID) allUsers.push({id: d.id, ...d.data()}); });
-                renderPrivateUsers(allUsers);
-            });
-        }
-
-        window.filterPrivateUsers = () => {
-            const term = document.getElementById('userSearchInp').value.toLowerCase();
-            const filtered = allUsers.filter(u => u.fullName.toLowerCase().includes(term) || u.phone.includes(term));
-            renderPrivateUsers(filtered);
-        };
-
-        function renderPrivateUsers(users) {
-            const list = document.getElementById('privateUsersListContainer');
-            list.innerHTML = "";
-            users.forEach(u => {
-                const chatId = [userUID, u.id].sort().join("_");
-                const item = document.createElement('div');
-                item.className = 'chat-selector-item';
-                item.innerHTML = `<span>👤 ${u.fullName}</span>`;
-                item.onclick = () => window.openChat(`PrivateChats/${chatId}/messages`, u.fullName, chatId);
-                list.appendChild(item);
-            });
-        }
-
-        // باقي الوظائف (أخبار، إشعارات، إحصائيات) كما هي في الأكواد السابقة...
-        function loadNews() { /* ... */ }
-        function trackUnread() { /* ... */ }
-        function checkBroadcast() { /* ... */ }
+        function loadNews() { /* ... استدعاء الأخبار المختصرة ... */ }
+        function trackUnread() { /* ... مراقب الإشعارات ... */ }
+        function checkBroadcast() { /* ... النجمة الذهبية ... */ }
         document.getElementById('logoutBtn').onclick = () => { if(confirm("خروج؟")) signOut(auth); };
 
     </script>
