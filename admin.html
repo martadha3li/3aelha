@@ -5,24 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة القيادة المركزية | المدير</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --warning: #f39c12; --bg: #f4f7f6; }
+        :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; }
         h1 { text-align: center; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
-        
         section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         h2 { color: var(--primary); font-size: 1.2rem; border-right: 4px solid var(--accent); padding-right: 10px; }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        
         input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
         .btn-primary { background: var(--primary); }
         .btn-accent { background: var(--accent); }
         .btn-danger { background: var(--danger); }
-        
         .toggle-box { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 10px; }
-        .data-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
         .request-card { border: 2px solid #f1c40f; background: #fffdf0; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
     </style>
 </head>
@@ -34,18 +29,9 @@
     <section>
         <h2>إعدادات الميزات (تفعيل/تعطيل)</h2>
         <div class="grid">
-            <div class="toggle-box">
-                <span>الإعجابات (Likes)</span>
-                <button id="toggleLikes" class="btn">جاري التحميل...</button>
-            </div>
-            <div class="toggle-box">
-                <span>التعليقات (Comments)</span>
-                <button id="toggleComments" class="btn">جاري التحميل...</button>
-            </div>
-            <div class="toggle-box">
-                <span>مشاركة الواتساب</span>
-                <button id="toggleShare" class="btn">جاري التحميل...</button>
-            </div>
+            <div class="toggle-box"><span>الإعجابات</span><button id="toggleLikes" class="btn">...</button></div>
+            <div class="toggle-box"><span>التعليقات</span><button id="toggleComments" class="btn">...</button></div>
+            <div class="toggle-box"><span>مشاركة الواتساب</span><button id="toggleShare" class="btn">...</button></div>
         </div>
     </section>
 
@@ -99,15 +85,13 @@
 
     let settings = { likesEnabled: true, shareEnabled: true, commentsEnabled: true };
 
-    // التحقق من صلاحية المدير
+    // فحص رتبة المدير
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
-            if (!snap.exists() || snap.data().role !== 'admin') {
-                window.location.href = "news.html";
-            } else {
+            if (snap.exists() && snap.data().role === 'admin') {
                 startAdmin();
-            }
+            } else { window.location.href = "news.html"; }
         } else { window.location.href = "index.html"; }
     });
 
@@ -118,47 +102,49 @@
         loadRequests();
     }
 
-    // --- 1. إدارة الميزات ---
+    // --- 1. التحكم في الميزات ---
     function loadSettings() {
         onSnapshot(doc(db, "Settings", "global"), (snap) => {
             if(snap.exists()) {
                 settings = snap.data();
-                updateToggleUI('toggleLikes', settings.likesEnabled);
-                updateToggleUI('toggleComments', settings.commentsEnabled);
-                updateToggleUI('toggleShare', settings.shareEnabled);
+                updateUI('toggleLikes', settings.likesEnabled);
+                updateUI('toggleComments', settings.commentsEnabled);
+                updateUI('toggleShare', settings.shareEnabled);
             }
         });
     }
 
-    function updateToggleUI(id, isEnabled) {
+    function updateUI(id, bool) {
         const btn = document.getElementById(id);
-        btn.innerText = isEnabled ? "مفعل (إيقاف)" : "معطل (تفعيل)";
-        btn.className = isEnabled ? "btn btn-accent" : "btn btn-danger";
+        btn.innerText = bool ? "مفعل" : "معطل";
+        btn.style.background = bool ? "#27ae60" : "#e74c3c";
     }
 
-    async function toggleSetting(field) {
+    async function toggle(field) {
         settings[field] = !settings[field];
         await setDoc(doc(db, "Settings", "global"), settings, {merge: true});
     }
 
-    document.getElementById('toggleLikes').onclick = () => toggleSetting('likesEnabled');
-    document.getElementById('toggleComments').onclick = () => toggleSetting('commentsEnabled');
-    document.getElementById('toggleShare').onclick = () => toggleSetting('shareEnabled');
+    document.getElementById('toggleLikes').onclick = () => toggle('likesEnabled');
+    document.getElementById('toggleComments').onclick = () => toggle('commentsEnabled');
+    document.getElementById('toggleShare').onclick = () => toggle('shareEnabled');
 
     // --- 2. التصنيفات والأخبار ---
     function loadCategories() {
         onSnapshot(collection(db, "Categories"), (snap) => {
-            const select = document.getElementById('newsCatSelect');
-            select.innerHTML = "";
-            snap.forEach(d => {
-                select.innerHTML += `<option value="${d.data().name}">${d.data().name}</option>`;
-            });
+            const sel = document.getElementById('newsCatSelect');
+            sel.innerHTML = "";
+            snap.forEach(d => { sel.innerHTML += `<option value="${d.data().name}">${d.data().name}</option>`; });
         });
     }
 
     document.getElementById('btnAddCat').onclick = async () => {
         const name = document.getElementById('newCatInput').value;
-        if(name) await addDoc(collection(db, "Categories"), { name });
+        if(name) {
+            await addDoc(collection(db, "Categories"), { name });
+            document.getElementById('newCatInput').value = "";
+            alert("تمت إضافة التصنيف");
+        }
     };
 
     document.getElementById('btnPostNews').onclick = async () => {
@@ -166,21 +152,27 @@
         const body = document.getElementById('newsBody').value;
         const cat = document.getElementById('newsCatSelect').value;
         if(title && body) {
-            await addDoc(collection(db, "News"), { title, body, cat, likes: 0, likedBy: [], date: serverTimestamp() });
-            alert("تم النشر!");
+            await addDoc(collection(db, "News"), { 
+                title, body, cat, likes: 0, likedBy: [], date: serverTimestamp() 
+            });
+            alert("تم نشر الخبر");
+            document.getElementById('newsTitle').value = "";
+            document.getElementById('newsBody').value = "";
         }
     };
 
     // --- 3. الإشعارات والمجموعات ---
     document.getElementById('btnSendNotif').onclick = async () => {
-        const text = document.getElementById('notifText').value;
+        const txt = document.getElementById('notifText').value;
         const type = document.getElementById('notifType').value;
         const dur = parseInt(document.getElementById('notifDuration').value);
-        if(text && dur) {
-            await addDoc(collection(db, "Notifications"), { 
-                text, type, duration: dur, createdAt: serverTimestamp(), expiry: Date.now() + (dur * 1000) 
+        if(txt && dur) {
+            await addDoc(collection(db, "Notifications"), {
+                text: txt, type, duration: dur, 
+                createdAt: serverTimestamp(), 
+                expiry: Date.now() + (dur * 1000)
             });
-            alert("تم البث!");
+            alert("تم بث الإشعار");
         }
     };
 
@@ -188,40 +180,37 @@
         const name = document.getElementById('groupName').value;
         const exp = document.getElementById('expiryTime').value;
         if(name && exp) {
-            await addDoc(collection(db, "TempGroups"), { name, expiry: new Date(exp).getTime() });
-            alert("تم إنشاء المجموعة!");
+            await addDoc(collection(db, "TempGroups"), { 
+                name, expiry: new Date(exp).getTime() 
+            });
+            alert("تم إنشاء المجموعة");
         }
     };
 
-    // --- 4. معالجة طلبات الجوال ---
+    // --- 4. معالجة طلبات الجوال والأعضاء ---
     function loadRequests() {
         onSnapshot(collection(db, "Requests"), (snap) => {
             const list = document.getElementById('requestsList');
             list.innerHTML = "";
             snap.forEach(d => {
                 const r = d.data();
-                if(r.status === 'pending') {
-                    list.innerHTML += `
-                    <div class="request-card">
-                        <strong>طلب تغيير رقم لمستخدم UID: ${r.uid.substring(0,6)}...</strong>
-                        <p>من: ${r.currentPhone} ⬅️ إلى: ${r.requestedPhone}</p>
-                        <button class="btn btn-accent" onclick="approvePhone('${d.id}', '${r.uid}', '${r.requestedPhone}')">موافقة وتحديث</button>
-                        <button class="btn btn-danger" onclick="window.delDoc('${d.id}')">رفض</button>
-                    </div>`;
-                }
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `<p>طلب من: ${r.currentPhone} ⬅️ إلى: ${r.requestedPhone}</p>`;
+                const btn = document.createElement('button');
+                btn.innerText = "موافقة";
+                btn.className = "btn btn-accent";
+                btn.onclick = async () => {
+                    await updateDoc(doc(db, "Users", r.uid), { phone: r.requestedPhone });
+                    await deleteDoc(doc(db, "Requests", d.id));
+                    alert("تم تحديث الرقم");
+                };
+                card.appendChild(btn);
+                list.appendChild(card);
             });
         });
     }
 
-    window.approvePhone = async (reqId, uid, newPhone) => {
-        await updateDoc(doc(db, "Users", uid), { phone: newPhone });
-        await deleteDoc(doc(db, "Requests", reqId));
-        alert("تم تحديث الرقم بنجاح!");
-    };
-
-    window.delDoc = async (id) => { await deleteDoc(doc(db, "Requests", id)); };
-
-    // --- 5. إدارة الأعضاء ---
     function loadUsers() {
         onSnapshot(collection(db, "Users"), (snap) => {
             const list = document.getElementById('usersList');
@@ -229,20 +218,19 @@
             snap.forEach(d => {
                 const u = d.data();
                 if(u.role !== 'admin') {
-                    list.innerHTML += `
-                    <div class="data-row">
-                        <div><strong>${u.fullName}</strong><br><small>${u.phone}</small></div>
-                        <button class="btn ${u.isActive ? 'btn-danger' : 'btn-accent'}" onclick="toggleUser('${d.id}', ${u.isActive})">
-                            ${u.isActive ? 'تعطيل' : 'تفعيل'}
-                        </button>
-                    </div>`;
+                    const row = document.createElement('div');
+                    row.className = 'data-row';
+                    row.innerHTML = `<span>${u.fullName} (${u.isActive ? 'نشط' : 'معطل'})</span>`;
+                    const btn = document.createElement('button');
+                    btn.innerText = u.isActive ? "تعطيل" : "تفعيل";
+                    btn.className = u.isActive ? "btn btn-danger" : "btn btn-accent";
+                    btn.onclick = async () => { await updateDoc(doc(db, "Users", d.id), { isActive: !u.isActive }); };
+                    row.appendChild(btn);
+                    list.appendChild(row);
                 }
             });
         });
     }
-
-    window.toggleUser = async (id, status) => { await updateDoc(doc(db, "Users", id), { isActive: !status }); };
-
 </script>
 </body>
 </html>
