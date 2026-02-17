@@ -2,64 +2,81 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الملف الشخصي</title>
+    <title>ملفي الشخصي</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .back-btn { background: #eee; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; }
-        .profile-card { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; text-align: center; }
-        .age-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 10px auto; color: white; font-weight: bold; }
-        .gender-male { background-color: #3498db; }
-        .gender-female { background-color: #ff69b4; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .p-card { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; }
+        .readonly { background: #eee; cursor: not-allowed; }
+        .btn-save { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .alert-phone { font-size: 12px; color: #e74c3c; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
-    <button class="back-btn" onclick="location.href='news.html'">⬅️ عودة</button>
+<div class="p-card">
+    <h2 style="text-align:center;">إدارة ملفي الشخصي 👤</h2>
+    
+    <label>الاسم الكامل:</label>
+    <input type="text" id="pName">
 
-    <div class="profile-card">
-        <img id="userPhoto" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">
-        <div id="ageContainer" class="age-circle">
-            <span id="uAgeNum" style="font-size:22px;">-</span>
-            <span style="font-size:10px;">سنة</span>
-        </div>
-        <h2 id="uName">جاري التحميل...</h2>
-        <div id="uPhone" style="color:#666; margin-bottom:20px;">-</div>
-        <button class="back-btn" style="width:100%; background:var(--primary); color:white;" id="reqPhoneBtn">طلب تعديل رقم الجوال</button>
-    </div>
+    <label>رقم الجوال (للتغيير تواصل مع الإدارة):</label>
+    <span class="alert-phone">* لا يمكن تعديل الجوال مباشرة لأسباب أمنية</span>
+    <input type="text" id="pPhone" class="readonly" readonly>
 
-    <script type="module">
-        import { auth, db } from './config.js';
-        import { doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <label>البريد الإلكتروني:</label>
+    <input type="email" id="pEmail">
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const snap = await getDoc(doc(db, "Users", user.uid));
-                const data = snap.data();
-                document.getElementById('uName').innerText = data.fullName;
-                document.getElementById('uPhone').innerText = data.phone;
-                document.getElementById('userPhoto').src = data.photoBase64 || '';
-                
-                const age = new Date().getFullYear() - new Date(data.dob).getFullYear();
-                document.getElementById('uAgeNum').innerText = age;
-                const circle = document.getElementById('ageContainer');
-                circle.className = 'age-circle ' + (data.gender === 'male' ? 'gender-male' : 'gender-female');
-            }
-        });
+    <label>كلمة المرور الجديدة:</label>
+    <input type="text" id="pPass" placeholder="اتركه فارغاً إذا لا تريد التغيير">
 
-        document.getElementById('reqPhoneBtn').onclick = async () => {
-            const newP = prompt("أدخل رقم الجوال الجديد:");
-            if(newP) {
-                await addDoc(collection(db, "Requests"), {
-                    uid: auth.currentUser.uid,
-                    currentPhone: document.getElementById('uPhone').innerText,
-                    requestedPhone: newP,
-                    status: 'pending'
-                });
-                alert("تم إرسال الطلب بنجاح");
-            }
-        };
-    </script>
+    <label>تاريخ الميلاد:</label>
+    <input type="date" id="pDOB">
+
+    <button class="btn-save" onclick="saveProfile()">حفظ التعديلات</button>
+    <button onclick="location.href='news.html'" style="width:100%; margin-top:10px; border:none; background:none; cursor:pointer; color:#777;">العودة للرئيسية</button>
+</div>
+
+<script type="module">
+    import { auth, db } from './config.js';
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { updatePassword, updateEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    auth.onAuthStateChanged(async user => {
+        if(user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            const u = snap.data();
+            document.getElementById('pName').value = u.fullName;
+            document.getElementById('pPhone').value = u.phone;
+            document.getElementById('pEmail').value = u.email;
+            document.getElementById('pDOB').value = u.dob || "";
+        }
+    });
+
+    window.saveProfile = async () => {
+        const user = auth.currentUser;
+        const newName = document.getElementById('pName').value;
+        const newEmail = document.getElementById('pEmail').value;
+        const newPass = document.getElementById('pPass').value;
+        const newDOB = document.getElementById('pDOB').value;
+
+        try {
+            // تحديث البيانات في Firestore
+            await updateDoc(doc(db, "Users", user.uid), {
+                fullName: newName,
+                email: newEmail,
+                dob: newDOB
+            });
+
+            // تحديث الإيميل والباسوورد في Auth (يتطلب تسجيل دخول حديث)
+            if(newEmail !== user.email) await updateEmail(user, newEmail);
+            if(newPass) await updatePassword(user, newPass);
+
+            alert("تم تحديث بياناتك بنجاح!");
+        } catch (e) {
+            alert("خطأ: " + e.message + " (قد يتطلب الأمر إعادة تسجيل الدخول لتغيير البيانات الحساسة)");
+        }
+    };
+</script>
 </body>
 </html>
