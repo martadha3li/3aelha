@@ -3,56 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>الرئيسية</title>
+    <title>تطبيق التواصل الذكي</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 70px; }
-        
-        /* الإشعار المنبثق - تم تحسين التموضع */
-        .pop-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; 
-        }
-        .pop-card { width: 85%; max-width: 350px; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --twitter-blue: #1DA1F2; --gold: #ffc107; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; overflow-x: hidden; }
+
+        /* شريط علوي */
+        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .star-broadcast { color: var(--gold); font-size: 24px; cursor: pointer; animation: pulse 1.5s infinite; display: none; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* الإشعار المنبثق (Popup) */
+        .pop-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .pop-card { width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; text-align: center; animation: popUp 0.3s; }
         .pop-white { background: white; color: #333; }
         .pop-red { background: var(--danger); color: white; }
         .pop-green { background: var(--accent); color: white; }
+
+        /* شريط الإدارة والبحث */
+        .admin-nav { display: none; background: #fff; padding: 10px; border-bottom: 1px solid #eee; justify-content: space-around; }
+        .admin-btn { border: none; background: #eee; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; box-sizing: border-box; }
+
+        /* البطاقات والأخبار */
+        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.08); cursor: pointer; display: flex; }
+        .news-img-thumb { width: 110px; height: 110px; object-fit: cover; }
+        .news-brief { padding: 10px; flex: 1; }
+        .news-meta { font-size: 11px; color: #888; margin-top: 5px; }
+
+        /* مركز المحادثات */
+        .overlay-full { display: none; position: fixed; inset: 0; background: white; z-index: 4000; flex-direction: column; }
+        .overlay-header { background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-selector-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+        /* نافذة الدردشة النشطة */
+        .active-chat-window { display: none; position: fixed; inset: 0; background: #e5ddd5; z-index: 5000; flex-direction: column; }
+        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 80%; }
+        .my-msg { align-self: flex-end; background: #dcf8c6; }
+        .other-msg { align-self: flex-start; background: white; }
+
+        /* الشريط السفلي */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .nav-item { text-align: center; color: #7f8c8d; cursor: pointer; font-size: 11px; position: relative; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; }
         
-        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .star-bc { color: #ffc107; font-size: 24px; cursor: pointer; display: none; }
-        
-        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .news-img { width: 100px; height: 100px; object-fit: cover; }
-        .news-info { padding: 10px; flex: 1; }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="loginPopupOverlay" class="pop-overlay">
         <div id="loginPopupCard" class="pop-card">
-            <h3 id="popTitle">🔔 تنبيه</h3>
+            <h3 id="popTitle">📢 تنبيه من الإدارة</h3>
             <p id="popMsg"></p>
-            <button onclick="closePopup()" style="margin-top:20px; padding:10px 25px; border-radius:25px; border:none; cursor:pointer; font-weight:bold;">حسناً، إغلاق</button>
+            <button onclick="window.closePopup()" style="margin-top:15px; padding:10px 25px; border-radius:25px; border:none; cursor:pointer; font-weight:bold;">إغلاق</button>
         </div>
     </div>
 
-    <div id="mainPageContent">
-        <div class="top-bar">
-            <button id="logoutBtn" style="background:none; border:none; font-size:22px;">🚪</button>
-            <div id="broadcastStar" class="star-bc" onclick="showBC()">⭐</div>
-            <span style="font-weight:bold;">الرئيسية</span>
-        </div>
+    <div class="top-bar">
+        <button onclick="window.handleLogout()" style="background:none; border:none; font-size:22px; cursor:pointer;">🚪</button>
+        <div id="broadcastStar" class="star-broadcast" onclick="window.showBC()">⭐</div>
+        <div id="permsBadge" style="font-size:11px; color:var(--twitter-blue); font-weight:bold;"></div>
+        <span style="font-weight:bold;">الرئيسية</span>
+    </div>
 
-        <div id="newsContainer">
+    <div id="adminNav" class="admin-nav">
+        <button id="manageAppBtn" class="admin-btn" onclick="location.href='admin.html'" style="display:none">⚙️ إدارة التطبيق</button>
+        <button id="manageNewsBtn" class="admin-btn" onclick="window.openNewsEditor()" style="display:none">➕ إضافة خبر</button>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="newsSearchInp" class="search-input" placeholder="ابحث في الأخبار..." oninput="window.filterNews()">
+    </div>
+
+    <main id="newsListContainer"></main>
+
+    <div id="chatCenterOverlay" class="overlay-full">
+        <div class="overlay-header">
+            <span>مركز المحادثات</span>
+            <button onclick="window.toggleChatCenter()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+        </div>
+        <div style="padding:10px; overflow-y:auto; flex:1;">
+            <div class="chat-selector-item" onclick="window.openChat('Messages', 'الدردشة العامة')"><span>🌐 الدردشة العامة</span></div>
+            
+            <h4 style="margin:15px 10px 5px;">مجموعات الدردشة المؤقتة</h4>
+            <div id="tempGroupsList"></div>
+
+            <h4 style="margin:15px 10px 5px;">محادثة خاصة (ابحث برقم الجوال)</h4>
+            <div style="display:flex; padding:5px 10px;">
+                <input type="number" id="searchPhone" placeholder="رقم الجوال..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <button onclick="window.searchByPhone()" style="background:var(--primary); color:white; border:none; padding:10px; border-radius:10px; margin-right:5px;">بحث</button>
             </div>
+            
+            <h4 style="margin:15px 10px 5px;">المحادثات السابقة</h4>
+            <div id="previousChatsList"></div>
+        </div>
     </div>
+
+    <div id="activeChatWindow" class="active-chat-window">
+        <div class="overlay-header">
+            <span id="activeChatTitle">الدردشة</span>
+            <button onclick="window.closeActiveChat()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
+        </div>
+        <div id="chatMessages"></div>
+        <div style="padding:10px; background:white; display:flex; border-top:1px solid #eee;">
+            <input type="text" id="chatInput" style="flex:1; padding:12px; border-radius:20px; border:1px solid #ddd;" placeholder="اكتب رسالة...">
+            <button id="sendChatBtn" style="background:none; border:none; color:var(--primary); font-size:24px; margin-right:10px;">➤</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="location.reload()">📰<br>الأخبار</div>
+        <div class="nav-item" onclick="window.toggleChatCenter()">💬<br>الدردشة <span id="chatBadge" class="badge" style="display:none;">0</span></div>
+        <div class="nav-item" onclick="location.href='profile.html'">👤<br>بروفايل</div>
+    </nav>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { doc, getDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, where, getDocs, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        let userUID, userData, userAge;
+        let userUID, userData, userAge, currentChatPath, unsubMsgs, allNews = [];
 
         auth.onAuthStateChanged(async (user) => {
             if (user) {
@@ -61,68 +134,150 @@
                 userData = snap.data();
                 userAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
                 
-                loadNews();
-                checkPopupOnce(); // فحص الإشعار
-                checkStarBC();    // فحص النجمة
-            } else {
-                window.location.href = "index.html";
-            }
+                initPage();
+            } else { window.location.href = "index.html"; }
         });
 
-        // 1. جلب الأخبار والتأكد من ظهورها
+        function initPage() {
+            renderAdminTools();
+            loadNews();
+            loadTempGroups();
+            loadPreviousChats();
+            checkPopup();
+            checkStarBC();
+        }
+
+        // إظهار أدوات الإدارة
+        function renderAdminTools() {
+            const badge = document.getElementById('permsBadge');
+            let p = [];
+            if(userData.role === 'admin') p.push("مدير");
+            if(userData.canAdd) p.push("إضافة");
+            if(p.length > 0) {
+                badge.innerText = p.join(" | ");
+                document.getElementById('adminNav').style.display = 'flex';
+                if(userData.role === 'admin') document.getElementById('manageAppBtn').style.display = 'block';
+                if(userData.canAdd || userData.role === 'admin') document.getElementById('manageNewsBtn').style.display = 'block';
+            }
+        }
+
+        // تحميل الأخبار
         function loadNews() {
             onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
-                const container = document.getElementById('newsContainer');
+                const container = document.getElementById('newsListContainer');
                 container.innerHTML = "";
+                allNews = [];
                 snap.forEach(d => {
                     const n = d.data();
+                    allNews.push({id: d.id, ...n});
                     container.innerHTML += `
                         <div class="news-card">
-                            <img src="${n.img || 'https://via.placeholder.com/100'}" class="news-img">
-                            <div class="news-info">
-                                <h3 style="margin:0; font-size:16px;">${n.title}</h3>
-                                <p style="font-size:12px; color:#666;">${n.body.substring(0,50)}...</p>
+                            <img src="${n.img || 'https://via.placeholder.com/110'}" class="news-img-thumb">
+                            <div class="news-brief">
+                                <h3>${n.title}</h3>
+                                <div class="news-meta">🕊️ ${n.likes || 0} | 📅 ${n.date?.toDate().toLocaleDateString('ar-SA')}</div>
                             </div>
                         </div>`;
                 });
             });
         }
 
-        // 2. فحص الإشعار المنبثق لمرة واحدة فقط
-        function checkPopupOnce() {
+        // الإشعار المنبثق لمرة واحدة
+        function checkPopup() {
             onSnapshot(doc(db, "Settings", "loginPopup"), (snap) => {
                 if(snap.exists()) {
-                    const data = snap.data();
-                    const lastSeenID = localStorage.getItem('last_popup_id');
-                    
-                    // الشروط: الوقت لم ينتهِ + المعرف جديد لم يره المستخدم من قبل
-                    if(data.expiry > Date.now() && data.id !== lastSeenID) {
-                        showPopup(data);
+                    const d = snap.data();
+                    if(d.expiry > Date.now() && localStorage.getItem('last_pop_id') !== d.id) {
+                        document.getElementById('popMsg').innerText = d.message;
+                        document.getElementById('loginPopupCard').className = `pop-card pop-${d.type}`;
+                        document.getElementById('loginPopupOverlay').style.display = 'flex';
+                        localStorage.setItem('last_pop_id', d.id);
+                        if(d.duration > 0) setTimeout(() => window.closePopup(), d.duration * 1000);
                     }
                 }
             });
         }
+        window.closePopup = () => document.getElementById('loginPopupOverlay').style.display = 'none';
 
-        function showPopup(data) {
-            const overlay = document.getElementById('loginPopupOverlay');
-            const card = document.getElementById('loginPopupCard');
-            document.getElementById('popMsg').innerText = data.message;
-            card.className = `pop-card pop-${data.type}`;
-            overlay.style.display = 'flex';
-            
-            // تخزين المعرف فوراً لمنع التكرار عند التحديث
-            localStorage.setItem('last_popup_id', data.id);
-
-            if(data.duration > 0) {
-                setTimeout(() => { closePopup(); }, data.duration * 1000);
-            }
-        }
-
-        window.closePopup = () => {
-            document.getElementById('loginPopupOverlay').style.display = 'none';
+        // مركز المحادثات والدردشة
+        window.toggleChatCenter = () => {
+            const el = document.getElementById('chatCenterOverlay');
+            el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
         };
 
-        // 3. فحص النجمة الذهبية المستهدفة
+        window.searchByPhone = async () => {
+            const phone = document.getElementById('searchPhone').value;
+            const q = query(collection(db, "Users"), where("phone", "==", phone), limit(1));
+            const snap = await getDocs(q);
+            if(!snap.empty) {
+                const u = snap.docs[0];
+                const cid = [userUID, u.id].sort().join("_");
+                window.openChat(`PrivateChats/${cid}/messages`, u.data().fullName, cid);
+            } else { alert("لا يوجد مستخدم بهذا الرقم"); }
+        };
+
+        window.openChat = (path, title, cid = null) => {
+            currentChatPath = path;
+            document.getElementById('activeChatTitle').innerText = title;
+            document.getElementById('activeChatWindow').style.display = 'flex';
+            if(unsubMsgs) unsubMsgs();
+            const q = query(collection(db, path), orderBy("time", "asc"));
+            unsubMsgs = onSnapshot(q, (snap) => {
+                const box = document.getElementById('chatMessages');
+                box.innerHTML = "";
+                snap.forEach(d => {
+                    const m = d.data();
+                    box.innerHTML += `<div class="msg ${m.uid === userUID ? 'my-msg' : 'other-msg'}"><b>${m.sender}:</b><br>${m.text}</div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        window.closeActiveChat = () => {
+            document.getElementById('activeChatWindow').style.display = 'none';
+            if(unsubMsgs) unsubMsgs();
+        };
+
+        document.getElementById('sendChatBtn').onclick = async () => {
+            const inp = document.getElementById('chatInput');
+            if(!inp.value.trim()) return;
+            await addDoc(collection(db, currentChatPath), {
+                text: inp.value, sender: userData.fullName, uid: userUID, time: serverTimestamp()
+            });
+            inp.value = "";
+        };
+
+        function loadTempGroups() {
+            onSnapshot(collection(db, "TempGroups"), (snap) => {
+                const list = document.getElementById('tempGroupsList');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const g = d.data();
+                    if(g.expiry > Date.now() && !g.disabled) {
+                        list.innerHTML += `<div class="chat-selector-item" onclick="window.openChat('TempGroups/${d.id}/messages', '${g.name}')">👥 ${g.name}</div>`;
+                    }
+                });
+            });
+        }
+
+        function loadPreviousChats() {
+            onSnapshot(collection(db, "PrivateChats"), (snap) => {
+                const list = document.getElementById('previousChatsList');
+                list.innerHTML = "";
+                snap.forEach(async d => {
+                    if(d.id.includes(userUID)) {
+                        const otherUID = d.id.replace(userUID, "").replace("_", "");
+                        const u = (await getDoc(doc(db, "Users", otherUID))).data();
+                        list.innerHTML += `<div class="chat-selector-item" onclick="window.openChat('PrivateChats/${d.id}/messages', '${u.fullName}', '${d.id}')">👤 ${u.fullName}</div>`;
+                    }
+                });
+            });
+        }
+
+        window.handleLogout = () => { if(confirm("تسجيل خروج؟")) signOut(auth); };
+        
+        // النجمة الذهبية
+        let bcMsg = "";
         function checkStarBC() {
             onSnapshot(doc(db, "Settings", "broadcast"), (snap) => {
                 if(snap.exists()) {
@@ -130,13 +285,12 @@
                     const match = (d.targetGender === 'all' || d.targetGender === userData.gender) && 
                                   (userAge >= d.minAge && userAge <= d.maxAge) && (d.expiry > Date.now());
                     document.getElementById('broadcastStar').style.display = match ? 'block' : 'none';
-                    window.bcMessage = d.message;
+                    bcMsg = d.message;
                 }
             });
         }
-        window.showBC = () => alert("📢 " + window.bcMessage);
+        window.showBC = () => alert("📢 " + bcMsg);
 
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
     </script>
 </body>
 </html>
