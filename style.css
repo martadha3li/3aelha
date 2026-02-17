@@ -1,6 +1,6 @@
-/* ملف التنسيق الموحد - مرتضى الناصر 2026 */
+/* style.css - التصميم الاحترافي الموحد */
 :root {
-    --primary: #007aff; /* لون أزرق آيفون احترافي */
+    --primary: #007aff;
     --bg-light: #f2f2f7;
     --white: #ffffff;
     --text-main: #1c1c1e;
@@ -11,18 +11,17 @@
 }
 
 body {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     background-color: var(--bg-light);
-    color: var(--text-main);
     margin: 0;
-    padding-bottom: 80px; /* مساحة للقائمة السفلية */
+    padding-bottom: 90px;
     direction: rtl;
 }
 
-/* الهيدر العلوي الاحترافي */
+/* الهيدر الزجاجي */
 .top-bar {
     background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px); /* تأثير زجاجي */
+    backdrop-filter: blur(10px);
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
@@ -33,96 +32,37 @@ body {
     border-bottom: 1px solid #d1d1d6;
 }
 
-/* تصميم كروت الأخبار (مثل بوستات التواصل) */
+/* الكروت (المنشورات) */
 .news-card {
     background: var(--white);
     margin: 15px;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: var(--shadow);
-    border: 1px solid rgba(0,0,0,0.05);
 }
 
-.news-img-main {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
+.news-img-main { width: 100%; height: 250px; object-fit: cover; background: #eee; }
+
+.news-body-content { padding: 15px; }
+
+/* الأزرار العائمة */
+.floating-btn {
+    position: fixed; bottom: 100px; left: 20px;
+    width: 60px; height: 60px; background: var(--primary);
+    color: white; border: none; border-radius: 50%;
+    font-size: 28px; box-shadow: 0 6px 16px rgba(0,122,255,0.3);
+    cursor: pointer; z-index: 2000;
 }
 
-.news-body-content {
-    padding: 15px;
-}
-
-.author-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.author-img {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: #ddd;
-}
-
-/* القائمة السفلية العائمة */
+/* القائمة السفلية */
 .bottom-nav {
-    position: fixed;
-    bottom: 15px;
-    left: 15px;
-    right: 15px;
-    background: var(--white);
-    height: 65px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    border-radius: 25px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    position: fixed; bottom: 15px; left: 15px; right: 15px;
+    background: var(--white); height: 65px; display: flex;
+    justify-content: space-around; align-items: center;
+    border-radius: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     z-index: 2000;
 }
 
-.nav-item {
-    text-align: center;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 11px;
-    transition: 0.3s;
-}
-
-.nav-item.active {
-    color: var(--primary);
-}
-
-.nav-icon {
-    font-size: 22px;
-    display: block;
-}
-
-/* أزرار الأكشن */
-.btn-main {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 15px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-/* تصميم الفلوتينج بوتون */
-.floating-btn {
-    position: fixed;
-    bottom: 95px;
-    left: 25px;
-    width: 60px;
-    height: 60px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 28px;
-    box-shadow: 0 6px 16px rgba(0,122,255,0.3);
-    cursor: pointer;
-}
+.nav-item { text-align: center; color: var(--text-muted); text-decoration: none; font-size: 11px; }
+.nav-item.active { color: var(--primary); font-weight: bold; }
+.nav-icon { font-size: 22px; display: block; }
