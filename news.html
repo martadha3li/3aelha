@@ -5,43 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>الرئيسية</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --twitter-blue: #1da1f2; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 70px; }
+        :root { --primary: #2c3e50; --accent: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); padding-bottom: 70px; }
         
-        /* الإشعار المنبثق */
-        .pop-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .pop-card { width: 100%; max-width: 350px; padding: 25px; border-radius: 20px; text-align: center; position: relative; animation: popUp 0.3s ease-out; }
-        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* الإشعار المنبثق - تم تحسين التموضع */
+        .pop-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; 
+        }
+        .pop-card { width: 85%; max-width: 350px; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .pop-white { background: white; color: #333; }
         .pop-red { background: var(--danger); color: white; }
         .pop-green { background: var(--accent); color: white; }
         
-        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); sticky: top; z-index: 1000; }
-        .star-bc { color: #ffc107; font-size: 24px; cursor: pointer; display: none; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .top-bar { background: white; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .star-bc { color: #ffc107; font-size: 24px; cursor: pointer; display: none; }
+        
+        .news-card { background: white; margin: 12px; border-radius: 15px; overflow: hidden; display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .news-img { width: 100px; height: 100px; object-fit: cover; }
+        .news-info { padding: 10px; flex: 1; }
     </style>
 </head>
 <body>
 
     <div id="loginPopupOverlay" class="pop-overlay">
         <div id="loginPopupCard" class="pop-card">
-            <h3 id="popTitle">🔔 تنبيه الإدارة</h3>
+            <h3 id="popTitle">🔔 تنبيه</h3>
             <p id="popMsg"></p>
-            <button onclick="closePopup()" style="margin-top:15px; padding:8px 20px; border-radius:20px; border:none; cursor:pointer;">إغلاق</button>
+            <button onclick="closePopup()" style="margin-top:20px; padding:10px 25px; border-radius:25px; border:none; cursor:pointer; font-weight:bold;">حسناً، إغلاق</button>
         </div>
     </div>
 
-    <div class="top-bar">
-        <button onclick="signOutUser()" style="background:none; border:none; font-size:20px;">🚪</button>
-        <div id="broadcastStar" class="star-bc" onclick="showBC()">⭐</div>
-        <span id="pageTitle" style="font-weight:bold;">الرئيسية</span>
-    </div>
+    <div id="mainPageContent">
+        <div class="top-bar">
+            <button id="logoutBtn" style="background:none; border:none; font-size:22px;">🚪</button>
+            <div id="broadcastStar" class="star-bc" onclick="showBC()">⭐</div>
+            <span style="font-weight:bold;">الرئيسية</span>
+        </div>
 
-    <main id="newsContainer"></main>
+        <div id="newsContainer">
+            </div>
+    </div>
 
     <script type="module">
         import { auth, db } from './config.js';
-        import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { doc, getDoc, onSnapshot, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         let userUID, userData, userAge;
 
@@ -52,19 +61,41 @@
                 userData = snap.data();
                 userAge = new Date().getFullYear() - new Date(userData.dob).getFullYear();
                 
-                checkPopup();
-                checkStarBC();
+                loadNews();
+                checkPopupOnce(); // فحص الإشعار
+                checkStarBC();    // فحص النجمة
+            } else {
+                window.location.href = "index.html";
             }
         });
 
-        // فحص الإشعار المنبثق لمرة واحدة
-        function checkPopup() {
+        // 1. جلب الأخبار والتأكد من ظهورها
+        function loadNews() {
+            onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
+                const container = document.getElementById('newsContainer');
+                container.innerHTML = "";
+                snap.forEach(d => {
+                    const n = d.data();
+                    container.innerHTML += `
+                        <div class="news-card">
+                            <img src="${n.img || 'https://via.placeholder.com/100'}" class="news-img">
+                            <div class="news-info">
+                                <h3 style="margin:0; font-size:16px;">${n.title}</h3>
+                                <p style="font-size:12px; color:#666;">${n.body.substring(0,50)}...</p>
+                            </div>
+                        </div>`;
+                });
+            });
+        }
+
+        // 2. فحص الإشعار المنبثق لمرة واحدة فقط
+        function checkPopupOnce() {
             onSnapshot(doc(db, "Settings", "loginPopup"), (snap) => {
                 if(snap.exists()) {
                     const data = snap.data();
                     const lastSeenID = localStorage.getItem('last_popup_id');
                     
-                    // يظهر إذا كان: 1. لم ينتهِ وقته 2. المعرف الخاص به يختلف عن آخر إشعار شاهده المستخدم
+                    // الشروط: الوقت لم ينتهِ + المعرف جديد لم يره المستخدم من قبل
                     if(data.expiry > Date.now() && data.id !== lastSeenID) {
                         showPopup(data);
                     }
@@ -79,16 +110,19 @@
             card.className = `pop-card pop-${data.type}`;
             overlay.style.display = 'flex';
             
-            // تخزين المعرف لمنع الظهور مرة أخرى
+            // تخزين المعرف فوراً لمنع التكرار عند التحديث
             localStorage.setItem('last_popup_id', data.id);
-            
+
             if(data.duration > 0) {
                 setTimeout(() => { closePopup(); }, data.duration * 1000);
             }
         }
 
-        window.closePopup = () => document.getElementById('loginPopupOverlay').style.display = 'none';
+        window.closePopup = () => {
+            document.getElementById('loginPopupOverlay').style.display = 'none';
+        };
 
+        // 3. فحص النجمة الذهبية المستهدفة
         function checkStarBC() {
             onSnapshot(doc(db, "Settings", "broadcast"), (snap) => {
                 if(snap.exists()) {
@@ -101,6 +135,8 @@
             });
         }
         window.showBC = () => alert("📢 " + window.bcMessage);
+
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
     </script>
 </body>
 </html>
