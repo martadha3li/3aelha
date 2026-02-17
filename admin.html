@@ -3,47 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | الإدارة</title>
+    <title>الإدارة المتقدمة | الصلاحيات</title>
     <style>
         :root { --primary: #2c3e50; --accent: #27ae60; --danger: #e74c3c; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
         section { background: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; font-size: 1.2rem; }
-        .request-card { border: 1px solid #ddd; background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-right: 8px solid #f1c40f; }
-        .user-meta { font-size: 0.9rem; color: #555; background: #f9f9f9; padding: 10px; border-radius: 8px; margin: 10px 0; }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; margin-left: 5px; }
-        .btn-accent { background: var(--accent); }
-        .btn-danger { background: var(--danger); }
-        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        h2 { color: var(--primary); border-right: 4px solid var(--accent); padding-right: 10px; }
+        
+        /* تصميم جدول الأعضاء والصلاحيات */
+        .user-card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eee; }
+        .perm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+        .perm-item { font-size: 12px; display: flex; align-items: center; gap: 5px; }
+        
+        .group-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 8px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; font-size: 12px; }
+        .btn-del { background: var(--danger); }
+        .btn-toggle { background: #f39c12; }
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin: 5px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>لوحة تحكم المدير ⚙️</h1>
+    <h1>لوحة التحكم المتقدمة ⚙️</h1>
 
     <section>
-        <h2>طلبات تغيير رقم الجوال 📱</h2>
-        <div id="requestsList">جاري تحميل الطلبات...</div>
+        <h2>إدارة مجموعات الدردشة</h2>
+        <div id="adminGroupsList"></div>
+        <hr>
+        <h4>إنشاء مجموعة جديدة</h4>
+        <input type="text" id="groupName" placeholder="اسم المجموعة">
+        <input type="datetime-local" id="expiryTime">
+        <button class="btn" style="background:var(--primary)" id="btnCreateGroup">إنشاء وحفظ</button>
     </section>
 
     <section>
-        <h2>إدارة الأخبار</h2>
-        <input type="text" id="newsTitle" placeholder="العنوان">
-        <textarea id="newsBody" placeholder="المحتوى"></textarea>
-        <button class="btn btn-accent" id="btnPost">نشر الخبر</button>
-    </section>
-
-    <section>
-        <h2>إدارة الأعضاء</h2>
-        <div id="usersList"></div>
+        <h2>إدارة الأعضاء والصلاحيات 👥</h2>
+        <div id="usersList">جاري التحميل...</div>
     </section>
 </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -54,52 +57,77 @@
     });
 
     function init() {
-        loadRequests();
         loadUsers();
+        loadGroups();
     }
 
-    // تحميل الطلبات مع عرض كامل بيانات العضو
-    function loadRequests() {
-        onSnapshot(collection(db, "Requests"), (snap) => {
-            const list = document.getElementById('requestsList');
-            list.innerHTML = snap.empty ? "لا توجد طلبات معلقة." : "";
-            snap.forEach(async (d) => {
-                const r = d.data();
-                const uSnap = await getDoc(doc(db, "Users", r.uid));
-                const u = uSnap.data();
-                const age = new Date().getFullYear() - new Date(u.dob).getFullYear();
+    // إدارة الأعضاء وصلاحياتهم
+    function loadUsers() {
+        onSnapshot(collection(db, "Users"), (snap) => {
+            const list = document.getElementById('usersList');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const u = d.data();
+                if(u.role === 'admin' && d.id === auth.currentUser.uid) return;
 
                 const card = document.createElement('div');
-                card.className = 'request-card';
-                card.style.borderRightColor = u.gender === 'male' ? '#3498db' : '#ff69b4';
+                card.className = 'user-card';
                 card.innerHTML = `
-                    <div class="user-meta">
-                        <b>الاسم:</b> ${u.fullName} (${u.gender === 'male' ? 'ذكر' : 'أنثى'})<br>
-                        <b>الإيميل:</b> ${u.email || 'غير مسجل'}<br>
-                        <b>العمر:</b> ${age} سنة<br>
-                        ${u.gender === 'female' ? `<b style="color:#e91e63">بيانات المعرف:</b> ${u.guardianName} - ${u.guardianPhone}` : ''}
+                    <div style="display:flex; justify-content:space-between">
+                        <b>${u.fullName} (${u.phone})</b>
+                        <span style="color:blue">${u.role === 'admin' ? 'مدير كامل' : 'عضو'}</span>
                     </div>
-                    <p>التغيير المطلوب: من <b>${r.currentPhone}</b> إلى <b style="color:green">${r.requestedPhone}</b></p>
-                    <button class="btn btn-accent" onclick="approveReq('${d.id}', '${r.uid}', '${r.requestedPhone}')">تحديث الرقم الآن</button>
-                    <button class="btn btn-danger" onclick="rejectReq('${d.id}')">رفض الطلب</button>
+                    <div class="perm-grid">
+                        <label class="perm-item"><input type="checkbox" ${u.canAdd ? 'checked' : ''} onchange="updatePerm('${d.id}', 'canAdd', this.checked)"> إضافة أخبار</label>
+                        <label class="perm-item"><input type="checkbox" ${u.canEdit ? 'checked' : ''} onchange="updatePerm('${d.id}', 'canEdit', this.checked)"> تعديل أخبار</label>
+                        <label class="perm-item"><input type="checkbox" ${u.canDelete ? 'checked' : ''} onchange="updatePerm('${d.id}', 'canDelete', this.checked)"> حذف أخبار</label>
+                        <label class="perm-item" style="color:red; font-weight:bold;"><input type="checkbox" ${u.role === 'admin' ? 'checked' : ''} onchange="updatePerm('${d.id}', 'role', this.checked ? 'admin' : 'user')"> صلاحية مدير</label>
+                    </div>
                 `;
                 list.appendChild(card);
             });
         });
     }
 
-    window.approveReq = async (id, uid, phone) => {
-        await updateDoc(doc(db, "Users", uid), { phone: phone });
-        await deleteDoc(doc(db, "Requests", id));
-        alert("تم تحديث الجوال بنجاح");
+    window.updatePerm = async (uid, field, value) => {
+        await updateDoc(doc(db, "Users", uid), { [field]: value });
     };
 
-    window.rejectReq = async (id) => {
-        await deleteDoc(doc(db, "Requests", id));
-    };
+    // إدارة المجموعات (حذف وتعطيل)
+    function loadGroups() {
+        onSnapshot(collection(db, "TempGroups"), (snap) => {
+            const list = document.getElementById('adminGroupsList');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const g = d.data();
+                const card = document.createElement('div');
+                card.className = 'group-card';
+                card.innerHTML = `
+                    <div>
+                        <b>${g.name}</b><br>
+                        <small>ينتهي: ${new Date(g.expiry).toLocaleString()}</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-toggle" onclick="toggleGroup('${d.id}', ${g.disabled})">${g.disabled ? 'تفعيل' : 'تعطيل مؤقت'}</button>
+                        <button class="btn btn-del" onclick="deleteGroup('${d.id}')">حذف نهائي</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        });
+    }
 
-    function loadUsers() { /* كود عرض الأعضاء السابق */ }
-    document.getElementById('btnPost').onclick = async () => { /* كود النشر السابق */ };
+    window.toggleGroup = async (id, status) => { await updateDoc(doc(db, "TempGroups", id), { disabled: !status }); };
+    window.deleteGroup = async (id) => { if(confirm("حذف المجموعة؟")) await deleteDoc(doc(db, "TempGroups", id)); };
+
+    document.getElementById('btnCreateGroup').onclick = async () => {
+        const name = document.getElementById('groupName').value;
+        const exp = document.getElementById('expiryTime').value;
+        if(name && exp) {
+            await addDoc(collection(db, "TempGroups"), { name, expiry: new Date(exp).getTime(), disabled: false });
+            alert("تم الإنشاء");
+        }
+    };
 </script>
 </body>
 </html>
