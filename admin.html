@@ -3,35 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة الشاملة</title>
+    <title>لوحة الإدارة المتكاملة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-wrapper { padding: 15px; max-width: 650px; margin: auto; }
-        
-        /* كروت الإحصائيات */
-        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 3px solid var(--primary); }
-        .stat-card h3 { font-size: 22px; color: var(--primary); margin: 5px 0; }
-        
-        /* الأقسام */
+        .admin-wrapper { padding: 15px; max-width: 800px; margin: auto; }
         .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
-        .section-header h2 { font-size: 15px; margin: 0; color: var(--text-main); }
+        
+        /* تصميم الجدول */
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+        th { background: #f8f9fa; padding: 12px; color: var(--primary); border-bottom: 2px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f5f5f5; }
 
-        /* الصناديق التنبيهية للطلبات */
-        .request-item { padding: 12px; border-radius: 15px; margin-bottom: 10px; border: 1px solid transparent; }
-        .req-phone { background: #eef6ff; border-color: #bcd9ff; } /* أزرق للجوال */
-        .req-pass { background: #fff1f1; border-color: #ffcccc; } /* أحمر للباسورد */
-        .req-role { background: #fff9e6; border-color: #ffeeba; } /* أصفر للصلاحيات */
+        /* ألوان الحالات */
+        .status-active { color: #34c759; font-weight: bold; }
+        .status-stopped { color: #ff3b30; font-weight: bold; }
+        .role-badge { background: #eef6ff; color: var(--primary); padding: 3px 8px; border-radius: 8px; font-size: 11px; font-weight: bold; }
 
-        .req-info { font-size: 12px; margin-bottom: 8px; line-height: 1.5; }
-        .req-btns { display: flex; gap: 8px; }
-        .btn-action-ok { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; }
-        .btn-action-no { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; }
-
-        /* التصنيفات */
-        .cat-tag { background: #f0f0f0; padding: 5px 12px; border-radius: 15px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
-        .cat-del { color: red; cursor: pointer; font-weight: bold; }
+        /* صندوق البحث */
+        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; outline: none; }
+        
+        .request-item { background: #fdfdfd; border: 1px solid #eee; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-group { display: flex; gap: 5px; justify-content: center; }
+        .mini-btn { padding: 5px 8px; border-radius: 8px; border: none; font-size: 10px; cursor: pointer; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -39,150 +34,150 @@
     <div class="top-bar">
         <div style="display:flex; align-items:center; gap:10px;">
             <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
-            <b style="font-size: 16px;">الإدارة العامة</b>
+            <b style="font-size: 16px;">مركز الإدارة والتحكم</b>
         </div>
         <img src="logo.png" style="height: 35px; border-radius: 5px;">
     </div>
 
     <div class="admin-wrapper">
-        <div class="stat-grid">
-            <div class="stat-card"><h3>الأعضاء</h3><span id="usersCount">0</span></div>
-            <div class="stat-card"><h3>الأخبار</h3><span id="newsCount">0</span></div>
+        
+        <div class="admin-section">
+            <div class="section-header"><h2>🛠️ فريق الإدارة الحالي</h2></div>
+            <div id="adminTeamList"></div>
+        </div>
+
+        <div class="admin-section" style="border-right: 5px solid var(--accent);">
+            <div class="section-header"><h2>📥 طلبات التفعيل الجديدة</h2></div>
+            <div id="activationRequests"></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>📱 طلبات تغيير رقم الجوال</h2></div>
-            <div id="phoneRequests"></div>
-        </div>
-
-        <div class="admin-section">
-            <div class="section-header"><h2>🔑 طلبات إعادة تعيين كلمة المرور</h2></div>
-            <div id="passRequests"></div>
-        </div>
-
-        <div class="admin-section">
-            <div class="section-header"><h2>📥 طلبات ترقية الصلاحية</h2></div>
-            <div id="roleRequests"></div>
-        </div>
-
-        <div class="admin-section">
-            <div class="section-header">
-                <h2>📁 إدارة تصنيفات الأخبار</h2>
-                <button class="btn-action-ok" onclick="addNewCategory()">+ إضافة</button>
+            <div class="section-header"><h2>👥 قاعدة بيانات الأعضاء</h2></div>
+            <input type="text" id="userSearch" class="search-box" placeholder="🔍 ابحث برقم الجوال أو الاسم..." onkeyup="filterUsers()">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>العضو</th>
+                            <th>الجوال</th>
+                            <th>الصلاحية</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
             </div>
-            <div id="categoriesList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
         </div>
+
+        <div id="previousRequestsSections">
+            </div>
     </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
             if (snap.data().role !== 'admin') { location.href = 'news.html'; }
-            initAdminDashboard();
+            loadAdminPower();
         } else { location.href = 'index.html'; }
     });
 
-    function initAdminDashboard() {
-        // الإحصائيات
-        onSnapshot(collection(db, "Users"), s => document.getElementById('usersCount').innerText = s.size);
-        onSnapshot(collection(db, "News"), s => document.getElementById('newsCount').innerText = s.size);
-
-        // طلبات الجوال
-        onSnapshot(collection(db, "PhoneRequests"), snap => {
-            const cont = document.getElementById('phoneRequests');
-            cont.innerHTML = snap.empty ? '<p style="font-size:12px; color:gray;">لا توجد طلبات</p>' : "";
-            snap.forEach(r => {
-                const data = r.data();
-                cont.innerHTML += `
-                    <div class="request-item req-phone">
-                        <div class="req-info">👤 <b>${data.userName}</b><br>يريد تغيير رقمه إلى: <b>${data.newPhone}</b></div>
-                        <div class="req-btns">
-                            <button class="btn-action-ok" onclick="approvePhone('${r.id}', '${data.userId}', '${data.newPhone}')">تحديث الجوال ✅</button>
-                            <button class="btn-action-no" onclick="rejectReq('PhoneRequests', '${r.id}')">رفض</button>
-                        </div>
-                    </div>`;
-            });
-        });
-
-        // طلبات كلمة المرور
-        onSnapshot(collection(db, "PasswordRequests"), snap => {
-            const cont = document.getElementById('passRequests');
-            cont.innerHTML = snap.empty ? '<p style="font-size:12px; color:gray;">لا توجد طلبات</p>' : "";
-            snap.forEach(r => {
-                const data = r.data();
-                cont.innerHTML += `
-                    <div class="request-item req-pass">
-                        <div class="req-info">👤 <b>${data.userName}</b><br>يطلب كلمة مرور جديدة: <b>${data.requestedPass}</b></div>
-                        <div class="req-btns">
-                            <button class="btn-action-ok" onclick="approvePass('${r.id}', '${data.userId}', '${data.requestedPass}')">تغيير الآن ✅</button>
-                            <button class="btn-action-no" onclick="rejectReq('PasswordRequests', '${r.id}')">رفض</button>
-                        </div>
-                    </div>`;
-            });
-        });
-
-        // طلبات الصلاحية
-        onSnapshot(collection(db, "RoleRequests"), snap => {
-            const cont = document.getElementById('roleRequests');
-            cont.innerHTML = snap.empty ? '<p style="font-size:12px; color:gray;">لا توجد طلبات</p>' : "";
-            snap.forEach(r => {
-                const data = r.data();
-                cont.innerHTML += `
-                    <div class="request-item req-role">
-                        <div class="req-info">👤 <b>${data.userName}</b> يطلب رتبة: <b>${data.requestedRole}</b></div>
-                        <div class="req-btns">
-                            <button class="btn-action-ok" onclick="approveRole('${r.id}', '${data.userId}', '${data.requestedRole}')">ترقية ✅</button>
-                            <button class="btn-action-no" onclick="rejectReq('RoleRequests', '${r.id}')">رفض</button>
-                        </div>
-                    </div>`;
-            });
-        });
-
-        // إدارة التصنيفات
-        onSnapshot(collection(db, "Categories"), snap => {
-            const cont = document.getElementById('categoriesList');
+    function loadAdminPower() {
+        // --- 1. فريق الإدارة ---
+        const teamQ = query(collection(db, "Users"), where("role", "in", ["admin", "editor"]));
+        onSnapshot(teamQ, snap => {
+            const cont = document.getElementById('adminTeamList');
             cont.innerHTML = "";
-            snap.forEach(c => {
-                cont.innerHTML += `<div class="cat-tag">${c.data().name} <span class="cat-del" onclick="delCategory('${c.id}')">✕</span></div>`;
+            snap.forEach(u => {
+                const d = u.data();
+                if(u.id === auth.currentUser.uid) return;
+                cont.innerHTML += `
+                    <div class="request-item">
+                        <div><b>${d.fullName}</b> <span class="role-badge">${d.role}</span></div>
+                        <button class="mini-btn" style="background:var(--accent)" onclick="location.href='chat.html?target=${u.id}'">💬 دردشة</button>
+                    </div>`;
+            });
+        });
+
+        // --- 2. طلبات التفعيل الجدد (الأعضاء بحالة pending) ---
+        const pendingQ = query(collection(db, "Users"), where("status", "==", "pending"));
+        onSnapshot(pendingQ, snap => {
+            const cont = document.getElementById('activationRequests');
+            cont.innerHTML = snap.empty ? '<p style="font-size:12px; color:gray;">لا توdx طلبات تفعيل</p>' : "";
+            snap.forEach(u => {
+                const d = u.data();
+                cont.innerHTML += `
+                    <div class="request-item">
+                        <div><b>${d.fullName}</b><br><small>${d.phone}</small></div>
+                        <div class="btn-group">
+                            <button class="mini-btn" style="background:#34c759" onclick="updateStatus('${u.id}', 'active')">تفعيل</button>
+                            <button class="mini-btn" style="background:#ff3b30" onclick="deleteUser('${u.id}')">إلغاء</button>
+                        </div>
+                    </div>`;
+            });
+        });
+
+        // --- 3. جدول كافة الأعضاء مع البحث ---
+        onSnapshot(collection(db, "Users"), snap => {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = "";
+            snap.forEach(u => {
+                const d = u.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${d.fullName}</td>
+                    <td class="user-phone-cell">${d.phone}</td>
+                    <td><span class="role-badge">${d.role || 'عضو'}</span></td>
+                    <td><span class="${d.status === 'active' ? 'status-active' : 'status-stopped'}">${d.status === 'active' ? 'نشط' : 'موقف'}</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="mini-btn" style="background:#007aff" onclick="editUser('${u.id}')">✏️</button>
+                            <button class="mini-btn" style="background:#5856d6" onclick="grantRole('${u.id}')">🛡️</button>
+                            <button class="mini-btn" style="background:#ff9500" onclick="toggleStatus('${u.id}', '${d.status}')">🚫</button>
+                            <button class="mini-btn" style="background:#ff3b30" onclick="deleteUser('${u.id}')">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
         });
     }
 
-    // دوال التنفيذ
-    window.approvePhone = async (reqId, uid, phone) => {
-        await updateDoc(doc(db, "Users", uid), { phone: phone });
-        await deleteDoc(doc(db, "PhoneRequests", reqId));
-        alert("تم تحديث رقم الجوال.");
+    // --- الدوال التنفيذية ---
+    window.updateStatus = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s });
+    
+    window.toggleStatus = async (id, current) => {
+        const next = current === 'active' ? 'stopped' : 'active';
+        await updateDoc(doc(db, "Users", id), { status: next });
     };
 
-    window.approvePass = async (reqId, uid, pass) => {
-        // ملاحظة: تغيير الباسورد برمجياً من الأدمن يتطلب دوال سحابية، هنا نحدثه في سجل المستخدم ليراه العضو
-        await updateDoc(doc(db, "Users", uid), { tempPassword: pass });
-        await deleteDoc(doc(db, "PasswordRequests", reqId));
-        alert("تم إرسال كلمة المرور الجديدة للعضو.");
+    window.editUser = async (id) => {
+        const newName = prompt("تعديل الاسم الكامل:");
+        if(newName) await updateDoc(doc(db, "Users", id), { fullName: newName });
     };
 
-    window.approveRole = async (reqId, uid, role) => {
-        await updateDoc(doc(db, "Users", uid), { role: role });
-        await deleteDoc(doc(db, "RoleRequests", reqId));
-        alert("تمت ترقية الصلاحية.");
+    window.grantRole = async (id) => {
+        const newRole = prompt("منح صلاحية (admin / editor / user):");
+        if(newRole) await updateDoc(doc(db, "Users", id), { role: newRole });
     };
 
-    window.rejectReq = async (col, id) => {
-        if(confirm("هل تريد رفض وحذف هذا الطلب؟")) await deleteDoc(doc(db, col, id));
+    window.deleteUser = async (id) => {
+        if(confirm("حذف العضو نهائياً؟")) await deleteDoc(doc(db, "Users", id));
     };
 
-    window.addNewCategory = async () => {
-        const name = prompt("أدخل اسم التصنيف الجديد:");
-        if(name) await addDoc(collection(db, "Categories"), { name, createdAt: serverTimestamp() });
-    };
-
-    window.delCategory = async (id) => {
-        if(confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "Categories", id));
+    // --- وظيفة البحث ---
+    window.filterUsers = () => {
+        const input = document.getElementById('userSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('#usersTableBody tr');
+        rows.forEach(row => {
+            const name = row.cells[0].innerText.toLowerCase();
+            const phone = row.cells[1].innerText;
+            row.style.display = (name.includes(input) || phone.includes(input)) ? "" : "none";
+        });
     };
 </script>
 </body>
