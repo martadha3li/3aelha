@@ -2,36 +2,142 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>إدارة التصنيفات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة التصنيفات المتقدمة</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-wrapper { padding: 15px; max-width: 800px; margin: auto; }
+        .category-card { background: white; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        
+        /* نموذج الإضافة */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--primary); }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+
+        /* جدول التصنيفات */
+        .cat-table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; margin-top: 10px; }
+        .cat-table th { background: #f8f9fa; padding: 15px; text-align: center; font-size: 14px; border-bottom: 2px solid #eee; }
+        .cat-table td { padding: 15px; border-bottom: 1px solid #f5f5f5; text-align: center; font-size: 13px; }
+
+        .btn-save { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; }
+        .action-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; color: white; font-size: 12px; font-weight: bold; margin: 0 2px; }
+    </style>
 </head>
-<body>
-    <a href="admin.html">⬅️ العودة</a>
-    <h1>إدارة تصنيفات الأخبار</h1>
-    <input type="text" id="catName" placeholder="اسم التصنيف الجديد">
-    <button onclick="addCategory()">إضافة تصنيف</button>
-    
-    <div id="catsList" style="margin-top:20px;"></div>
+<body style="background: #f8f9fa;">
+
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+            <b>إدارة التصنيفات المتقدمة</b>
+        </div>
+        <img src="logo.png" style="height: 35px; border-radius: 5px;">
+    </div>
+
+    <div class="admin-wrapper">
+        <div class="category-card">
+            <h2 style="font-size: 18px; margin-bottom: 15px;">🆕 إضافة تصنيف جديد</h2>
+            <div class="input-group">
+                <label>اسم التصنيف (يظهر في القائمة الجانبية):</label>
+                <input type="text" id="catName" class="form-input" placeholder="مثلاً: أخبار عاجلة، تعازي...">
+            </div>
+            <div class="input-group">
+                <label>العنوان الافتراضي (يظهر تلقائياً عند كتابة خبر):</label>
+                <input type="text" id="catDefTitle" class="form-input" placeholder="مثلاً: يتقدم مجلس العائلة بخالص العزاء لـ...">
+            </div>
+            <button class="btn-save" onclick="saveCategory()">حفظ التصنيف الجديد ✨</button>
+        </div>
+
+        <div class="category-card" style="padding: 10px;">
+            <h2 style="font-size: 18px; padding: 15px;">📁 التصنيفات الحالية</h2>
+            <div style="overflow-x: auto;">
+                <table class="cat-table">
+                    <thead>
+                        <tr>
+                            <th>التصنيف</th>
+                            <th>العنوان الافتراضي</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    onSnapshot(collection(db, "Categories"), snap => {
-        const list = document.getElementById('catsList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            list.innerHTML += `<div>📁 ${d.data().name} <button onclick="deleteCat('${d.id}')">حذف</button></div>`;
-        });
+    // حماية الصفحة
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role !== 'admin') location.href = 'news.html';
+            loadCategories();
+        } else location.href = 'index.html';
     });
 
-    window.addCategory = async () => {
-        const name = document.getElementById('catName').value;
-        if(!name) return;
-        await addDoc(collection(db, "Categories"), { name: name });
+    // 1. جلب وعرض التصنيفات
+    function loadCategories() {
+        onSnapshot(query(collection(db, "Categories"), orderBy("createdAt", "desc")), snap => {
+            const tbody = document.getElementById('categoriesTableBody');
+            tbody.innerHTML = "";
+            snap.forEach(c => {
+                const d = c.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold;">${d.name}</td>
+                        <td style="color:gray;">${d.defaultTitle || '---'}</td>
+                        <td>
+                            <button class="action-btn" style="background:#007aff" onclick="editCat('${c.id}', '${d.name}', '${d.defaultTitle}')">✏️</button>
+                            <button class="action-btn" style="background:#ff3b30" onclick="deleteCat('${c.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    // 2. حفظ تصنيف جديد
+    window.saveCategory = async () => {
+        const name = document.getElementById('catName').value.trim();
+        const defTitle = document.getElementById('catDefTitle').value.trim();
+
+        if(!name) return alert("يرجى إدخال اسم التصنيف");
+
+        await addDoc(collection(db, "Categories"), {
+            name: name,
+            defaultTitle: defTitle,
+            createdAt: serverTimestamp()
+        });
+
         document.getElementById('catName').value = "";
+        document.getElementById('catDefTitle').value = "";
+        alert("تمت إضافة التصنيف بنجاح ✅");
     };
 
-    window.deleteCat = async (id) => { if(confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "Categories", id)); };
+    // 3. تعديل تصنيف
+    window.editCat = async (id, oldName, oldTitle) => {
+        const newName = prompt("تعديل اسم التصنيف:", oldName);
+        const newTitle = prompt("تعديل العنوان الافتراضي:", oldTitle);
+        
+        if (newName) {
+            await updateDoc(doc(db, "Categories", id), {
+                name: newName,
+                defaultTitle: newTitle || ""
+            });
+            alert("تم التحديث بنجاح");
+        }
+    };
+
+    // 4. حذف تصنيف
+    window.deleteCat = async (id) => {
+        if(confirm("هل أنت متأكد من حذف هذا التصنيف؟ سيؤدي ذلك لإزالته من القائمة الجانبية.")) {
+            await deleteDoc(doc(db, "Categories", id));
+        }
+    };
 </script>
 </body>
 </html>
