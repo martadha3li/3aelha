@@ -3,186 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تايم لاين | إنستغرام ستايل</title>
+    <title>تسجيل الدخول | منصة التواصل</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .header-icons { display: flex; gap: 15px; align-items: center; }
-        .icon-btn { cursor: pointer; font-size: 22px; transition: 0.2s; }
-        .icon-btn:hover { transform: scale(1.1); }
-        
-        /* أدوات التحرير */
-        .edit-tools { display: flex; gap: 10px; padding: 10px; border-top: 1px solid #eee; background: #fafafa; }
-        .btn-tool { font-size: 11px; border: 1px solid #ddd; padding: 4px 8px; border-radius: 8px; cursor: pointer; background: white; }
-        
-        /* قسم التعليقات المنسدل */
-        .comments-tray { display: none; padding: 10px; background: #f9f9f9; border-top: 1px solid #eee; max-height: 200px; overflow-y: auto; }
-        .comment-item { font-size: 12px; margin-bottom: 5px; }
-        .stopped-mark { background: var(--danger); color: white; padding: 2px 10px; border-radius: 5px; font-size: 10px; margin-bottom: 5px; display: inline-block; }
-
-        /* نافذة التعديل */
-        .modal-edit { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; align-items:center; justify-content:center; }
-        .edit-form { background:white; width:90%; max-width:400px; padding:20px; border-radius:20px; }
+        /* تنسيقات إضافية لضمان ثبات الصفحة */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--white);
+            padding: 40px 30px;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .login-card h2 {
+            margin: 0 0 25px 0;
+            color: var(--text-main);
+            font-size: 22px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e1e1e6;
+            border-radius: 15px;
+            box-sizing: border-box;
+            outline: none;
+            background: #f9f9fb;
+            font-size: 16px;
+        }
+        .form-input:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+        .links-group {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        .links-group a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .error-msg {
+            color: var(--danger);
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <img src="logo.png" style="height:35px; border-radius:8px;">
-            <b style="color:var(--primary);">مرتضى الناصر</b>
-        </div>
-        <div class="header-icons">
-            <span id="adminBtn" class="icon-btn" style="display:none;" onclick="location.href='admin.html'">⚙️</span>
-            <span class="icon-btn" onclick="handleLogout()">Logout 🚪</span>
-        </div>
-    </div>
+    <div class="login-card">
+        <img src="logo.png" alt="Logo" style="width: 90px; height: auto; margin-bottom: 15px; border-radius: 18px;">
+        
+        <h2>مرحباً بك مجدداً</h2>
 
-    <div id="newsFeed"></div>
+        <div id="errorMessage" class="error-msg">بيانات الدخول غير صحيحة</div>
 
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
+        <input type="text" id="loginId" class="form-input" placeholder="رقم الجوال أو البريد">
+        <input type="password" id="loginPass" class="form-input" placeholder="كلمة المرور">
+        
+        <button class="btn-main" style="width: 100%; padding: 16px; font-size: 17px;" id="loginBtn">
+            تسجيل الدخول
+        </button>
 
-    <div id="editModal" class="modal-edit">
-        <div class="edit-form">
-            <h3>✏️ تعديل المنشور</h3>
-            <input type="text" id="editTitle" class="form-input" style="width:100%; margin-bottom:10px;">
-            <textarea id="editBody" class="form-input" style="width:100%; height:100px; margin-bottom:10px;"></textarea>
-            <button class="btn-main" id="saveEditBtn" style="width:100%;">حفظ التعديلات</button>
-            <button onclick="closeEdit()" style="width:100%; background:none; border:none; margin-top:10px; color:gray;">إلغاء</button>
+        <div class="links-group">
+            <a href="register.html">إنشاء حساب</a>
+            <span style="color: #ddd;">|</span>
+            <a href="forgot.html" style="color: var(--danger);">نسيت كلمة المرور؟</a>
         </div>
     </div>
-
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span></a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span></a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span></a>
-    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData;
+    // تعريف الدالة داخل النطاق وربطها بالزر
+    const handleLogin = async () => {
+        const id = document.getElementById('loginId').value.trim();
+        const pass = document.getElementById('loginPass').value;
+        const btn = document.getElementById('loginBtn');
+        const errorDiv = document.getElementById('errorMessage');
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            userUID = user.uid;
-            const s = await getDoc(doc(db, "Users", user.uid));
-            userData = s.data();
-            if (userData.role === 'admin' || userData.role === 'editor') {
-                document.getElementById('addNewsBtn').style.display = 'block';
-                document.getElementById('adminBtn').style.display = 'block';
-            }
-            loadFeed();
-        } else { window.location.href = "index.html"; }
-    });
+        if (!id || !pass) {
+            alert("يرجى إدخال البيانات كاملة");
+            return;
+        }
 
-    function loadFeed() {
-        onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
-            const feed = document.getElementById('newsFeed');
-            feed.innerHTML = "";
-            snap.forEach((d) => {
-                const n = d.data();
-                const isAllowed = (userUID === n.authorId) || (userData.role === 'admin');
+        btn.disabled = true;
+        btn.innerText = "جاري الدخول...";
+        errorDiv.style.display = "none";
+
+        let email = id;
+
+        try {
+            // 1. إذا كان المدخل رقم جوال، نبحث عن الإيميل المرتبط به
+            if (!id.includes('@')) {
+                const q = query(collection(db, "Users"), where("phone", "==", id));
+                const snap = await getDocs(q);
                 
-                // إخفاء الخبر الموقوف عن العاديين
-                if(n.isStopped && !isAllowed) return;
+                if (snap.empty) {
+                    throw new Error("رقم الجوال غير مسجل لدينا");
+                }
+                email = snap.docs[0].data().email;
+            }
 
-                const hasLiked = n.likedBy?.includes(userUID);
+            // 2. محاولة تسجيل الدخول
+            const userCred = await signInWithEmailAndPassword(auth, email, pass);
+            const user = userCred.user;
 
-                feed.innerHTML += `
-                    <div class="news-card">
-                        <div class="news-body-content">
-                            ${n.isStopped ? `<span class="stopped-mark">⚠️ تم إيقاف نشر هذا الخبر</span>` : ''}
-                            <div class="author-info">
-                                <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
-                                <div><b>${n.authorName}</b><br><small>${n.category}</small></div>
-                            </div>
-                        </div>
-                        <img src="${n.img}" class="news-img-main">
-                        <div class="news-body-content">
-                            <h3 style="margin-bottom:5px;">${n.title}</h3>
-                            <p style="font-size:13px;">${n.body}</p>
-                            
-                            <div style="display:flex; gap:15px; margin-top:15px; font-weight:bold;">
-                                <span onclick="toggleLike('${d.id}', ${hasLiked})" style="cursor:pointer; color:${hasLiked ? 'red' : 'black'}">
-                                    ${hasLiked ? '❤️' : '🤍'} ${n.likedBy?.length || 0}
-                                </span>
-                                <span onclick="toggleComments('${d.id}')" style="cursor:pointer;">💬 التعليقات</span>
-                            </div>
-                        </div>
+            // 3. جلب بيانات المستخدم للتأكد من الحالة والصلاحية
+            const userDoc = await getDoc(doc(db, "Users", user.uid));
+            
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
 
-                        <div id="tray-${d.id}" class="comments-tray">
-                            <div id="list-${d.id}">جاري التحميل...</div>
-                            <div style="display:flex; margin-top:10px;">
-                                <input type="text" id="inp-${d.id}" placeholder="أضف تعليقاً..." style="flex:1; border:none; background:#eee; padding:5px; border-radius:5px;">
-                                <button onclick="addComm('${d.id}')" style="border:none; background:var(--primary); color:white; border-radius:5px; margin-right:5px;">نشر</button>
-                            </div>
-                        </div>
+                if (userData.status === "disabled") {
+                    await auth.signOut();
+                    alert("عذراً، هذا الحساب معطل حالياً من قبل الإدارة.");
+                    location.reload();
+                    return;
+                }
 
-                        ${isAllowed ? `
-                            <div class="edit-tools">
-                                <button class="btn-tool" onclick="openEdit('${d.id}', '${n.title}', '${n.body}')">✏️ تعديل</button>
-                                <button class="btn-tool" style="color:orange" onclick="stopNews('${d.id}', ${n.isStopped})">${n.isStopped ? '✅ إعادة نشر' : '🚫 إيقاف النشر'}</button>
-                                <button class="btn-tool" style="color:red" onclick="delNews('${d.id}')">🗑️ حذف</button>
-                            </div>
-                        ` : ''}
-                    </div>`;
-            });
-        });
-    }
+                // عرض الصلاحية والترحيب
+                const role = userData.role || "عضو";
+                alert(`أهلاً بك يا ${userData.fullName} \n صلاحيتك الحالية: ${role}`);
+                
+                // التوجه للرئيسية
+                window.location.href = "news.html";
+            }
 
-    // --- نظام الإعجاب ---
-    window.toggleLike = async (id, hasLiked) => {
-        const ref = doc(db, "News", id);
-        await updateDoc(ref, {
-            likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID)
-        });
+        } catch (error) {
+            btn.disabled = false;
+            btn.innerText = "تسجيل الدخول";
+            errorDiv.style.display = "block";
+            errorDiv.innerText = "خطأ: " + error.message;
+            console.error(error);
+        }
     };
 
-    // --- نظام التعليقات ---
-    window.toggleComments = (id) => {
-        const tray = document.getElementById(`tray-${id}`);
-        tray.style.display = tray.style.display === 'block' ? 'none' : 'block';
-        if(tray.style.display === 'block') loadComms(id);
-    };
-
-    window.loadComms = (id) => {
-        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), s => {
-            const list = document.getElementById(`list-${id}`);
-            list.innerHTML = s.empty ? "لا توجد تعليقات بعد." : "";
-            s.forEach(c => {
-                list.innerHTML += `<div class="comment-item"><b>${c.data().userName}:</b> ${c.data().text}</div>`;
-            });
-        });
-    };
-
-    window.addComm = async (id) => {
-        const txt = document.getElementById(`inp-${id}`).value;
-        if(!txt) return;
-        await addDoc(collection(db, `News/${id}/Comments`), {
-            text: txt, userName: userData.fullName, timestamp: serverTimestamp()
-        });
-        document.getElementById(`inp-${id}`).value = "";
-    };
-
-    // --- أدوات التحرير ---
-    window.openEdit = (id, t, b) => {
-        document.getElementById('editModal').style.display = 'flex';
-        document.getElementById('editTitle').value = t;
-        document.getElementById('editBody').value = b;
-        document.getElementById('saveEditBtn').onclick = async () => {
-            await updateDoc(doc(db, "News", id), {
-                title: document.getElementById('editTitle').value,
-                body: document.getElementById('editBody').value
-            });
-            closeEdit();
-        };
-    };
-    window.closeEdit = () => document.getElementById('editModal').style.display = 'none';
-    window.stopNews = async (id, currentStatus) => await updateDoc(doc(db, "News", id), { isStopped: !currentStatus });
-    window.delNews = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
-    window.handleLogout = async () => { await signOut(auth); location.href="index.html"; };
+    // ربط الدالة بالزر برمجياً (أفضل من onclick في الـ HTML)
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
 </script>
+
 </body>
 </html>
