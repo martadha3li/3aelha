@@ -5,20 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الرئيسية | تايم لاين</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* تحسينات إضافية للتفاعل */
+        .post-actions {
+            display: flex;
+            gap: 20px;
+            padding: 10px 15px;
+            border-top: 1px solid #f0f0f2;
+        }
+        .action-item {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .action-item:active { transform: scale(0.9); }
+        .like-active { color: #ff3b30; }
+
+        /* نافذة التعليقات المنسدلة (إنستغرام ستايل) */
+        .comments-tray {
+            display: none;
+            background: #f9f9fb;
+            border-top: 1px solid #eee;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .comment-msg {
+            margin-bottom: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .comment-msg b { color: var(--primary); margin-left: 5px; }
+        
+        .comment-input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            background: white;
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+        }
+        .comment-input-area input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 8px;
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body>
+
     <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <img src="logo.png" style="height: 35px; border-radius: 8px;">
-            <span style="font-weight:bold; color:var(--primary);">تطبيق الأخبار</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <img src="logo.png" style="height:35px; border-radius:8px;">
+            <b style="color:var(--primary); font-size:16px;">منصة العائلة</b>
         </div>
-        <div>
-            <button id="adminLink" style="display:none; border:none; background:none; font-size:22px;" onclick="location.href='admin.html'">⚙️</button>
-            <button onclick="handleLogout()" style="border:none; background:none; font-size:22px;">🚪</button>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="adminBtn" style="display:none; cursor:pointer; font-size:20px;" onclick="location.href='admin.html'">⚙️</span>
+            <span style="cursor:pointer; font-size:20px;" onclick="handleLogout()">🚪</span>
         </div>
     </div>
 
-    <div id="newsFeed"></div>
+    <div id="newsFeed">
+        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل المستجدات...</p>
+    </div>
 
     <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
 
@@ -30,55 +88,137 @@
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     let userUID, userData;
 
+    // 1. التحقق من المستخدم وتحميل البيانات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
+            
             if (userData.role === 'admin' || userData.role === 'editor') {
                 document.getElementById('addNewsBtn').style.display = 'block';
-                if(userData.role === 'admin') document.getElementById('adminLink').style.display = 'block';
+                if(userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
             }
             loadFeed();
-        } else { window.location.href = "index.html"; }
+        } else { window.location.replace("index.html"); }
     });
 
+    // 2. تحميل المنشورات
     function loadFeed() {
         onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
             snap.forEach((d) => {
                 const n = d.data();
-                const canControl = (userUID === n.authorId) || (userData.role === 'admin');
-                feed.innerHTML += `
-                    <div class="news-card">
-                        <div class="news-body-content">
-                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                                <img src="${n.authorImg || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                                <div><b>${n.authorName}</b><br><small style="color:var(--text-muted)">${n.category || 'عام'}</small></div>
-                            </div>
-                            <h3 style="margin:0 0 10px 0;">${n.title}</h3>
-                        </div>
-                        <img src="${n.img}" class="news-img-main">
-                        <div class="news-body-content">
-                            <p>${n.body}</p>
-                            <div style="display:flex; justify-content:space-between; margin-top:15px;">
-                                <span style="color:var(--primary); font-weight:bold;">❤️ ${n.likes || 0}</span>
-                                ${canControl ? `<button onclick="deleteNews('${d.id}')" style="color:var(--danger); border:none; background:none; font-weight:bold; cursor:pointer;">🗑️ حذف</button>` : ''}
+                const hasLiked = n.likedBy?.includes(userUID);
+                
+                // حساب عدد التعليقات الحقيقي لكل خبر
+                const newsId = d.id;
+
+                const card = document.createElement('div');
+                card.className = 'news-card';
+                card.innerHTML = `
+                    <div class="news-body-content">
+                        <div class="author-info">
+                            <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
+                            <div>
+                                <div style="font-weight:700; font-size:14px;">${n.authorName}</div>
+                                <div style="font-size:11px; color:var(--text-muted);">${n.category || 'عام'}</div>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                    <img src="${n.img}" class="news-img-main">
+                    <div class="news-body-content">
+                        <h3 style="margin:0 0 8px 0; font-size:15px;">${n.title}</h3>
+                        <p style="font-size:13px; color:#444;">${n.body}</p>
+                    </div>
+
+                    <div class="post-actions">
+                        <div class="action-item ${hasLiked ? 'like-active' : ''}" onclick="toggleLike('${d.id}', ${hasLiked})">
+                            ${hasLiked ? '❤️' : '🤍'} <span id="like-count-${d.id}">${n.likedBy?.length || 0}</span>
+                        </div>
+                        <div class="action-item" onclick="toggleComments('${d.id}')">
+                            💬 <span id="comm-count-${d.id}">0</span>
+                        </div>
+                    </div>
+
+                    <div id="tray-${d.id}" class="comments-tray">
+                        <div id="list-${d.id}"></div>
+                        <div class="comment-input-area">
+                            <input type="text" id="inp-${d.id}" placeholder="أضف تعليقاً..." onkeypress="handleCommKey(event, '${d.id}')">
+                            <button onclick="addComment('${d.id}')" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer;">نشر</button>
+                        </div>
+                    </div>
+                `;
+                feed.appendChild(card);
+                updateCommentCount(d.id);
             });
         });
     }
 
-    window.deleteNews = async (id) => { if(confirm("حذف المنشور؟")) await deleteDoc(doc(db, "News", id)); };
-    window.handleLogout = async () => { if(confirm("تسجيل خروج؟")) { await signOut(auth); window.location.href="index.html"; } };
+    // --- وظيفة الإعجاب ---
+    window.toggleLike = async (id, hasLiked) => {
+        const ref = doc(db, "News", id);
+        await updateDoc(ref, {
+            likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID)
+        });
+    };
+
+    // --- وظائف التعليقات ---
+    window.toggleComments = (id) => {
+        const tray = document.getElementById(`tray-${id}`);
+        const isVisible = tray.style.display === 'block';
+        tray.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) loadComments(id);
+    };
+
+    window.updateCommentCount = (id) => {
+        onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
+            document.getElementById(`comm-count-${id}`).innerText = s.size;
+        });
+    };
+
+    window.loadComments = (id) => {
+        const list = document.getElementById(`list-${id}`);
+        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (snap) => {
+            list.innerHTML = "";
+            snap.forEach(c => {
+                const data = c.data();
+                list.innerHTML += `<div class="comment-msg"><b>${data.userName}</b> ${data.text}</div>`;
+            });
+            list.scrollTop = list.scrollHeight;
+        });
+    };
+
+    window.addComment = async (id) => {
+        const inp = document.getElementById(`inp-${id}`);
+        const text = inp.value.trim();
+        if (!text) return;
+
+        await addDoc(collection(db, `News/${id}/Comments`), {
+            text: text,
+            userName: userData.fullName,
+            uid: userUID,
+            timestamp: serverTimestamp()
+        });
+        inp.value = "";
+    };
+
+    window.handleCommKey = (e, id) => {
+        if (e.key === 'Enter') window.addComment(id);
+    };
+
+    window.handleLogout = async () => {
+        if(confirm("هل تريد تسجيل الخروج؟")) {
+            await signOut(auth);
+            window.location.replace("index.html");
+        }
+    };
 </script>
 </body>
 </html>
