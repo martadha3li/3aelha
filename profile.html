@@ -2,74 +2,158 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>الملف الشخصي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملفي الشخصي</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
-        .p-card { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .btn-save { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .profile-header { position: relative; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; background: white; border-radius: 0 0 30px 30px; box-shadow: var(--shadow); }
+        .img-container { position: relative; }
+        .profile-img-large { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); }
+        
+        /* دائرة العمر بجانب الصورة */
+        .age-badge { 
+            position: absolute; bottom: 5px; right: -5px; 
+            background: var(--accent); color: white; 
+            width: 35px; height: 35px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 14px; border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .info-card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+        .info-row:last-child { border: none; }
+        .label { color: #8e8e93; font-weight: 600; }
+        .value { color: #1c1c1e; font-weight: 700; }
+
+        /* نافذة طلب تغيير الجوال */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: white; width: 90%; max-width: 380px; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; }
     </style>
 </head>
-<body>
+<body style="background: #f8f9fa;">
 
-<div class="p-card">
-    <h2>بياناتي الشخصية 👤</h2>
-    <img id="pPreview" class="profile-pic" src="https://via.placeholder.com/120">
-    <input type="file" accept="image/*" onchange="uploadProfileImg()">
-    <input type="hidden" id="pImgBase64">
+    <div class="top-bar">
+        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
+        <b>إعدادات الحساب</b>
+        <div style="width:20px;"></div>
+    </div>
 
-    <input type="text" id="pName" placeholder="الاسم الكامل">
-    <input type="text" id="pPhone" readonly style="background:#eee;" placeholder="رقم الجوال (تعديل من الإدارة)">
-    <input type="email" id="pEmail" placeholder="البريد الإلكتروني">
-    <input type="password" id="pPass" placeholder="كلمة مرور جديدة">
+    <div class="profile-header">
+        <div class="img-container">
+            <img id="uImg" src="https://via.placeholder.com/110" class="profile-img-large">
+            <div id="uAge" class="age-badge">--</div>
+        </div>
+        <h2 id="uName" style="margin: 15px 0 5px 0; font-size: 20px;">جاري التحميل...</h2>
+        <span id="uRole" class="role-badge" style="background: #eef6ff; color: var(--primary); padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold;">عضو</span>
+    </div>
 
-    <button class="btn-save" onclick="updateProfile()">حفظ التغييرات</button>
-</div>
+    <div class="info-card">
+        <div class="info-row"><span class="label">البريد الإلكتروني</span> <span id="uEmail" class="value">--</span></div>
+        <div class="info-row"><span class="label">تاريخ الميلاد</span> <span id="uBirth" class="value">--</span></div>
+        <div class="info-row"><span class="label">الجنس</span> <span id="uGender" class="value">--</span></div>
+        <div class="info-row" style="align-items: center;">
+            <div style="display:flex; flex-direction:column;">
+                <span class="label">رقم الجوال</span>
+                <span id="uPhone" class="value">--</span>
+            </div>
+            <button onclick="openPhoneModal()" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:10px; font-size:11px; cursor:pointer;">طلب تغيير 📱</button>
+        </div>
+    </div>
+
+    <div id="phoneModal" class="modal">
+        <div class="modal-box">
+            <h3 style="margin-top:0;">تغيير رقم الجوال</h3>
+            <p style="font-size:12px; color:gray;">سيتم إرسال الطلب للمدير للموافقة عليه</p>
+            
+            <input type="tel" id="newPhoneInput" class="modal-input" placeholder="رقم الجوال الجديد">
+            
+            <label style="font-size:12px; font-weight:bold; display:block; margin-top:10px;">سبب التغيير:</label>
+            <select id="changeReason" class="modal-input">
+                <option value="تغير رقمي">تغير رقمي</option>
+                <option value="مقطوع">مقطوع</option>
+                <option value="منتهي">منتهي</option>
+                <option value="ليس رقمي الأساسي">ليس رقمي الأساسي</option>
+                <option value="خطأ بالرقم">خطأ بالرقم</option>
+            </select>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-main" onclick="submitPhoneRequest()" style="flex:1;">إرسال الطلب</button>
+                <button onclick="closeModal()" style="flex:1; background:#eee; border:none; border-radius:12px;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="news.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="profile.html" class="nav-item active"><span class="nav-icon">👤</span><span>حسابي</span></a>
+    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { updatePassword, updateEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    auth.onAuthStateChanged(async user => {
-        if(user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            const u = snap.data();
-            document.getElementById('pName').value = u.fullName;
-            document.getElementById('pPhone').value = u.phone;
-            document.getElementById('pEmail').value = u.email;
-            if(u.profileImg) {
-                document.getElementById('pPreview').src = u.profileImg;
-                document.getElementById('pImgBase64').value = u.profileImg;
+    let currentUserData = null;
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const docRef = doc(db, "Users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                currentUserData = docSnap.data();
+                displayProfile(currentUserData);
             }
-        }
+        } else { window.location.href = "index.html"; }
     });
 
-    window.uploadProfileImg = () => {
-        const file = document.querySelector('input[type=file]').files[0];
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            document.getElementById('pPreview').src = reader.result;
-            document.getElementById('pImgBase64').value = reader.result;
+    function displayProfile(data) {
+        document.getElementById('uName').innerText = data.fullName;
+        document.getElementById('uEmail').innerText = data.email;
+        document.getElementById('uPhone').innerText = data.phone;
+        document.getElementById('uBirth').innerText = data.dob; // تاريخ الميلاد المسجل
+        document.getElementById('uRole').innerText = data.role || 'عضو';
+        document.getElementById('uGender').innerText = data.gender === 'male' ? 'ذكر' : 'أنثى';
+        if(data.profileImg) document.getElementById('uImg').src = data.profileImg;
+
+        // حساب العمر تلقائياً
+        if(data.dob) {
+            const birthDate = new Date(data.dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
+            document.getElementById('uAge').innerText = age;
         }
-        if (file) reader.readAsDataURL(file);
-    };
+    }
 
-    window.updateProfile = async () => {
-        const user = auth.currentUser;
-        const newName = document.getElementById('pName').value;
-        const newImg = document.getElementById('pImgBase64').value;
-        const newPass = document.getElementById('pPass').value;
+    // وظائف المودال
+    window.openPhoneModal = () => document.getElementById('phoneModal').style.display = 'flex';
+    window.closeModal = () => document.getElementById('phoneModal').style.display = 'none';
 
-        await updateDoc(doc(db, "Users", user.uid), {
-            fullName: newName,
-            profileImg: newImg
-        });
+    window.submitPhoneRequest = async () => {
+        const newPhone = document.getElementById('newPhoneInput').value.trim();
+        const reason = document.getElementById('changeReason').value;
 
-        if(newPass) await updatePassword(user, newPass);
-        alert("تم تحديث البيانات بنجاح!");
-    };
+        if(!newPhone || newPhone.length < 10) return alert("يرجى إدخال رقم جوال صحيح");
+
+        try {
+            await addDoc(collection(db, "PhoneRequests"), {
+                userId: auth.currentUser.uid,
+                userName: currentUserData.fullName,
+                currentPhone: currentUserData.phone,
+                newPhone: newPhone,
+                reason: reason,
+                status: "pending",
+                timestamp: serverTimestamp()
+            });
+            alert("تم إرسال طلبك بنجاح. سيقوم المسؤول بمراجعته وتحديث رقمك قريباً.");
+            closeModal();
+        } catch(e) {
+            alert("حدث خطأ أثناء إرسال الطلب");
+        }
+    }
 </script>
 </body>
 </html>
