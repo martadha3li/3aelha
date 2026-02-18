@@ -3,38 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية | منصة العائلة</title>
+    <title>منصة العائلة | تايم لاين</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* تنسيقات إضافية لحالات الخبر الخاصة */
-        .stopped-news { border: 2px dashed var(--danger) !important; background: #fff9f9 !important; }
-        .scheduled-news { border: 2px dashed #f39c12 !important; background: #fffdf5 !important; }
-        .status-tag { font-size: 10px; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 8px; display: inline-block; }
+        /* تنسيقات جمالية متقدمة */
+        body { background-color: #f0f2f5; }
+
+        /* الهيدر الزجاجي */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 10px 20px;
+        }
+
+        /* كرت الخبر المطور */
+        .news-card {
+            background: #ffffff;
+            margin: 15px auto;
+            max-width: 500px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border: none;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .news-img-main {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: cover;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* رأس المنشور */
+        .author-section {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .author-img-ring {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(45deg, #007aff, #34c759);
+        }
+        .author-img-ring img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+
+        /* التفاعلات (إنستغرام ستايل) */
+        .interaction-bar {
+            padding: 12px 18px;
+            display: flex;
+            gap: 20px;
+            font-size: 22px;
+        }
+        .heart-icon { transition: 0.2s; cursor: pointer; }
+        .heart-icon:active { transform: scale(1.4); }
+
+        /* منطقة النص */
+        .content-section { padding: 0 18px 15px 18px; }
+        .post-title { font-size: 16px; font-weight: 800; color: #1c1c1e; margin-bottom: 6px; }
+        .post-text { font-size: 14px; color: #3a3a3c; line-height: 1.6; }
+
+        /* علامات الحالة */
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        /* شريط الأدوات للمحرر */
+        .editor-dashboard {
+            background: #f8f9fa;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            border-top: 1px solid #eee;
+        }
+        .mini-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 6px 15px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* نافذة التعليقات */
+        .comments-section {
+            background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+            padding: 15px;
+            display: none;
+        }
+        .comment-bubble {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* القائمة السفلية العائمة */
+        .bottom-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            bottom: 20px;
+            width: 90%;
+            left: 5%;
+            border-radius: 30px;
+        }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <img src="logo.png" style="height:35px; border-radius:8px;">
-            <b style="color:var(--primary);">منصة العائلة</b>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <img src="logo.png" style="height:38px; border-radius:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <b style="color:var(--primary); font-size:18px; letter-spacing: -0.5px;">منصة العائلة</b>
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <span id="adminBtn" style="display:none; cursor:pointer; font-size:20px;" onclick="location.href='admin.html'">⚙️</span>
-            <span id="logoutBtn" style="cursor:pointer; font-size:20px;" onclick="handleLogout()">🚪</span>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="adminBtn" style="display:none; cursor:pointer; font-size:22px;" onclick="location.href='admin.html'">⚙️</span>
+            <span id="logoutBtn" style="cursor:pointer; font-size:22px;" onclick="handleLogout()">🚪</span>
         </div>
     </div>
 
-    <div id="newsFeed">
-        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل الأخبار...</p>
+    <div id="newsFeed" style="padding-top: 10px;">
+        <p style="text-align:center; margin-top:100px; color:#8e8e93; font-weight:500;">جاري تحديث القصص والأخبار...</p>
     </div>
 
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
+    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none; bottom: 100px; left: 30px; transform: scale(1.1);">+</button>
 
     <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span>الرئيسية</a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span>الدردشة</a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span>حسابي</a>
+        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span></a>
+        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span></a>
     </nav>
 
 <script type="module">
@@ -49,91 +172,73 @@
             userUID = user.uid;
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
-            
-            // إظهار أزرار الإدارة والتحرير بناءً على الصلاحية
             if (userData.role === 'admin' || userData.role === 'editor') {
                 document.getElementById('addNewsBtn').style.display = 'block';
                 if(userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
             }
             loadFeed();
-        } else {
-            window.location.replace("index.html");
-        }
+        } else { window.location.replace("index.html"); }
     });
 
     function loadFeed() {
-        // وقت التشغيل الحالي للمقارنة مع المجدول
         const now = Date.now();
-
         onSnapshot(query(collection(db, "News"), orderBy("publishDate", "desc")), (snap) => {
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
             
-            if(snap.empty) {
-                feed.innerHTML = '<p style="text-align:center; margin-top:50px; color:gray;">لا توجد أخبار منشورة حالياً</p>';
-                return;
-            }
-
             snap.forEach((d) => {
                 const n = d.data();
                 const isAuth = (userUID === n.authorId) || (userData.role === 'admin' || userData.role === 'editor');
-                
-                // فحص الجدولة: هل تاريخ النشر في المستقبل؟
                 const isScheduled = n.publishDate > now;
-                // فحص الإيقاف: هل تم وضع علامة إيقاف (عرض مؤقت)؟
                 const isStopped = n.isStopped === true;
 
-                // منطق العرض: إذا كان الخبر (مجدول أو موقوف) وهو ليس مديراً/محرراً -> لا يعرض الخبر
                 if ((isScheduled || isStopped) && !isAuth) return;
 
                 const hasLiked = n.likedBy?.includes(userUID);
                 const card = document.createElement('div');
-                
-                // إضافة كلاسات التمييز للمحررين
-                card.className = `news-card ${isStopped ? 'stopped-news' : ''} ${isScheduled ? 'scheduled-news' : ''}`;
+                card.className = 'news-card';
                 
                 card.innerHTML = `
-                    <div class="news-body-content">
-                        ${isScheduled ? '<span class="status-tag" style="background:#f39c12;">⏳ منشور مجدول</span>' : ''}
-                        ${isStopped ? '<span class="status-tag" style="background:#e74c3c;">👁️ عرض مؤقت للمحررين</span>' : ''}
-                        
-                        <div class="author-info">
-                            <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
-                            <div>
-                                <div style="font-weight:700; font-size:14px;">${n.authorName}</div>
-                                <div style="font-size:11px; color:var(--text-muted);">${new Date(n.publishDate).toLocaleString('ar-EG')}</div>
-                            </div>
+                    <div class="author-section">
+                        <div class="author-img-ring">
+                            <img src="${n.authorImg || 'https://via.placeholder.com/45'}">
                         </div>
-                        <h3 style="margin:10px 0 5px 0; font-size:16px;">${n.title}</h3>
-                    </div>
-                    
-                    <img src="${n.img}" class="news-img-main">
-                    
-                    <div class="news-body-content">
-                        <div style="font-size:14px; line-height:1.6; color:#444;">${n.body}</div>
-                    </div>
-
-                    <div class="post-actions">
-                        <div class="action-item ${hasLiked ? 'like-active' : ''}" onclick="toggleLike('${d.id}', ${hasLiked})">
-                            ${hasLiked ? '❤️' : '🤍'} <span>${n.likedBy?.length || 0}</span>
-                        </div>
-                        <div class="action-item" onclick="toggleComments('${d.id}')">
-                            💬 <span id="comm-count-${d.id}">0</span>
+                        <div>
+                            <div style="font-weight:700; font-size:14px; color:#1c1c1e;">${n.authorName}</div>
+                            <div style="font-size:11px; color:#8e8e93;">${new Date(n.publishDate).toLocaleDateString('ar-EG')}</div>
                         </div>
                     </div>
 
-                    <div id="tray-${d.id}" class="comments-tray">
+                    <div class="content-section">
+                        ${isScheduled ? '<span class="status-badge" style="background:#f39c12;">⏳ منشور مجدول</span>' : ''}
+                        ${isStopped ? '<span class="status-badge" style="background:#ff3b30;">👁️ عرض للمحررين</span>' : ''}
+                        <div class="post-title">${n.title}</div>
+                    </div>
+
+                    ${n.img ? `<img src="${n.img}" class="news-img-main">` : ''}
+
+                    <div class="interaction-bar">
+                        <span class="heart-icon" onclick="toggleLike('${d.id}', ${hasLiked})">${hasLiked ? '❤️' : '🤍'}</span>
+                        <span style="cursor:pointer;" onclick="toggleComments('${d.id}')">💬</span>
+                    </div>
+
+                    <div class="content-section">
+                        <div style="font-weight:700; font-size:13px; margin-bottom:5px;">${n.likedBy?.length || 0} إعجاب</div>
+                        <div class="post-text">${n.body}</div>
+                    </div>
+
+                    <div id="tray-${d.id}" class="comments-section">
                         <div id="list-${d.id}"></div>
-                        <div class="comment-input-area">
-                            <input type="text" id="inp-${d.id}" placeholder="اكتب تعليقاً..." onkeypress="handleCommKey(event, '${d.id}')">
-                            <button onclick="addComment('${d.id}')" style="border:none; background:none; color:var(--primary); font-weight:bold;">نشر</button>
+                        <div style="display:flex; gap:8px; margin-top:12px;">
+                            <input type="text" id="inp-${d.id}" placeholder="إضافة تعليق..." style="flex:1; border:1px solid #eee; padding:8px 12px; border-radius:20px; font-size:13px; outline:none;" onkeypress="handleCommKey(event, '${d.id}')">
+                            <button onclick="addComment('${d.id}')" style="background:var(--primary); color:white; border:none; padding:0 15px; border-radius:20px; font-weight:600; font-size:12px;">نشر</button>
                         </div>
                     </div>
 
                     ${isAuth ? `
-                        <div class="editor-tools" style="display:flex; gap:10px; padding:10px; background:#f0f0f0; border-top:1px solid #ddd;">
-                            <button class="btn-tool" onclick="location.href='add_news.html?edit=${d.id}'">✏️ تعديل</button>
-                            <button class="btn-tool" style="color:red" onclick="deletePost('${d.id}')">🗑️ حذف</button>
+                        <div class="editor-dashboard">
+                            <button class="mini-btn" onclick="location.href='add_news.html?edit=${d.id}'">✏️ تعديل</button>
+                            <button class="mini-btn" style="color:#ff3b30" onclick="deletePost('${d.id}')">🗑️ حذف</button>
                         </div>
                     ` : ''}
                 `;
@@ -143,25 +248,15 @@
         });
     }
 
-    // --- الوظائف التفاعلية ---
+    // (الوظائف البرمجية المتبقية - Like, Comment, Logout - تبقى كما هي لضمان عمل الأدوات)
     window.toggleLike = async (id, hasLiked) => {
-        await updateDoc(doc(db, "News", id), {
-            likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID)
-        });
+        await updateDoc(doc(db, "News", id), { likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID) });
     };
 
     window.toggleComments = (id) => {
         const tray = document.getElementById(`tray-${id}`);
-        const isVisible = tray.style.display === 'block';
-        tray.style.display = isVisible ? 'none' : 'block';
-        if (!isVisible) loadComments(id);
-    };
-
-    window.updateCommentCount = (id) => {
-        onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
-            const el = document.getElementById(`comm-count-${id}`);
-            if(el) el.innerText = s.size;
-        });
+        tray.style.display = (tray.style.display === 'block') ? 'none' : 'block';
+        if (tray.style.display === 'block') loadComments(id);
     };
 
     window.loadComments = (id) => {
@@ -169,7 +264,8 @@
         onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (snap) => {
             list.innerHTML = "";
             snap.forEach(c => {
-                list.innerHTML += `<div style="margin-bottom:5px; font-size:13px;"><b>${c.data().userName}:</b> ${c.data().text}</div>`;
+                const data = c.data();
+                list.innerHTML += `<div class="comment-bubble"><b>${data.userName}</b> ${data.text}</div>`;
             });
         });
     };
@@ -184,17 +280,9 @@
     };
 
     window.handleCommKey = (e, id) => { if (e.key === 'Enter') window.addComment(id); };
-
-    window.deletePost = async (id) => {
-        if(confirm("هل أنت متأكد من حذف الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id));
-    };
-
-    window.handleLogout = async () => {
-        if(confirm("هل تريد الخروج؟")) {
-            await signOut(auth);
-            window.location.replace("index.html");
-        }
-    };
+    window.deletePost = async (id) => { if(confirm("هل تريد حذف هذا المنشور؟")) await deleteDoc(doc(db, "News", id)); };
+    window.handleLogout = async () => { if(confirm("هل تريد تسجيل الخروج؟")) { await signOut(auth); window.location.replace("index.html"); } };
+    function updateCommentCount(id) {} // اختيارية للعرض المستقبلي
 </script>
 </body>
 </html>
