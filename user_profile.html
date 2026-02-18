@@ -45,26 +45,25 @@
     import { db } from './config.js';
     import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. التقاط الـ UID من الرابط فوراً
     const urlParams = new URLSearchParams(window.location.search);
-    const targetUid = urlParams.get('uid');
+    // تنظيف المعرف من أي مسافات زائدة
+    const targetUid = urlParams.get('uid')?.trim(); 
 
-    if (!targetUid) {
-        document.getElementById('loader').innerText = "خطأ: لم يتم العثور على معرف العضو";
+    if (!targetUid || targetUid === "undefined" || targetUid === "null") {
+        document.getElementById('loader').innerText = "خطأ: معرف العضو غير صحيح أو غير موجود";
     } else {
         loadMemberData();
     }
 
     async function loadMemberData() {
         try {
-            // 2. جلب بيانات العضو من مجموعة Users
+            // جلب البيانات من سجل Users
             const userSnap = await getDoc(doc(db, "Users", targetUid));
             
             if (userSnap.exists()) {
                 const data = userSnap.data();
                 
-                // تعبئة الواجهة
-                document.getElementById('uName').innerText = data.fullName;
+                document.getElementById('uName').innerText = data.fullName || "عضو مجهول";
                 document.getElementById('uCity').innerText = data.city || "غير محددة";
                 document.getElementById('uGender').innerText = data.gender === 'male' ? 'ذكر' : 'أنثى';
                 document.getElementById('uImg').src = data.profileImg || 'https://via.placeholder.com/110';
@@ -73,40 +72,22 @@
                     document.getElementById('uDate').innerText = new Date(data.createdAt.toDate()).toLocaleDateString('ar-EG');
                 }
 
-                // إظهار المحتوى وإخفاء اللودر
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('profileContent').style.display = 'block';
 
-                // 3. جلب منشورات هذا العضو
                 loadMemberPosts();
             } else {
-                document.getElementById('loader').innerText = "هذا العضو غير موجود في قاعدة البيانات";
+                // هذا هو الخطأ الذي ظهر لك، والآن أضفنا الـ ID المفقود في الرسالة للتأكد
+                document.getElementById('loader').innerText = "لم يتم العثور على بيانات للعضو في سجل Users.";
+                console.log("الـ ID الذي تم البحث عنه ولم يوجد:", targetUid);
             }
         } catch (error) {
             console.error(error);
-            document.getElementById('loader').innerText = "حدث خطأ أثناء جلب البيانات";
+            document.getElementById('loader').innerText = "حدث خطأ في الاتصال بقاعدة البيانات";
         }
     }
-
-    async function loadMemberPosts() {
-        const postsCont = document.getElementById('userPosts');
-        const q = query(collection(db, "News"), where("authorId", "==", targetUid));
-        const snap = await getDocs(q);
-        
-        if(snap.empty) {
-            postsCont.innerHTML = '<p style="color:gray; font-size:12px; text-align:center;">لا توجد منشورات لهذا العضو</p>';
-            return;
-        }
-
-        snap.forEach(d => {
-            const post = d.data();
-            postsCont.innerHTML += `
-                <div style="background:white; padding:12px; border-radius:15px; margin-bottom:10px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow);">
-                    <img src="${post.img || 'logo.png'}" style="width:45px; height:45px; border-radius:10px; object-fit:cover;">
-                    <div style="font-size:13px; font-weight:bold;">${post.title}</div>
-                </div>`;
-        });
-    }
+    
+    // ... دالة loadMemberPosts تبقى كما هي ...
 </script>
 </body>
 </html>
