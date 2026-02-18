@@ -268,13 +268,14 @@ window.loadCommentsRealtime = (id) => {
             s.forEach(c => {
                 const comm = c.data();
                 // التعديل: إضافة رابط حول الاسم يوجه لبروفايل العضو عبر الـ UID
-                list.innerHTML += `
-                    <div style="margin-bottom:8px; font-size:12px; display:flex; align-items:flex-start; gap:5px;">
-                        <a href="profile.html?uid=${comm.userId}" style="text-decoration:none; color:var(--primary); font-weight:bold;">
-                            ${comm.userName}:
-                        </a>
-                        <span style="color:#444;">${comm.text}</span>
-                    </div>`;
+               // داخل دالة loadCommentsRealtime في news.html
+list.innerHTML += `
+    <div style="margin-bottom:8px; font-size:12px;">
+        <a href="user_profile.html?uid=${comm.userId}" style="text-decoration:none; color:var(--primary); font-weight:bold;">
+            ${comm.userName}:
+        </a>
+        <span style="color:#444;">${comm.text}</span>
+    </div>`;
             });
         }
     });
@@ -299,5 +300,6 @@ window.sendComment = async (id) => {
 </script>
 </body>
 </html>
+
 
 
