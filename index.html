@@ -6,7 +6,6 @@
     <title>تسجيل الدخول</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* لضمان عدم حدوث أي قفزة في التصميم أثناء التحميل */
         body {
             display: flex;
             justify-content: center;
@@ -14,7 +13,8 @@
             height: 100vh;
             margin: 0;
             background-color: var(--bg-light);
-            overflow: hidden;
+            /* نمنع التفاعل حتى تتأكد الصفحة من حالة المستخدم */
+            visibility: hidden; 
         }
         .login-card {
             width: 90%;
@@ -24,25 +24,6 @@
             border-radius: 30px;
             box-shadow: var(--shadow);
             text-align: center;
-            /* تبدأ الصفحة مخفية قليلاً لتجنب الوميض ثم تظهر بسلاسة */
-            opacity: 0;
-            transform: translateY(10px);
-            transition: 0.5s ease-in-out;
-        }
-        .show-card {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .form-input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 1px solid #e1e1e6;
-            border-radius: 15px;
-            box-sizing: border-box;
-            outline: none;
-            background: #f9f9fb;
-            font-size: 16px;
         }
     </style>
 </head>
@@ -52,17 +33,15 @@
         <img src="logo.png" style="width: 100px; height: auto; border-radius: 20px; margin-bottom: 15px;">
         <h2 style="margin-bottom: 25px; color: var(--text-main);">تسجيل الدخول</h2>
 
-        <input type="text" id="loginId" class="form-input" placeholder="رقم الجوال أو البريد">
-        <input type="password" id="loginPass" class="form-input" placeholder="كلمة المرور">
+        <input type="text" id="loginId" class="form-input" placeholder="رقم الجوال أو البريد" style="width:100%; padding:15px; margin-bottom:10px; border-radius:12px; border:1px solid #ddd;">
+        <input type="password" id="loginPass" class="form-input" placeholder="كلمة المرور" style="width:100%; padding:15px; margin-bottom:15px; border-radius:12px; border:1px solid #ddd;">
         
-        <button class="btn-main" id="loginBtn" style="width: 100%; margin-top: 15px; padding: 16px;">
-            دخول
-        </button>
+        <button class="btn-main" id="loginBtn" style="width: 100%; padding: 16px;">دخول</button>
 
         <div style="margin-top: 25px; font-size: 14px; display: flex; justify-content: center; gap: 20px;">
             <a href="register.html" style="text-decoration: none; color: var(--primary); font-weight: bold;">حساب جديد</a>
             <span style="color: #ddd;">|</span>
-            <a href="forgot.html" style="text-decoration: none; color: var(--danger); font-weight: bold;">نسيت كلمة المرور؟</a>
+            <a href="forgot.html" style="text-decoration: none; color: var(--danger); font-weight: bold;">نسيت؟</a>
         </div>
     </div>
 
@@ -71,36 +50,35 @@
     import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const card = document.getElementById('mainCard');
-    const btn = document.getElementById('loginBtn');
+    // القفل البرمجي لمنع التكرار
+    let checkDone = false;
 
-    // وظيفة التحقق الهادئ عند فتح الصفحة
     onAuthStateChanged(auth, (user) => {
+        if (checkDone) return; // إذا تم الفحص مسبقاً لا تفعل شيئاً
+        
         if (user) {
-            // إذا كان مسجل دخوله، نرسله مباشرة للأخبار دون إظهار الفورم
+            checkDone = true;
+            // إذا كان مسجلاً، اذهب للأخبار وتوقف عن تنفيذ أي كود آخر في هذه الصفحة
             window.location.replace("news.html");
         } else {
-            // إذا لم يكن مسجلاً، نظهر له كرت الدخول بنعومة
-            card.classList.add('show-card');
+            checkDone = true;
+            // إذا لم يكن مسجلاً، اظهر الصفحة للمستخدم وابقى فيها
+            document.body.style.visibility = "visible";
         }
     });
 
-    // وظيفة تسجيل الدخول اليدوي
     const handleLogin = async () => {
         const id = document.getElementById('loginId').value.trim();
         const pass = document.getElementById('loginPass').value;
+        const btn = document.getElementById('loginBtn');
 
-        if (!id || !pass) {
-            alert("يرجى إكمال البيانات");
-            return;
-        }
+        if (!id || !pass) return alert("أكمل البيانات");
 
         btn.disabled = true;
         btn.innerText = "جاري الدخول...";
 
         try {
             let email = id;
-            // إذا أدخل رقم جوال، نبحث عن الإيميل المرتبط به
             if (!id.includes('@')) {
                 const q = query(collection(db, "Users"), where("phone", "==", id));
                 const snap = await getDocs(q);
@@ -109,28 +87,15 @@
             }
 
             const userCred = await signInWithEmailAndPassword(auth, email, pass);
-            const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
-            
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                if (data.status === "disabled") {
-                    await auth.signOut();
-                    alert("عذراً، هذا الحساب معطل.");
-                    location.reload();
-                    return;
-                }
-                // ترحيب سريع ثم انتقال
-                alert("أهلاً بك: " + data.fullName);
-                window.location.replace("news.html");
-            }
+            // عند نجاح الدخول، الانتقال سيحدث تلقائياً عبر onAuthStateChanged بالأعلى
         } catch (e) {
             btn.disabled = false;
             btn.innerText = "دخول";
-            alert("فشل الدخول: " + e.message);
+            alert("خطأ: " + e.message);
         }
     };
 
-    btn.addEventListener('click', handleLogin);
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
 </script>
 </body>
 </html>
