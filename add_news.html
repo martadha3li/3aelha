@@ -9,7 +9,7 @@
         .editor-box { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
         .rich-editor { min-height: 250px; border: 1px solid #ddd; padding: 15px; border-radius: 12px; outline: none; background: #fff; margin-bottom: 15px; }
         .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid #eee; margin-top: 10px; }
-        .schedule-input { border: 1px solid #ddd; padding: 5px; border-radius: 8px; font-family: inherit; }
+        .schedule-input, .select-input { border: 1px solid #ddd; padding: 8px; border-radius: 10px; font-family: inherit; width: 100%; box-sizing: border-box; }
         .toolbar { background: #f0f0f0; padding: 8px; border-radius: 10px 10px 0 0; border: 1px solid #ddd; border-bottom: none; display: flex; gap: 8px; }
     </style>
 </head>
@@ -21,8 +21,15 @@
     </div>
 
     <div class="editor-box">
-        <input type="text" id="postTitle" placeholder="عنوان الخبر هنا..." class="form-input" style="font-weight:bold; font-size:18px;">
+        <input type="text" id="postTitle" placeholder="عنوان الخبر هنا..." class="form-input" style="font-weight:bold; font-size:18px; width: 100%; border: none; border-bottom: 1px solid #eee; margin-bottom: 15px;">
         
+        <div style="margin-bottom: 15px;">
+            <label style="font-size:13px; display:block; margin-bottom:5px; font-weight: bold; color: var(--primary);">📁 تصنيف الخبر:</label>
+            <select id="postCategory" class="select-input">
+                <option value="عام">عام</option>
+                </select>
+        </div>
+
         <div class="toolbar">
             <button onclick="execCmd('bold')" class="btn-tool"><b>B</b></button>
             <button onclick="execCmd('italic')" class="btn-tool"><i>I</i></button>
@@ -31,7 +38,7 @@
         <div id="editor" class="rich-editor" contenteditable="true"></div>
 
         <div style="margin-bottom:15px;">
-            <label style="font-size:13px; display:block; margin-bottom:5px;">📸 صورة الغلاف:</label>
+            <label style="font-size:13px; display:block; margin-bottom:5px; font-weight: bold; color: var(--primary);">📸 صورة الغلاف:</label>
             <input type="file" id="imgFile" accept="image/*" onchange="handleImg()">
             <input type="hidden" id="imgBase64">
         </div>
@@ -43,13 +50,23 @@
 
         <div class="setting-row">
             <span>📅 جدولة النشر (اختياري)</span>
-            <input type="datetime-local" id="scheduleDate" class="schedule-input">
+            <input type="datetime-local" id="scheduleDate" class="schedule-input" style="width: auto;">
         </div>
     </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 1. جلب التصنيفات من Firestore فوراً
+    onSnapshot(collection(db, "Categories"), (snap) => {
+        const catSelect = document.getElementById('postCategory');
+        catSelect.innerHTML = '<option value="عام">عام</option>'; // القيمة الافتراضية
+        snap.forEach(doc => {
+            const cat = doc.data();
+            catSelect.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+        });
+    });
 
     window.execCmd = (c, v=null) => document.execCommand(c, false, v);
 
@@ -62,12 +79,13 @@
 
     document.getElementById('publishBtn').onclick = async () => {
         const title = document.getElementById('postTitle').value;
+        const category = document.getElementById('postCategory').value;
         const body = document.getElementById('editor').innerHTML;
         const img = document.getElementById('imgBase64').value;
         const isTemp = document.getElementById('tempView').checked;
         const schedule = document.getElementById('scheduleDate').value;
         
-        if(!title || body === "") return alert("يرجى كتابة العنوان والمحتوى");
+        if(!title || body === "" || body === "<br>") return alert("يرجى كتابة العنوان والمحتوى");
 
         const btn = document.getElementById('publishBtn');
         btn.disabled = true;
@@ -79,18 +97,20 @@
             const uData = uSnap.data();
 
             await addDoc(collection(db, "News"), {
-                title, body, img,
+                title, 
+                category, // حفظ التصنيف المختار
+                body, 
+                img,
                 authorId: user.uid,
                 authorName: uData.fullName,
                 authorImg: uData.profileImg || "",
                 createdAt: serverTimestamp(),
-                // تاريخ النشر المجدول (إذا كان فارغاً نستخدم الوقت الحالي)
                 publishDate: schedule ? new Date(schedule).getTime() : Date.now(),
-                isStopped: isTemp, // إذا كان عرض مؤقت، نعتبره موقوفاً عن العامة
+                isStopped: isTemp,
                 likedBy: []
             });
 
-            alert("🎉 تم تنفيذ طلبك بنجاح!");
+            alert("🎉 تم نشر الخبر بنجاح في تصنيف: " + category);
             window.location.href = "news.html";
         } catch(e) {
             alert("حدث خطأ أثناء النشر");
