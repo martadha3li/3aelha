@@ -3,62 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية | تايم لاين</title>
+    <title>منصة العائلة | التايم لاين</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* تحسينات إضافية للتفاعل */
-        .post-actions {
-            display: flex;
-            gap: 20px;
-            padding: 10px 15px;
-            border-top: 1px solid #f0f0f2;
-        }
-        .action-item {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .action-item:active { transform: scale(0.9); }
-        .like-active { color: #ff3b30; }
+        /* تنسيقات أدوات التحرير */
+        .editor-tools { display: flex; gap: 10px; padding: 10px 15px; background: #f8f9fa; border-top: 1px solid #eee; justify-content: flex-end; }
+        .btn-tool { font-size: 11px; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; background: white; transition: 0.2s; }
+        .btn-tool:hover { background: #eee; }
+        .stopped-news { opacity: 0.7; filter: grayscale(0.5); border: 2px dashed var(--danger); }
+        .stop-tag { background: var(--danger); color: white; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; margin-bottom: 5px; display: inline-block; }
 
-        /* نافذة التعليقات المنسدلة (إنستغرام ستايل) */
-        .comments-tray {
-            display: none;
-            background: #f9f9fb;
-            border-top: 1px solid #eee;
-            padding: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-        }
-        .comment-msg {
-            margin-bottom: 10px;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-        .comment-msg b { color: var(--primary); margin-left: 5px; }
-        
-        .comment-input-area {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            background: white;
-            padding: 5px;
-            border-radius: 12px;
-            border: 1px solid #ddd;
-        }
-        .comment-input-area input {
-            flex: 1;
-            border: none;
-            outline: none;
-            padding: 8px;
-            font-size: 13px;
-        }
+        /* النافذة المنبثقة (Modal) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 90%; max-width: 450px; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); position: relative; }
+        .close-modal { position: absolute; top: 15px; left: 15px; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; outline: none; font-family: inherit; }
     </style>
 </head>
 <body>
@@ -66,7 +25,7 @@
     <div class="top-bar">
         <div style="display:flex; align-items:center; gap:8px;">
             <img src="logo.png" style="height:35px; border-radius:8px;">
-            <b style="color:var(--primary); font-size:16px;">منصة العائلة</b>
+            <b style="color:var(--primary);">منصة العائلة</b>
         </div>
         <div style="display:flex; gap:15px; align-items:center;">
             <span id="adminBtn" style="display:none; cursor:pointer; font-size:20px;" onclick="location.href='admin.html'">⚙️</span>
@@ -74,32 +33,45 @@
         </div>
     </div>
 
-    <div id="newsFeed">
-        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل المستجدات...</p>
+    <div id="newsFeed"></div>
+
+    <button id="addNewsBtn" class="floating-btn" onclick="openAddModal()" style="display:none;">+</button>
+
+    <div id="newsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">✕</span>
+            <h2 id="modalTitle" style="margin-top:0; font-size:18px;">نشر خبر جديد</h2>
+            
+            <input type="text" id="postTitle" class="modal-input" placeholder="عنوان الخبر">
+            
+            <label style="font-size:12px; color:gray;">صورة الخبر:</label>
+            <input type="file" id="postImgFile" accept="image/*" class="modal-input" onchange="processModalImage()">
+            <input type="hidden" id="postImgBase64">
+
+            <textarea id="postBody" class="modal-input" rows="4" placeholder="ماذا يدور في ذهنك؟"></textarea>
+            
+            <button class="btn-main" id="submitPostBtn" style="width:100%; margin-top:10px;">نشر الآن</button>
+        </div>
     </div>
 
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
-
     <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span>الرئيسية</a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span>الدردشة</a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span>حسابي</a>
+        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span></a>
+        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span></a>
     </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let userUID, userData;
+    let userUID, userData, editingId = null;
 
-    // 1. التحقق من المستخدم وتحميل البيانات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
-            
             if (userData.role === 'admin' || userData.role === 'editor') {
                 document.getElementById('addNewsBtn').style.display = 'block';
                 if(userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
@@ -108,117 +80,128 @@
         } else { window.location.replace("index.html"); }
     });
 
-    // 2. تحميل المنشورات
     function loadFeed() {
         onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
             snap.forEach((d) => {
                 const n = d.data();
-                const hasLiked = n.likedBy?.includes(userUID);
+                const isAuthorized = (userUID === n.authorId) || (userData.role === 'admin');
                 
-                // حساب عدد التعليقات الحقيقي لكل خبر
-                const newsId = d.id;
+                // إذا كان الخبر موقوفاً وليس لديك صلاحية، لا يظهر لك
+                if (n.isStopped && !isAuthorized) return;
 
                 const card = document.createElement('div');
-                card.className = 'news-card';
+                card.className = `news-card ${n.isStopped ? 'stopped-news' : ''}`;
                 card.innerHTML = `
                     <div class="news-body-content">
+                        ${n.isStopped ? '<span class="stop-tag">🚫 موقوف عن العرض</span>' : ''}
                         <div class="author-info">
                             <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
                             <div>
-                                <div style="font-weight:700; font-size:14px;">${n.authorName}</div>
-                                <div style="font-size:11px; color:var(--text-muted);">${n.category || 'عام'}</div>
+                                <b>${n.authorName}</b>
+                                <div style="font-size:10px; color:gray;">${n.date ? new Date(n.date.toDate()).toLocaleString('ar-EG') : ''}</div>
                             </div>
                         </div>
                     </div>
-                    <img src="${n.img}" class="news-img-main">
+                    <img src="${n.img}" class="news-img-main" style="cursor:pointer">
                     <div class="news-body-content">
-                        <h3 style="margin:0 0 8px 0; font-size:15px;">${n.title}</h3>
+                        <h3 style="margin:0 0 5px 0; font-size:15px;">${n.title}</h3>
                         <p style="font-size:13px; color:#444;">${n.body}</p>
                     </div>
 
                     <div class="post-actions">
-                        <div class="action-item ${hasLiked ? 'like-active' : ''}" onclick="toggleLike('${d.id}', ${hasLiked})">
-                            ${hasLiked ? '❤️' : '🤍'} <span id="like-count-${d.id}">${n.likedBy?.length || 0}</span>
-                        </div>
-                        <div class="action-item" onclick="toggleComments('${d.id}')">
-                            💬 <span id="comm-count-${d.id}">0</span>
-                        </div>
+                        <span>❤️ ${n.likedBy?.length || 0}</span>
+                        <span style="cursor:pointer" onclick="toggleComments('${d.id}')">💬 تعليقات</span>
                     </div>
+
+                    ${isAuthorized ? `
+                        <div class="editor-tools">
+                            <button class="btn-tool" onclick="prepareEdit('${d.id}')">✏️ تعديل</button>
+                            <button class="btn-tool" onclick="toggleStop('${d.id}', ${n.isStopped})">${n.isStopped ? '✅ إعادة نشر' : '🚫 إيقاف'}</button>
+                            <button class="btn-tool" style="color:red" onclick="deletePost('${d.id}')">🗑️ حذف</button>
+                        </div>
+                    ` : ''}
 
                     <div id="tray-${d.id}" class="comments-tray">
                         <div id="list-${d.id}"></div>
-                        <div class="comment-input-area">
-                            <input type="text" id="inp-${d.id}" placeholder="أضف تعليقاً..." onkeypress="handleCommKey(event, '${d.id}')">
-                            <button onclick="addComment('${d.id}')" style="border:none; background:none; color:var(--primary); font-weight:bold; cursor:pointer;">نشر</button>
-                        </div>
                     </div>
                 `;
                 feed.appendChild(card);
-                updateCommentCount(d.id);
             });
         });
     }
 
-    // --- وظيفة الإعجاب ---
-    window.toggleLike = async (id, hasLiked) => {
-        const ref = doc(db, "News", id);
-        await updateDoc(ref, {
-            likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID)
-        });
+    // --- وظائف المودال (إضافة وتعديل) ---
+    window.openAddModal = () => {
+        editingId = null;
+        document.getElementById('modalTitle').innerText = "نشر خبر جديد";
+        document.getElementById('submitPostBtn').innerText = "نشر الآن";
+        document.getElementById('postTitle').value = "";
+        document.getElementById('postBody').value = "";
+        document.getElementById('postImgBase64').value = "";
+        document.getElementById('newsModal').style.display = 'flex';
     };
 
-    // --- وظائف التعليقات ---
-    window.toggleComments = (id) => {
-        const tray = document.getElementById(`tray-${id}`);
-        const isVisible = tray.style.display === 'block';
-        tray.style.display = isVisible ? 'none' : 'block';
-        if (!isVisible) loadComments(id);
+    window.closeModal = () => document.getElementById('newsModal').style.display = 'none';
+
+    window.processModalImage = () => {
+        const file = document.getElementById('postImgFile').files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => document.getElementById('postImgBase64').value = reader.result;
+        if (file) reader.readAsDataURL(file);
     };
 
-    window.updateCommentCount = (id) => {
-        onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
-            document.getElementById(`comm-count-${id}`).innerText = s.size;
-        });
-    };
+    document.getElementById('submitPostBtn').onclick = async () => {
+        const title = document.getElementById('postTitle').value;
+        const body = document.getElementById('postBody').value;
+        const img = document.getElementById('postImgBase64').value;
 
-    window.loadComments = (id) => {
-        const list = document.getElementById(`list-${id}`);
-        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (snap) => {
-            list.innerHTML = "";
-            snap.forEach(c => {
-                const data = c.data();
-                list.innerHTML += `<div class="comment-msg"><b>${data.userName}</b> ${data.text}</div>`;
+        if (!title || !body) return alert("يرجى تعبئة العنوان والمحتوى");
+
+        if (editingId) {
+            // تحديث خبر موجود
+            const updateData = { title, body };
+            if (img) updateData.img = img;
+            await updateDoc(doc(db, "News", editingId), updateData);
+            alert("تم تحديث الخبر");
+        } else {
+            // إضافة خبر جديد
+            await addDoc(collection(db, "News"), {
+                title, body, img: img || "",
+                authorId: userUID, authorName: userData.fullName,
+                authorImg: userData.profileImg || "",
+                date: serverTimestamp(), likedBy: [], isStopped: false
             });
-            list.scrollTop = list.scrollHeight;
-        });
+            alert("تم النشر");
+        }
+        closeModal();
     };
 
-    window.addComment = async (id) => {
-        const inp = document.getElementById(`inp-${id}`);
-        const text = inp.value.trim();
-        if (!text) return;
-
-        await addDoc(collection(db, `News/${id}/Comments`), {
-            text: text,
-            userName: userData.fullName,
-            uid: userUID,
-            timestamp: serverTimestamp()
-        });
-        inp.value = "";
+    // --- وظائف أدوات التحرير ---
+    window.prepareEdit = async (id) => {
+        const s = await getDoc(doc(db, "News", id));
+        const n = s.data();
+        editingId = id;
+        document.getElementById('modalTitle').innerText = "تعديل الخبر";
+        document.getElementById('submitPostBtn').innerText = "حفظ التعديلات";
+        document.getElementById('postTitle').value = n.title;
+        document.getElementById('postBody').value = n.body;
+        document.getElementById('postImgBase64').value = n.img;
+        document.getElementById('newsModal').style.display = 'flex';
     };
 
-    window.handleCommKey = (e, id) => {
-        if (e.key === 'Enter') window.addComment(id);
+    window.toggleStop = async (id, currentStatus) => {
+        await updateDoc(doc(db, "News", id), { isStopped: !currentStatus });
     };
 
-    window.handleLogout = async () => {
-        if(confirm("هل تريد تسجيل الخروج؟")) {
-            await signOut(auth);
-            window.location.replace("index.html");
+    window.deletePost = async (id) => {
+        if (confirm("هل أنت متأكد من حذف هذا الخبر نهائياً؟")) {
+            await deleteDoc(doc(db, "News", id));
         }
     };
+
+    window.handleLogout = async () => { if(confirm("خروج؟")) { await signOut(auth); location.replace("index.html"); } };
 </script>
 </body>
 </html>
