@@ -10,18 +10,15 @@
         .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
         
-        /* كروت الإحصائيات المطورة */
+        /* كروت الإحصائيات */
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid var(--primary); }
         .stat-card h3 { font-size: 20px; color: var(--primary); margin: 5px 0; }
         .stat-card span { font-size: 11px; color: gray; font-weight: bold; }
 
-        /* الطلبات الملونة */
-        .req-box { padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
-        .req-phone { background: #eef6ff; border-color: #bcd9ff; }
-        .req-pass { background: #fff1f1; border-color: #ffcccc; }
-        .req-role { background: #fff9e6; border-color: #ffeeba; }
-        .req-activation { background: #f2fff5; border-color: #bdf0c9; }
+        /* طلبات التفعيل */
+        .req-box { padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #bdf0c9; background: #f2fff5; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .req-box:hover { transform: scale(1.01); box-shadow: var(--shadow); }
 
         /* الجدول والبحث */
         .table-container { overflow-x: auto; }
@@ -29,8 +26,21 @@
         th { background: #f8f9fa; padding: 12px; border-bottom: 2px solid #eee; }
         td { padding: 12px; border-bottom: 1px solid #f5f5f5; text-align: center; }
 
+        /* النافذة المنبثقة Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 25px; overflow: hidden; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { background: var(--primary); color: white; padding: 20px; text-align: center; }
+        .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .detail-label { color: #8e8e93; font-weight: bold; }
+        .modal-footer { padding: 20px; display: flex; gap: 10px; background: #f8f9fa; flex-wrap: wrap; }
+
         .btn-group { display: flex; gap: 5px; justify-content: center; }
         .mini-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-activate { background: #34c759; color: white; flex: 1; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-delete { background: #ff3b30; color: white; width: 100%; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        
         .role-badge { background: #eef6ff; color: var(--primary); padding: 3px 8px; border-radius: 8px; font-size: 11px; }
         .cat-tag { background: #f0f0f0; padding: 8px 12px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 8px; margin: 5px; }
     </style>
@@ -55,30 +65,20 @@
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>🛠️ فريق الإدارة والمحررين</h2></div>
-            <div id="adminTeamList"></div>
-        </div>
-
-        <div class="admin-section">
-            <div class="section-header"><h2>📥 طلبات تفعيل الحسابات الجديدة</h2></div>
+            <div class="section-header"><h2>📥 طلبات تفعيل جديدة (اضغط للمراجعة)</h2></div>
             <div id="activationRequests"></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>📬 طلبات التعديل والترقية</h2></div>
-            <div id="mixedRequests"></div>
-        </div>
-
-        <div class="admin-section">
             <div class="section-header">
-                <h2>📁 تصنيفات الأخبار والعناوين</h2>
-                <button onclick="addNewCategory()" class="mini-btn" style="background:var(--primary)">+ إضافة</button>
+                <h2>📁 إدارة تصنيفات الأخبار</h2>
+                <button onclick="addNewCategory()" class="mini-btn" style="background:var(--primary)">+ إضافة تصنيف</button>
             </div>
             <div id="categoriesList"></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>👥 قاعدة بيانات كافة الأعضاء</h2></div>
+            <div class="section-header"><h2>👥 قاعدة بيانات الأعضاء والبحث</h2></div>
             <input type="text" id="userSearch" class="form-input" style="width:100%; margin-bottom:15px;" placeholder="🔍 ابحث برقم الجوال أو الاسم..." onkeyup="filterUsers()">
             <div class="table-container">
                 <table>
@@ -87,6 +87,21 @@
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <img id="mUserImg" src="" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid white; object-fit: cover;">
+                <h2 id="mUserName" style="margin: 10px 0 0 0; font-size: 18px;"></h2>
+            </div>
+            <div class="modal-body" id="mUserDetails"></div>
+            <div class="modal-footer">
+                <button id="btnAct" class="btn-activate">تفعيل الحساب والترحيب ✅</button>
+                <button onclick="document.getElementById('userModal').style.display='none'" style="flex:1; border:none; border-radius:12px; cursor:pointer;">إلغاء</button>
+                <button id="btnDel" class="btn-delete">رفض وحذف نهائي 🗑️</button>
             </div>
         </div>
     </div>
@@ -104,55 +119,39 @@
     });
 
     function initFullAdmin() {
-        // --- تحديث الإحصائيات الديموغرافية حياً ---
+        // 1. الإحصائيات الذكية (تحديث حي)
         onSnapshot(collection(db, "Users"), snap => {
             let male = 0, female = 0, ages = [];
             document.getElementById('uCount').innerText = snap.size;
-            
             snap.forEach(u => {
                 const d = u.data();
-                // حساب الجنس
                 if(d.gender === 'male') male++;
                 if(d.gender === 'female') female++;
-                // جمع الأعمار
                 if(d.age) ages.push(parseInt(d.age));
             });
-
             document.getElementById('mCount').innerText = male;
             document.getElementById('fCount').innerText = female;
-            
             if(ages.length > 0) {
                 document.getElementById('maxAge').innerText = Math.max(...ages);
                 document.getElementById('minAge').innerText = Math.min(...ages);
             }
         });
 
-        // --- فريق الإدارة والدردشة ---
-        onSnapshot(query(collection(db, "Users"), where("role", "in", ["admin", "editor"])), snap => {
-            const cont = document.getElementById('adminTeamList');
-            cont.innerHTML = "";
-            snap.forEach(u => {
-                if(u.id === auth.currentUser.uid) return;
-                cont.innerHTML += `<div class="req-box" style="background:#f8f9fa;">
-                    <div><b>${u.data().fullName}</b> <span class="role-badge">${u.data().role}</span></div>
-                    <button class="mini-btn" style="background:var(--accent)" onclick="location.href='chat.html?target=${u.id}'">💬 دردشة</button>
-                </div>`;
-            });
-        });
-
-        // --- طلبات التفعيل ---
+        // 2. طلبات التفعيل (قابلة للنقر)
         onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
             const cont = document.getElementById('activationRequests');
-            cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px;">لا توجد طلبات معلقة</p>' : "";
+            cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px; text-align:center;">لا توجد طلبات جديدة</p>' : "";
             snap.forEach(u => {
-                cont.innerHTML += `<div class="req-box req-activation">
-                    <div><b>${u.data().fullName}</b> (${u.data().phone})</div>
-                    <button class="mini-btn" style="background:#34c759" onclick="updateStatus('${u.id}', 'active')">تفعيل ✅</button>
-                </div>`;
+                const d = u.data();
+                const div = document.createElement('div');
+                div.className = 'req-box';
+                div.onclick = () => showUserDetails(u.id, d);
+                div.innerHTML = `<div><b>${d.fullName}</b> (${d.phone})</div> <span style="font-size:10px; color:var(--primary);">مراجعة التفاصيل 🔍</span>`;
+                cont.appendChild(div);
             });
         });
 
-        // --- جدول كافة الأعضاء والبحث ---
+        // 3. جدول الأعضاء
         onSnapshot(collection(db, "Users"), snap => {
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = "";
@@ -163,7 +162,7 @@
                     <td><span class="role-badge">${d.role || 'عضو'}</span></td>
                     <td style="color:${d.status === 'active' ? 'green' : 'red'}">${d.status}</td>
                     <td><div class="btn-group">
-                        <button class="mini-btn" style="background:#007aff" onclick="editAny('${u.id}', 'fullName', 'الاسم الجديد')">✏️</button>
+                        <button class="mini-btn" style="background:#007aff" onclick="editField('${u.id}', 'fullName')">✏️</button>
                         <button class="mini-btn" style="background:#ff9500" onclick="updateStatus('${u.id}', '${d.status === 'active' ? 'stopped' : 'active'}')">🚫</button>
                         <button class="mini-btn" style="background:#ff3b30" onclick="deleteUser('${u.id}')">🗑️</button>
                     </div></td>
@@ -171,26 +170,68 @@
             });
         });
 
-        // --- بقية الطلبات والتصنيفات (نفس المنطق السابق) ---
-        // ... (كود PhoneRequests, PasswordRequests, Categories كما في النسخ السابقة)
+        // 4. التصنيفات
+        onSnapshot(collection(db, "Categories"), snap => {
+            const cont = document.getElementById('categoriesList');
+            cont.innerHTML = "";
+            snap.forEach(c => {
+                cont.innerHTML += `<div class="cat-tag" title="العنوان الافتراضي: ${c.data().defaultTitle}">
+                    <b>${c.data().name}</b> <span onclick="deleteDoc(doc(db, 'Categories', '${c.id}'))" style="color:red; cursor:pointer;">✕</span>
+                </div>`;
+            });
+        });
     }
 
-    // --- الدوال التنفيذية ---
-    window.updateStatus = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s });
-    window.deleteUser = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
-    window.editAny = async (id, field, msg) => { const val = prompt(msg); if(val) await updateDoc(doc(db, "Users", id), { [field]: val }); };
-    
-    window.addNewCategory = async () => {
-        const name = prompt("اسم التصنيف:");
-        const def = prompt("العنوان الافتراضي للخبر:");
-        if(name) await addDoc(collection(db, "Categories"), { name, defaultTitle: def || "" });
+    // --- وظيفة مراجعة العضو (Modal) ---
+    window.showUserDetails = (uid, data) => {
+        const modal = document.getElementById('userModal');
+        document.getElementById('mUserName').innerText = data.fullName;
+        document.getElementById('mUserImg').src = data.profileImg || 'https://via.placeholder.com/80';
+        
+        let html = `
+            <div class="detail-row"><span class="detail-label">الجوال:</span> <span>${data.phone}</span></div>
+            <div class="detail-row"><span class="detail-label">المدينة:</span> <span>${data.city || 'غير محددة'}</span></div>
+            <div class="detail-row"><span class="detail-label">الجنس:</span> <span>${data.gender === 'male' ? 'ذكر' : 'أنثى'}</span></div>
+            <div class="detail-row"><span class="detail-label">العمر:</span> <span>${data.age} سنة</span></div>
+        `;
+        if(data.gender === 'female') {
+            html += `<div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:10px;">
+                <b style="color:#d63031; font-size:12px;">🛡️ المعرف:</b>
+                <div class="detail-row"><span>الاسم: ${data.guardianName || '--'}</span></div>
+                <div class="detail-row"><span>الجوال: ${data.guardianPhone || '--'}</span></div>
+            </div>`;
+        }
+        document.getElementById('mUserDetails').innerHTML = html;
+        modal.style.display = 'flex';
+
+        document.getElementById('btnAct').onclick = () => { updateStatus(uid, 'active', data.fullName); modal.style.display = 'none'; };
+        document.getElementById('btnDel').onclick = () => { deleteUser(uid); modal.style.display = 'none'; };
     };
 
+    // --- تحديث الحالة + ترحيب تلقائي ---
+    window.updateStatus = async (uid, s, name = "") => {
+        await updateDoc(doc(db, "Users", uid), { status: s });
+        if(s === 'active' && name !== "") {
+            await addDoc(collection(db, "Chats"), {
+                senderId: auth.currentUser.uid,
+                receiverId: uid,
+                message: `مرحباً بك يا ${name}! تم تفعيل حسابك في منصة العائلة بنجاح. نحن سعداء بوجودك معنا 🌸`,
+                timestamp: serverTimestamp()
+            });
+            alert("تم التفعيل وإرسال ترحيب آلي 💌");
+        }
+    };
+
+    window.deleteUser = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
+    window.editField = async (id, field) => { const val = prompt("تعديل البيانات:"); if(val) await updateDoc(doc(db, "Users", id), { [field]: val }); };
+    window.addNewCategory = async () => {
+        const n = prompt("اسم التصنيف:");
+        const t = prompt("العنوان الافتراضي للخبر:");
+        if(n) await addDoc(collection(db, "Categories"), { name: n, defaultTitle: t || "" });
+    };
     window.filterUsers = () => {
         const val = document.getElementById('userSearch').value.toLowerCase();
-        document.querySelectorAll('#usersTableBody tr').forEach(tr => {
-            tr.style.display = (tr.innerText.toLowerCase().includes(val)) ? "" : "none";
-        });
+        document.querySelectorAll('#usersTableBody tr').forEach(tr => tr.style.display = tr.innerText.toLowerCase().includes(val) ? "" : "none");
     };
 </script>
 </body>
