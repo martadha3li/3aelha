@@ -2,58 +2,176 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>طلبات الأعضاء</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الطلبات والأمن الرقمي</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .req-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; }
-        .bulk-actions { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; position: sticky; top: 0; }
+        .admin-wrapper { padding: 15px; max-width: 1000px; margin: auto; }
+        .req-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 25px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; margin-bottom: 15px; }
+        
+        /* تنبيهات الأمن */
+        .security-alert { background: #fff1f1; border: 2px solid #ff3b30; color: #d63031; padding: 10px; border-radius: 12px; font-size: 12px; margin-top: 10px; font-weight: bold; }
+        
+        /* كروت الطلبات */
+        .request-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f9f9f9; }
+        .request-card:last-child { border: none; }
+        .user-meta { display: flex; align-items: center; gap: 12px; }
+        .user-meta img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        
+        .badge { padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .badge-phone { background: #eef6ff; color: #007aff; }
+        .badge-pass { background: #fdf2f2; color: #ff3b30; }
+
+        .btn-group { display: flex; gap: 8px; }
+        .btn-action { border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: bold; color: white; }
     </style>
 </head>
-<body>
-    <a href="admin.html">⬅️ العودة</a>
-    <h1>طلبات تغيير كلمة المرور</h1>
+<body style="background: #f4f7f6;">
 
-    <div class="bulk-actions">
-        <label><input type="checkbox" id="selectAll" onclick="toggleAll()"> تحديد الكل</label>
-        <button onclick="approveSelected()" style="background:#27ae60; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">موافقة جماعية على المحددة</button>
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+            <b>مركز الطلبات والأمن</b>
+        </div>
+        <img src="logo.png" style="height: 35px;">
     </div>
 
-    <div id="requestsList"></div>
+    <div class="admin-wrapper">
+        
+        <div class="req-section">
+            <div class="section-header"><h2>📥 طلبات التفعيل المعلقة</h2></div>
+            <div id="activationList"></div>
+        </div>
+
+        <div class="req-section">
+            <div class="section-header"><h2>📬 طلبات التعديل الحالية</h2></div>
+            <div id="activeRequests"></div>
+        </div>
+
+        <div class="req-section">
+            <div class="section-header">
+                <h2>🛡️ سجل أمن الحسابات (تغيير كلمة المرور)</h2>
+                <small>تنبيه في حال تجاوز المسافة 600 كم</small>
+            </div>
+            <div id="passwordHistory"></div>
+        </div>
+
+        <div class="req-section" style="border-top: 4px solid var(--primary);">
+            <div class="section-header"><h2>👥 آخر 7 أعضاء انضموا إلينا</h2></div>
+            <div id="recentUsers"></div>
+        </div>
+
+    </div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, query, orderBy, limit, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    onSnapshot(collection(db, "Requests"), snap => {
-        const list = document.getElementById('requestsList');
-        list.innerHTML = "";
-        snap.forEach(d => {
-            const r = d.data();
-            list.innerHTML += `
-                <div class="req-card">
-                    <input type="checkbox" class="req-check" value="${d.id}" data-uid="${r.uid}">
-                    <div><b>${r.fullName}</b> | ${r.phone} <br> <small>نوع الطلب: ${r.type}</small></div>
-                </div>`;
-        });
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role === 'admin') initRequestsPage();
+            else location.href = 'news.html';
+        }
     });
 
-    window.toggleAll = () => {
-        const checked = document.getElementById('selectAll').checked;
-        document.querySelectorAll('.req-check').forEach(c => c.checked = checked);
+    function initRequestsPage() {
+        // --- 1. جلب طلبات التفعيل ---
+        onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
+            const cont = document.getElementById('activationList');
+            cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px;">لا توجد طلبات</p>' : "";
+            snap.forEach(u => {
+                const d = u.data();
+                cont.innerHTML += `<div class="request-card">
+                    <div class="user-meta"><b>${d.fullName}</b><br><small>${d.phone}</small></div>
+                    <button class="btn-action" style="background:#34c759" onclick="updateStatus('${u.id}', 'active')">تفعيل</button>
+                </div>`;
+            });
+        });
+
+        // --- 2. طلبات الجوال والباسورد (المجمعة) ---
+        const reqCols = ['PhoneRequests', 'PasswordRequests'];
+        reqCols.forEach(col => {
+            onSnapshot(collection(db, col), snap => {
+                const cont = document.getElementById('activeRequests');
+                snap.forEach(r => {
+                    const d = r.data();
+                    const isPhone = col === 'PhoneRequests';
+                    cont.innerHTML += `<div class="request-card">
+                        <div>
+                            <span class="badge ${isPhone ? 'badge-phone' : 'badge-pass'}">${isPhone ? 'جوال' : 'كلمة مرور'}</span>
+                            <b>${d.userName}</b><br>
+                            <small>${isPhone ? 'الجديد: ' + d.newPhone : 'المطلوبة: ' + d.requestedPass}</small>
+                        </div>
+                        <button class="btn-action" style="background:var(--primary)" onclick="approveReq('${col}', '${r.id}', '${d.userId}', '${d.newPhone || d.requestedPass}')">موافقة</button>
+                    </div>`;
+                });
+            });
+        });
+
+        // --- 3. سجل الباسورد + التنبيه الجغرافي ---
+        onSnapshot(query(collection(db, "PasswordHistory"), orderBy("timestamp", "desc")), snap => {
+            const cont = document.getElementById('passwordHistory');
+            cont.innerHTML = "";
+            snap.forEach(h => {
+                const d = h.data();
+                // حساب المسافة
+                let alertMsg = "";
+                if(d.regLoc && d.changeLoc) {
+                    const dist = calculateDistance(d.regLoc.lat, d.regLoc.lng, d.changeLoc.lat, d.changeLoc.lng);
+                    if(dist > 600) {
+                        alertMsg = `<div class="security-alert">⚠️ تنبيه أمني: تم تغيير الباسورد من مسافة ${dist.toFixed(1)} كم بعيداً عن موقع التسجيل!</div>`;
+                    }
+                }
+                cont.innerHTML += `<div class="request-card" style="flex-direction:column; align-items:start;">
+                    <div style="width:100%; display:flex; justify-content:space-between;">
+                        <b>${d.userName}</b> <span>${new Date(d.timestamp?.toDate()).toLocaleString('ar-EG')}</span>
+                    </div>
+                    ${alertMsg}
+                </div>`;
+            });
+        });
+
+        // --- 4. آخر 7 أعضاء مسجلين ---
+        onSnapshot(query(collection(db, "Users"), orderBy("createdAt", "desc"), limit(7)), snap => {
+            const cont = document.getElementById('recentUsers');
+            cont.innerHTML = "";
+            snap.forEach(u => {
+                const d = u.data();
+                cont.innerHTML += `<div class="request-card">
+                    <div class="user-meta">
+                        <img src="${d.profileImg || 'https://via.placeholder.com/45'}">
+                        <div><b>${d.fullName}</b><br><small>${d.phone} - ${d.city || 'بدون مدينة'}</small></div>
+                    </div>
+                    <span class="badge" style="background:#eee;">${d.role}</span>
+                </div>`;
+            });
+        });
+    }
+
+    // دالة حساب المسافة بين نقطتين (Haversine Formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // نصف قطر الأرض بالكم
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    // الدوال التنفيذية للموافقة والتفعيل
+    window.approveReq = async (col, rid, uid, val) => {
+        const field = col === 'PhoneRequests' ? 'phone' : 'tempPassword';
+        await updateDoc(doc(db, "Users", uid), { [field]: val });
+        await deleteDoc(doc(db, col, rid));
+        alert("تم تحديث البيانات بنجاح ✅");
     };
 
-    window.approveSelected = async () => {
-        const selected = document.querySelectorAll('.req-check:checked');
-        if(selected.length === 0) return alert("حدد طلبات أولاً");
-        
-        for (let item of selected) {
-            const rid = item.value;
-            const uid = item.dataset.uid;
-            // تنفيذ الموافقة (مثلاً تفعيل resetMode)
-            await updateDoc(doc(db, "Users", uid), { resetMode: true });
-            await deleteDoc(doc(db, "Requests", rid));
-        }
-        alert("تمت معالجة الطلبات المختارة بنجاح");
+    window.updateStatus = async (id, s) => {
+        await updateDoc(doc(db, "Users", id), { status: s });
+        alert("تم تفعيل العضو بنجاح ✅");
     };
 </script>
 </body>
