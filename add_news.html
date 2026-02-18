@@ -2,144 +2,110 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>إضافة خبر جديد</title>
-   <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرئيسية | تايم لاين</title>
+    <title>نشر خبر جديد</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .editor-container { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; padding: 10px; border-bottom: 1px solid #eee; }
+        .tool-btn { padding: 5px 10px; border: 1px solid #ddd; border-radius: 5px; background: white; cursor: pointer; font-weight: bold; }
+        .rich-editor { min-height: 200px; border: 1px solid #eee; padding: 15px; border-radius: 10px; outline: none; background: #fafafa; }
+        .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px; display: none; }
+    </style>
 </head>
 <body>
-
     <div class="top-bar">
-        <img src="logo.png" style="height: 35px;">
-        <div class="top-bar-right">
-            <button id="adminLink" style="display:none; border:none; background:none; font-size:20px;" onclick="location.href='admin.html'">⚙️</button>
-            <button onclick="window.handleLogout()" style="border:none; background:none; font-size:20px;">🚪</button>
+        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
+        <b id="pageTitle">نشر منشور جديد</b>
+        <button class="btn-main" onclick="publishPost()" id="pubBtn">نشر</button>
+    </div>
+
+    <div class="editor-container">
+        <input type="text" id="postTitle" placeholder="عنوان الخبر الرئيسي" class="form-input" style="font-weight: bold; font-size: 18px;">
+        
+        <div class="toolbar">
+            <button class="tool-btn" onclick="execCmd('bold')">B</button>
+            <button class="tool-btn" onclick="execCmd('italic')">I</button>
+            <select onchange="execCmd('foreColor', this.value)" class="tool-btn">
+                <option value="#000">لون النص</option>
+                <option value="#ff3b30">أحمر</option>
+                <option value="#007aff">أزرق</option>
+                <option value="#34c759">أخضر</option>
+            </select>
+        </div>
+
+        <div id="editor" class="rich-editor" contenteditable="true" placeholder="اكتب تفاصيل الخبر هنا..."></div>
+
+        <div style="margin-top:20px;">
+            <label>🖼️ إضافة صورة:</label>
+            <input type="file" id="imgFile" accept="image/*" onchange="previewImage()" style="display: block; margin-top:10px;">
+            <img id="imgPreview" class="preview-img">
+            <input type="hidden" id="base64Img">
         </div>
     </div>
 
-    <div id="newsFeed">
-        </div>
-
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
-
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span>الرئيسية</a>
-        <a href="chat.html" id="chatBtn" class="nav-item"><span class="nav-icon">💬</span>الدردشة</a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span>حسابي</a>
-    </nav>
-
-<script type="module">
-    import { auth, db } from './config.js';
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    let userUID, userData;
-
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            userUID = user.uid;
-            const s = await getDoc(doc(db, "Users", user.uid));
-            userData = s.data();
-            
-            // إظهار الصلاحيات
-            if (userData.role === 'admin' || userData.role === 'editor') {
-                document.getElementById('addNewsBtn').style.display = 'block';
-                if(userData.role === 'admin') document.getElementById('adminLink').style.display = 'block';
-            }
-            loadFeed();
-        } else { window.location.href = "index.html"; }
-    });
-
-    function loadFeed() {
-        onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
-            const feed = document.getElementById('newsFeed');
-            feed.innerHTML = "";
-            snap.forEach((d) => {
-                const n = d.data();
-                const canControl = (userUID === n.authorId) || (userData.role === 'admin');
-
-                feed.innerHTML += `
-                    <div class="news-card">
-                        <div class="news-body-content">
-                            <div class="author-info">
-                                <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
-                                <div>
-                                    <div style="font-weight:700; font-size:14px;">${n.authorName || 'إدارة التطبيق'}</div>
-                                    <div style="font-size:11px; color:var(--text-muted);">${n.category || 'عام'}</div>
-                                </div>
-                            </div>
-                            <h3 style="margin:10px 0; font-size:16px;">${n.title}</h3>
-                        </div>
-                        <img src="${n.img}" class="news-img-main" onclick="openFullNews('${d.id}')">
-                        <div class="news-body-content">
-                            <p style="font-size:13px; line-height:1.5; color:#444;">${n.body}</p>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
-                                <div style="color:var(--primary); font-weight:bold;">❤️ ${n.likes || 0}</div>
-                                ${canControl ? `<button onclick="deleteNews('${d.id}')" style="color:var(--danger); border:none; background:none; font-size:12px; font-weight:bold; cursor:pointer;">🗑️ حذف المنشور</button>` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-            });
-        });
-    }
-
-    window.deleteNews = async (id) => {
-        if(confirm("حذف هذا المنشور نهائياً؟")) await deleteDoc(doc(db, "News", id));
-    };
-</script>
-</body>
-</html>
-</head>
-<body>
-
-<div class="form-card">
-    <h2 style="text-align:center;">نشر خبر جديد 📰</h2>
-    <input type="text" id="newsTitle" placeholder="عنوان الخبر">
-    
-    <label>صورة الخبر (من الجهاز):</label>
-    <input type="file" id="newsImgFile" accept="image/*" onchange="processImage()">
-    <img id="preview">
-    <input type="hidden" id="newsImgBase64"> <textarea id="newsBody" rows="5" placeholder="تفاصيل الخبر..."></textarea>
-    <button class="btn-post" onclick="publishNews()">نشر الخبر الآن</button>
-</div>
-
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    window.processImage = () => {
-        const file = document.getElementById('newsImgFile').files[0];
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('edit');
+
+    // التحقق من حالة التعديل
+    if(editId) {
+        document.getElementById('pageTitle').innerText = "تعديل الخبر";
+        document.getElementById('pubBtn').innerText = "حفظ";
+        const snap = await getDoc(doc(db, "News", editId));
+        const n = snap.data();
+        document.getElementById('postTitle').value = n.title;
+        document.getElementById('editor').innerHTML = n.body;
+        if(n.img) {
+            document.getElementById('imgPreview').src = n.img;
+            document.getElementById('imgPreview').style.display = 'block';
+            document.getElementById('base64Img').value = n.img;
+        }
+    }
+
+    window.execCmd = (cmd, val = null) => document.execCommand(cmd, false, val);
+
+    window.previewImage = () => {
+        const file = document.getElementById('imgFile').files[0];
         const reader = new FileReader();
         reader.onloadend = () => {
-            document.getElementById('newsImgBase64').value = reader.result;
-            document.getElementById('preview').src = reader.result;
-            document.getElementById('preview').style.display = 'block';
-        }
-        if (file) reader.readAsDataURL(file);
+            document.getElementById('imgPreview').src = reader.result;
+            document.getElementById('imgPreview').style.display = 'block';
+            document.getElementById('base64Img').value = reader.result;
+        };
+        if(file) reader.readAsDataURL(file);
     };
 
-    window.publishNews = async () => {
-        const title = document.getElementById('newsTitle').value;
-        const imgData = document.getElementById('newsImgBase64').value;
-        const body = document.getElementById('newsBody').value;
+    window.publishPost = async () => {
+        const title = document.getElementById('postTitle').value;
+        const body = document.getElementById('editor').innerHTML;
+        const img = document.getElementById('base64Img').value;
+        const user = auth.currentUser;
 
-        if(!title || !imgData || !body) return alert("أكمل البيانات واختر صورة");
+        if(!title || body === "") return alert("أكمل البيانات");
 
-        const uSnap = await getDoc(doc(db, "Users", auth.currentUser.uid));
-        const uName = uSnap.data().fullName;
-
-        await addDoc(collection(db, "News"), {
-            title, img: imgData, body,
-            authorId: auth.currentUser.uid,
-            authorName: uName, // اسم المحرر
-            date: serverTimestamp(),
-            likes: 0
-        });
-        alert("تم النشر بنجاح");
-        window.location.href = "news.html";
+        try {
+            if(editId) {
+                await updateDoc(doc(db, "News", editId), { title, body, img });
+                alert("تم التعديل");
+            } else {
+                const uSnap = await getDoc(doc(db, "Users", user.uid));
+                const uData = uSnap.data();
+                await addDoc(collection(db, "News"), {
+                    title, body, img,
+                    authorId: user.uid,
+                    authorName: uData.fullName,
+                    authorImg: uData.profileImg || "",
+                    date: serverTimestamp(),
+                    likedBy: [], isStopped: false
+                });
+                alert("تم النشر");
+            }
+            window.location.href = "news.html";
+        } catch(e) { alert("حدث خطأ"); }
     };
 </script>
 </body>
