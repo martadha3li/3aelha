@@ -285,12 +285,15 @@ list.innerHTML += `
 window.sendComment = async (id) => {
     const inp = document.getElementById(`inp-${id}`);
     if(!inp.value.trim()) return;
+
     await addDoc(collection(db, `News/${id}/Comments`), { 
         text: inp.value, 
         userName: userData.fullName, 
-        userId: auth.currentUser.uid, // ضروري جداً لربط البروفايل
+        userId: auth.currentUser.uid, // تأكد من وجود هذا السطر بدقة
         timestamp: serverTimestamp() 
     });
+    inp.value = "";
+};
     inp.value = "";
 };
 
@@ -300,6 +303,7 @@ window.sendComment = async (id) => {
 </script>
 </body>
 </html>
+
 
 
 
