@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة العائلة | الرئيسية</title>
+    <title>الرئيسية | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* تنسيقات إضافية لحالات الخبر الخاصة */
+        .stopped-news { border: 2px dashed var(--danger) !important; background: #fff9f9 !important; }
+        .scheduled-news { border: 2px dashed #f39c12 !important; background: #fffdf5 !important; }
+        .status-tag { font-size: 10px; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; margin-bottom: 8px; display: inline-block; }
+    </style>
 </head>
 <body>
+
     <div class="top-bar">
         <div style="display:flex; align-items:center; gap:8px;">
             <img src="logo.png" style="height:35px; border-radius:8px;">
             <b style="color:var(--primary);">منصة العائلة</b>
         </div>
-        <div style="display:flex; gap:12px;">
-            <span id="adminBtn" style="display:none; cursor:pointer;" onclick="location.href='admin.html'">⚙️</span>
-            <span onclick="location.href='profile.html'" style="cursor:pointer;">👤</span>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <span id="adminBtn" style="display:none; cursor:pointer; font-size:20px;" onclick="location.href='admin.html'">⚙️</span>
+            <span id="logoutBtn" style="cursor:pointer; font-size:20px;" onclick="handleLogout()">🚪</span>
         </div>
     </div>
 
-    <div id="newsFeed"></div>
+    <div id="newsFeed">
+        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل الأخبار...</p>
+    </div>
 
     <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
 
@@ -31,6 +40,7 @@
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     let userUID, userData;
 
@@ -39,88 +49,152 @@
             userUID = user.uid;
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
-            if (userData.role === 'admin' || userData.role === 'editor') document.getElementById('addNewsBtn').style.display = 'block';
-            if (userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
+            
+            // إظهار أزرار الإدارة والتحرير بناءً على الصلاحية
+            if (userData.role === 'admin' || userData.role === 'editor') {
+                document.getElementById('addNewsBtn').style.display = 'block';
+                if(userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
+            }
             loadFeed();
-        } else { window.location.replace("index.html"); }
+        } else {
+            window.location.replace("index.html");
+        }
     });
 
     function loadFeed() {
-        onSnapshot(query(collection(db, "News"), orderBy("date", "desc")), (snap) => {
+        // وقت التشغيل الحالي للمقارنة مع المجدول
+        const now = Date.now();
+
+        onSnapshot(query(collection(db, "News"), orderBy("publishDate", "desc")), (snap) => {
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
+            
+            if(snap.empty) {
+                feed.innerHTML = '<p style="text-align:center; margin-top:50px; color:gray;">لا توجد أخبار منشورة حالياً</p>';
+                return;
+            }
+
             snap.forEach((d) => {
                 const n = d.data();
-                const isAuth = (userUID === n.authorId) || (userData.role === 'admin');
-                if (n.isStopped && !isAuth) return;
+                const isAuth = (userUID === n.authorId) || (userData.role === 'admin' || userData.role === 'editor');
+                
+                // فحص الجدولة: هل تاريخ النشر في المستقبل؟
+                const isScheduled = n.publishDate > now;
+                // فحص الإيقاف: هل تم وضع علامة إيقاف (عرض مؤقت)؟
+                const isStopped = n.isStopped === true;
+
+                // منطق العرض: إذا كان الخبر (مجدول أو موقوف) وهو ليس مديراً/محرراً -> لا يعرض الخبر
+                if ((isScheduled || isStopped) && !isAuth) return;
 
                 const hasLiked = n.likedBy?.includes(userUID);
                 const card = document.createElement('div');
-                card.className = `news-card ${n.isStopped ? 'stopped-news' : ''}`;
+                
+                // إضافة كلاسات التمييز للمحررين
+                card.className = `news-card ${isStopped ? 'stopped-news' : ''} ${isScheduled ? 'scheduled-news' : ''}`;
                 
                 card.innerHTML = `
                     <div class="news-body-content">
-                        ${n.isStopped ? '<span class="stop-tag">🚫 خبر موقوف</span>' : ''}
+                        ${isScheduled ? '<span class="status-tag" style="background:#f39c12;">⏳ منشور مجدول</span>' : ''}
+                        ${isStopped ? '<span class="status-tag" style="background:#e74c3c;">👁️ عرض مؤقت للمحررين</span>' : ''}
+                        
                         <div class="author-info">
                             <img src="${n.authorImg || 'https://via.placeholder.com/35'}" class="author-img">
-                            <div><b>${n.authorName}</b><br><small>${n.date?.toDate().toLocaleString('ar-EG')}</small></div>
+                            <div>
+                                <div style="font-weight:700; font-size:14px;">${n.authorName}</div>
+                                <div style="font-size:11px; color:var(--text-muted);">${new Date(n.publishDate).toLocaleString('ar-EG')}</div>
+                            </div>
+                        </div>
+                        <h3 style="margin:10px 0 5px 0; font-size:16px;">${n.title}</h3>
+                    </div>
+                    
+                    <img src="${n.img}" class="news-img-main">
+                    
+                    <div class="news-body-content">
+                        <div style="font-size:14px; line-height:1.6; color:#444;">${n.body}</div>
+                    </div>
+
+                    <div class="post-actions">
+                        <div class="action-item ${hasLiked ? 'like-active' : ''}" onclick="toggleLike('${d.id}', ${hasLiked})">
+                            ${hasLiked ? '❤️' : '🤍'} <span>${n.likedBy?.length || 0}</span>
+                        </div>
+                        <div class="action-item" onclick="toggleComments('${d.id}')">
+                            💬 <span id="comm-count-${d.id}">0</span>
                         </div>
                     </div>
-                    <img src="${n.img}" class="news-img-main">
-                    <div class="news-body-content">
-                        <h3 style="margin:0 0 10px 0;">${n.title}</h3>
-                        <div style="font-size:14px; line-height:1.6;">${n.body}</div>
-                    </div>
 
-                    <div class="post-actions" style="border-top:1px solid #eee;">
-                        <span onclick="toggleLike('${d.id}', ${hasLiked})" style="cursor:pointer; color:${hasLiked?'red':'gray'}">❤️ ${n.likedBy?.length || 0}</span>
-                        <span style="color:gray;">💬 التعليقات</span>
-                    </div>
-
-                    <div style="padding:10px 15px; background:#f9f9f9;">
-                        <div id="comms-${d.id}" style="font-size:12px; max-height:100px; overflow-y:auto; margin-bottom:10px;"></div>
-                        <div style="display:flex; gap:5px;">
-                            <input type="text" id="inp-${d.id}" placeholder="اكتب تعليقاً..." style="flex:1; padding:8px; border-radius:10px; border:1px solid #ddd; font-size:12px;">
-                            <button onclick="sendComm('${d.id}')" style="background:var(--primary); color:white; border:none; padding:5px 15px; border-radius:10px;">نشر</button>
+                    <div id="tray-${d.id}" class="comments-tray">
+                        <div id="list-${d.id}"></div>
+                        <div class="comment-input-area">
+                            <input type="text" id="inp-${d.id}" placeholder="اكتب تعليقاً..." onkeypress="handleCommKey(event, '${d.id}')">
+                            <button onclick="addComment('${d.id}')" style="border:none; background:none; color:var(--primary); font-weight:bold;">نشر</button>
                         </div>
                     </div>
 
                     ${isAuth ? `
-                        <div class="editor-tools" style="padding:10px; background:#eee;">
+                        <div class="editor-tools" style="display:flex; gap:10px; padding:10px; background:#f0f0f0; border-top:1px solid #ddd;">
                             <button class="btn-tool" onclick="location.href='add_news.html?edit=${d.id}'">✏️ تعديل</button>
-                            <button class="btn-tool" onclick="toggleStop('${d.id}', ${n.isStopped})">${n.isStopped?'تشغيل':'إيقاف'}</button>
-                            <button class="btn-tool" style="color:red" onclick="delPost('${d.id}')">🗑️ حذف</button>
+                            <button class="btn-tool" style="color:red" onclick="deletePost('${d.id}')">🗑️ حذف</button>
                         </div>
                     ` : ''}
                 `;
                 feed.appendChild(card);
-                loadComms(d.id);
+                updateCommentCount(d.id);
             });
         });
     }
 
-    // دوال التفاعل
-    window.toggleLike = async (id, liked) => {
-        await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
-    };
-
-    window.loadComms = (id) => {
-        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), s => {
-            const box = document.getElementById(`comms-${id}`);
-            box.innerHTML = "";
-            s.forEach(c => { box.innerHTML += `<div><b>${c.data().userName}:</b> ${c.data().text}</div>`; });
+    // --- الوظائف التفاعلية ---
+    window.toggleLike = async (id, hasLiked) => {
+        await updateDoc(doc(db, "News", id), {
+            likedBy: hasLiked ? arrayRemove(userUID) : arrayUnion(userUID)
         });
     };
 
-    window.sendComm = async (id) => {
-        const txt = document.getElementById(`inp-${id}`).value;
-        if(!txt) return;
-        await addDoc(collection(db, `News/${id}/Comments`), { text: txt, userName: userData.fullName, timestamp: serverTimestamp() });
-        document.getElementById(`inp-${id}`).value = "";
+    window.toggleComments = (id) => {
+        const tray = document.getElementById(`tray-${id}`);
+        const isVisible = tray.style.display === 'block';
+        tray.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) loadComments(id);
     };
 
-    window.toggleStop = async (id, s) => await updateDoc(doc(db, "News", id), { isStopped: !s });
-    window.delPost = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
+    window.updateCommentCount = (id) => {
+        onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
+            const el = document.getElementById(`comm-count-${id}`);
+            if(el) el.innerText = s.size;
+        });
+    };
+
+    window.loadComments = (id) => {
+        const list = document.getElementById(`list-${id}`);
+        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (snap) => {
+            list.innerHTML = "";
+            snap.forEach(c => {
+                list.innerHTML += `<div style="margin-bottom:5px; font-size:13px;"><b>${c.data().userName}:</b> ${c.data().text}</div>`;
+            });
+        });
+    };
+
+    window.addComment = async (id) => {
+        const inp = document.getElementById(`inp-${id}`);
+        if (!inp.value.trim()) return;
+        await addDoc(collection(db, `News/${id}/Comments`), {
+            text: inp.value, userName: userData.fullName, timestamp: serverTimestamp()
+        });
+        inp.value = "";
+    };
+
+    window.handleCommKey = (e, id) => { if (e.key === 'Enter') window.addComment(id); };
+
+    window.deletePost = async (id) => {
+        if(confirm("هل أنت متأكد من حذف الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id));
+    };
+
+    window.handleLogout = async () => {
+        if(confirm("هل تريد الخروج؟")) {
+            await signOut(auth);
+            window.location.replace("index.html");
+        }
+    };
 </script>
 </body>
 </html>
