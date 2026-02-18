@@ -2,73 +2,155 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة الإدارة الشاملة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | الإدارة العامة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-container { padding: 15px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .user-row { background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; box-shadow: var(--shadow); }
-        .badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; color: white; }
-        .status-pending { background: var(--danger); }
-        .status-active { background: var(--accent); }
-        .guardian-note { font-size: 11px; background: #fff5f5; padding: 5px; border-radius: 5px; margin-top: 5px; border: 1px dashed red; }
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; padding: 15px; }
+        .stat-card { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid var(--primary); }
+        .stat-card h3 { font-size: 24px; margin: 5px 0; color: var(--primary); }
+        .stat-card span { font-size: 12px; color: gray; }
+
+        .admin-section { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
+        .admin-section h2 { font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+
+        .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
+        
+        .role-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #eef6ff; color: var(--primary); font-weight: bold; }
+        
+        .chat-btn { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
+        
+        .request-card { background: #fffdf5; border: 1px solid #fcebb6; padding: 12px; border-radius: 12px; margin-bottom: 10px; }
+        .request-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-approve { background: var(--accent); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-reject { background: var(--danger); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
+
     <div class="top-bar">
-        <b>⚙️ إدارة المنصة</b>
-        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:20px;">🏠</button>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button onclick="location.href='news.html'" style="border:none; background:none; font-size:20px;">🏠</button>
+            <b>لوحة تحكم المدير</b>
+        </div>
+        <img src="logo.png" style="height: 35px;">
     </div>
 
-    <div class="admin-container">
-        <div class="stat-grid" id="statsArea">
-            </div>
+    <div class="admin-grid">
+        <div class="stat-card"><h3 id="newsCount">0</h3><span>إجمالي الأخبار</span></div>
+        <div class="stat-card"><h3 id="catCount">0</h3><span>التصنيفات</span></div>
+        <div class="stat-card"><h3 id="usersCount">0</h3><span>الأعضاء</span></div>
+    </div>
 
-        <h3>👥 إدارة الأعضاء والطلبات</h3>
-        <div id="usersManager"></div>
+    <div class="admin-section">
+        <h2>📥 طلبات ترقية الصلاحيات</h2>
+        <div id="requestsList">
+            <p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات معلقة حالياً</p>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h2>🛠️ طاقم الإدارة والمحررين</h2>
+        <div id="adminTeam"></div>
+    </div>
+
+    <div style="padding: 15px;">
+        <button class="btn-main" style="width:100%;" onclick="openRequestModal()">طلب ترقية صلاحية 🚀</button>
     </div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { auth, db } from './config.js';
+    import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. الإحصائيات والإدارة
-    onSnapshot(collection(db, "Users"), snap => {
-        let m=0, f=0, total=snap.size;
-        const manager = document.getElementById('usersManager');
-        manager.innerHTML = "";
-        
-        snap.forEach(d => {
-            const u = d.data();
-            if(u.role === 'admin') return;
-            u.gender === 'male' ? m++ : f++;
-            
-            const isFemale = u.gender === 'female';
-            manager.innerHTML += `
-                <div class="user-row">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <b>${u.fullName}</b> <span class="badge ${u.status === 'active' ? 'status-active' : 'status-pending'}">${u.status}</span>
-                            <div style="font-size:11px; color:gray;">${u.phone} | صلاحية: ${u.role || 'عضو'}</div>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="changeRole('${d.id}', 'editor')" style="font-size:10px;">ترقية لمحرر</button>
-                            <button onclick="toggleUser('${d.id}', '${u.status}')" style="font-size:10px;">${u.status === 'active' ? 'تعطيل' : 'تفعيل'}</button>
-                            <button onclick="deleteU('${d.id}')" style="font-size:10px; color:red;">حذف</button>
-                        </div>
-                    </div>
-                    ${(isFemale && u.guardianName) ? `<div class="guardian-note">🛡️ المعرف: ${u.guardianName} (${u.guardianPhone})</div>` : ''}
-                </div>`;
-        });
-        
-        document.getElementById('statsArea').innerHTML = `
-            <div class="stat-box"><h3>الذكور</h3><p>${m}</p></div>
-            <div class="stat-box"><h3>الإناث</h3><p>${f}</p></div>`;
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const s = await getDoc(doc(db, "Users", user.uid));
+            if (s.data().role !== 'admin') {
+                alert("عذراً، هذه الصفحة مخصصة للمدير العام فقط.");
+                location.href = 'news.html';
+            }
+            loadAdminData();
+        } else { location.href = 'index.html'; }
     });
 
-    window.changeRole = async (id, role) => await updateDoc(doc(db, "Users", id), { role });
-    window.toggleUser = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s === 'active' ? 'disabled' : 'active' });
-    window.deleteU = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
+    function loadAdminData() {
+        // 1. حساب الإحصائيات
+        onSnapshot(collection(db, "News"), s => document.getElementById('newsCount').innerText = s.size);
+        onSnapshot(collection(db, "Categories"), s => document.getElementById('catCount').innerText = s.size);
+        onSnapshot(collection(db, "Users"), s => document.getElementById('usersCount').innerText = s.size);
+
+        // 2. عرض طاقم الإدارة
+        const teamQuery = query(collection(db, "Users"), where("role", "in", ["admin", "editor", "moderator"]));
+        onSnapshot(teamQuery, (snap) => {
+            const container = document.getElementById('adminTeam');
+            container.innerHTML = "";
+            snap.forEach(u => {
+                const data = u.data();
+                if(u.id === auth.currentUser.uid) return; // عدم إظهار المدير لنفسه
+                container.innerHTML += `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <img src="${data.profileImg || 'https://via.placeholder.com/35'}" class="user-avatar">
+                            <div>
+                                <b>${data.fullName}</b><br>
+                                <span class="role-badge">${data.role}</span>
+                            </div>
+                        </div>
+                        <button class="chat-btn" onclick="goToChat('${u.id}')">💬 دردشة</button>
+                    </div>`;
+            });
+        });
+
+        // 3. عرض طلبات الصلاحيات
+        onSnapshot(collection(db, "RoleRequests"), (snap) => {
+            const list = document.getElementById('requestsList');
+            if(snap.empty) { list.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات</p>'; return; }
+            list.innerHTML = "";
+            snap.forEach(r => {
+                const req = r.data();
+                list.innerHTML += `
+                    <div class="request-card">
+                        <b>👤 ${req.userName}</b> يطلب صلاحية: <span style="color:var(--primary); font-weight:bold;">${req.requestedRole}</span>
+                        <div class="request-actions">
+                            <button class="btn-approve" onclick="handleRequest('${r.id}', '${req.userId}', '${req.requestedRole}', true)">موافقة ✅</button>
+                            <button class="btn-reject" onclick="handleRequest('${r.id}', null, null, false)">رفض ❌</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    // الموافقة أو الرفض
+    window.handleRequest = async (reqId, userId, newRole, isApproved) => {
+        if (isApproved) {
+            await updateDoc(doc(db, "Users", userId), { role: newRole });
+            alert("تمت الموافقة وترقية العضو.");
+        }
+        await deleteDoc(doc(db, "RoleRequests", reqId));
+    };
+
+    // توجيه للدردشة
+    window.goToChat = (targetId) => {
+        location.href = `chat.html?target=${targetId}`;
+    };
+
+    // وظيفة طلب صلاحية (للتجربة)
+    window.openRequestModal = async () => {
+        const role = prompt("أدخل اسم الصلاحية المطلوبة (editor / moderator):");
+        if(role) {
+            const u = auth.currentUser;
+            const uSnap = await getDoc(doc(db, "Users", u.uid));
+            await addDoc(collection(db, "RoleRequests"), {
+                userId: u.uid,
+                userName: uSnap.data().fullName,
+                requestedRole: role,
+                timestamp: serverTimestamp()
+            });
+            alert("تم إرسال طلبك للإدارة العامة.");
+        }
+    };
 </script>
 </body>
 </html>
