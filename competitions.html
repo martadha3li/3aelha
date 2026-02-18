@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المسابقات | العائلة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="background: #f8f9fa;">
+    <div class="top-bar">
+        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
+        <b>المسابقات القائمة</b>
+    </div>
+
+    <div id="compList" style="padding: 15px;">
+        <p style="text-align: center; color: gray;">جاري جلب المسابقات المتاحة...</p>
+    </div>
+
+<script type="module">
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, query, addDoc, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    let currentUser = null;
+    auth.onAuthStateChanged(async user => {
+        if(user) {
+            const s = await getDoc(doc(db, "Users", user.uid));
+            currentUser = s.data();
+            currentUser.uid = user.uid;
+            loadActiveCompetitions();
+        }
+    });
+
+    function loadActiveCompetitions() {
+        const now = new Date().toISOString();
+        onSnapshot(collection(db, "Competitions"), snap => {
+            const cont = document.getElementById('compList');
+            cont.innerHTML = "";
+            snap.forEach(compDoc => {
+                const comp = compDoc.data();
+                // فحص الجدولة
+                if(now >= comp.start && now <= comp.end) {
+                    const div = document.createElement('div');
+                    div.className = 'comp-card';
+                    div.innerHTML = `<h3>🏆 ${comp.name}</h3><div id="q-${compDoc.id}"></div>`;
+                    cont.appendChild(div);
+                    loadQuestions(compDoc.id);
+                }
+            });
+        });
+    }
+
+    function loadQuestions(compId) {
+        onSnapshot(collection(db, `Competitions/${compId}/Questions`), snap => {
+            const qCont = document.getElementById(`q-${compId}`);
+            snap.forEach(qDoc => {
+                const q = qDoc.data();
+                qCont.innerHTML += `
+                    <div style="margin-top:15px; background:#f9f9f9; padding:15px; border-radius:15px;">
+                        <p><b>السؤال:</b> ${q.text}</p>
+                        ${q.options.map((opt, i) => `
+                            <button onclick="submitAnswer('${compId}', '${qDoc.id}', ${i+1}, ${q.correct})" 
+                                    style="width:100%; margin-top:5px; padding:10px; border-radius:10px; border:1px solid #ddd; cursor:pointer;">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            });
+        });
+    }
+
+    window.submitAnswer = async (compId, qId, chosen, correct) => {
+        await addDoc(collection(db, "CompResults"), {
+            compId, qId,
+            userId: currentUser.uid,
+            userName: currentUser.fullName,
+            isCorrect: (chosen == correct),
+            timestamp: new Date()
+        });
+        alert("تم تسجيل إجابتك، شكراً لمشاركتك!");
+    };
+</script>
+</body>
+</html>
