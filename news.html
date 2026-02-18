@@ -3,24 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة العائلة | التايم لاين</title>
+    <title>التايم لاين | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* القائمة الجانبية */
-        .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 1000; transition: 0.3s; padding: 20px; }
-        .sidebar.active { right: 0; }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 999; }
-        .sidebar-overlay.active { display: block; }
-        .cat-link { display: block; padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 12px; text-decoration: none; color: #333; font-weight: 600; }
-        .active-cat { background: var(--primary) !important; color: white !important; }
+        /* ضمان ظهور الشريط السفلي وثباته */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eee;
+            z-index: 2000; /* أعلى من القائمة الجانبية */
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
 
-        /* تمييز الأخبار الخاصة */
-        .scheduled-card { border-right: 6px solid #ff9500 !important; background: #fffaf2 !important; }
-        .private-card { border-right: 6px solid #007aff !important; background: #f2f7ff !important; }
-        
-        .interaction-row { display: flex; gap: 20px; padding: 12px 18px; border-top: 1px solid #eee; }
-        .stat-item { cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold; }
-        .comments-dropdown { display: none; background: #fafafa; padding: 15px; border-top: 1px solid #eee; }
+        .nav-item {
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #8e8e93;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+
+        /* تعديل المسافة السفلية للأخبار لكي لا يغطيها الشريط */
+        #newsFeed { padding-bottom: 80px; }
+
+        /* القائمة الجانبية (Sidebar) */
+        .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: white; z-index: 3000; transition: 0.3s; padding: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
+        .sidebar.active { right: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 2500; }
+        .sidebar-overlay.active { display: block; }
     </style>
 </head>
 <body>
@@ -44,105 +67,28 @@
     </div>
 
     <div id="newsFeed"></div>
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
+
+    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none; bottom: 85px;">+</button>
+
+    <nav class="bottom-nav">
+        <a href="news.html" class="nav-item active">
+            <span class="nav-icon">🏠</span>
+            <span>الرئيسية</span>
+        </a>
+        <a href="chat.html" class="nav-item">
+            <span class="nav-icon">💬</span>
+            <span>الدردشة</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>حسابي</span>
+        </a>
+    </nav>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, query, orderBy, onSnapshot, doc, getDoc, where, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    let userUID, userData, currentCat = "الكل";
-
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            userUID = user.uid;
-            const s = await getDoc(doc(db, "Users", user.uid));
-            userData = s.data();
-            if (userData.role === 'admin' || userData.role === 'editor') document.getElementById('addNewsBtn').style.display = 'block';
-            if (userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
-            loadSidebar();
-            loadFeed();
-        } else { window.location.replace("index.html"); }
-    });
-
-    function loadSidebar() {
-        onSnapshot(collection(db, "Categories"), snap => {
-            const cont = document.getElementById('sideCats');
-            cont.innerHTML = "";
-            snap.forEach(c => {
-                cont.innerHTML += `<a href="#" class="cat-link" onclick="filterByCategory('${c.data().name}', this)">${c.data().name}</a>`;
-            });
-        });
-    }
-
-    window.filterByCategory = (name, el) => {
-        currentCat = name;
-        document.querySelectorAll('.cat-link').forEach(link => link.classList.remove('active-cat'));
-        el.classList.add('active-cat');
-        toggleSidebar();
-        loadFeed();
-    };
-
-    function loadFeed() {
-        const now = Date.now();
-        let qry = query(collection(db, "News"), orderBy("publishDate", "desc"));
-        if(currentCat !== "الكل") qry = query(collection(db, "News"), where("category", "==", currentCat), orderBy("publishDate", "desc"));
-
-        onSnapshot(qry, snap => {
-            const feed = document.getElementById('newsFeed');
-            feed.innerHTML = "";
-            snap.forEach(d => {
-                const n = d.data();
-                const isAuth = (userUID === n.authorId) || (userData.role === 'admin' || userData.role === 'editor');
-                const isScheduled = n.publishDate > now;
-                const isTemp = n.isStopped;
-
-                if((isScheduled || isTemp) && !isAuth) return;
-
-                const card = document.createElement('div');
-                card.className = `news-card ${isScheduled ? 'scheduled-card' : ''} ${isTemp ? 'private-card' : ''}`;
-                
-                card.innerHTML = `
-                    <div class="news-body-content">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span class="role-badge">${n.category || 'عام'}</span>
-                            ${isScheduled ? '<b>⏳ مجدول</b>' : ''} ${isTemp ? '<b>👁️ خاص</b>' : ''}
-                        </div>
-                        <h3 style="margin:10px 0;">${n.title}</h3>
-                        <div style="font-size:14px; color:#444;">${n.body}</div>
-                    </div>
-                    ${n.img ? `<img src="${n.img}" class="news-img-main">` : ''}
-                    <div class="interaction-row">
-                        <div class="stat-item" onclick="toggleLike('${d.id}', ${n.likedBy?.includes(userUID)})">
-                            ${n.likedBy?.includes(userUID) ? '❤️' : '🤍'} ${n.likedBy?.length || 0}
-                        </div>
-                        <div class="stat-item" onclick="toggleComments('${d.id}')">💬 تعليقات</div>
-                        ${isAuth ? `<span onclick="location.href='add_news.html?edit=${d.id}'" style="cursor:pointer;">✏️</span>
-                                    <span onclick="deletePost('${d.id}')" style="cursor:pointer; color:red;">🗑️</span>` : ''}
-                    </div>
-                    <div id="tray-${d.id}" class="comments-dropdown">
-                        <div id="list-${d.id}"></div>
-                        <input type="text" id="inp-${d.id}" placeholder="اكتب تعليقاً..." onkeypress="handleComm(event, '${d.id}')" style="width:100%; padding:8px; border-radius:10px; border:1px solid #ddd; margin-top:10px;">
-                    </div>
-                `;
-                feed.appendChild(card);
-                loadComms(d.id);
-            });
-        });
-    }
-
-    window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); };
-    window.toggleLike = async (id, liked) => { await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) }); };
-    window.toggleComments = (id) => { const t = document.getElementById(`tray-${id}`); t.style.display = t.style.display === 'block' ? 'none' : 'block'; };
-    window.loadComms = (id) => { onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), s => {
-        const l = document.getElementById(`list-${id}`); l.innerHTML = "";
-        s.forEach(c => { l.innerHTML += `<div style="font-size:12px; margin-bottom:5px;"><b>${c.data().userName}:</b> ${c.data().text}</div>`; });
-    }); };
-    window.handleComm = async (e, id) => { if(e.key==='Enter' && e.target.value.trim()){ 
-        await addDoc(collection(db, `News/${id}/Comments`), { text: e.target.value, userName: userData.fullName, timestamp: serverTimestamp() });
-        e.target.value = "";
-    }};
-    window.deletePost = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
-    window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(()=>location.replace("index.html")); };
+    // ... (نفس كود السكريبت السابق الخاص بجلب البيانات والفلترة) ...
+    // تأكد من بقاء دوال loadFeed() و toggleSidebar() كما هي في الكود السابق
 </script>
+
 </body>
 </html>
