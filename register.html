@@ -3,31 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل عضوية جديدة | منصة العائلة</title>
+    <title>إنشاء حساب جديد | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .reg-container { padding: 30px 20px; max-width: 450px; margin: auto; }
+        .reg-container { padding: 30px 20px; max-width: 500px; margin: auto; padding-bottom: 50px; }
+        .form-card { background: white; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #444; }
-        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; outline: none; }
-        .form-input:focus { border-color: var(--primary); }
-        .location-note { font-size: 11px; color: #8e8e93; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 13px; color: #444; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s; }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+        
+        /* قسم المعرف - مخفي افتراضياً */
+        #guardianSection { 
+            display: none; 
+            background: #fff5f5; 
+            padding: 15px; 
+            border-radius: 15px; 
+            border: 1px dashed #ffcccc; 
+            margin-top: 10px; 
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body style="background: #f8f9fa;">
 
     <div class="top-bar">
-        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
+        <button onclick="location.href='login.html'" style="border:none; background:none; font-size:20px;">➡️</button>
         <b>إنشاء حساب جديد</b>
         <div style="width:20px;"></div>
     </div>
 
     <div class="reg-container">
-        <div class="category-card" style="background:white; padding:25px; border-radius:25px; box-shadow: var(--shadow);">
-            
+        <div class="form-card">
             <div class="form-group">
                 <label>الاسم الكامل</label>
-                <input type="text" id="regName" class="form-input" placeholder="أدخل اسمك الثلاثي">
+                <input type="text" id="regName" class="form-input" placeholder="الاسم الثلاثي">
             </div>
 
             <div class="form-group">
@@ -35,28 +46,38 @@
                 <input type="tel" id="regPhone" class="form-input" placeholder="05xxxxxxxx">
             </div>
 
-            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                    <label>العمر</label>
-                    <input type="number" id="regAge" class="form-input" placeholder="مثلاً: 25">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>تاريخ الميلاد</label>
+                    <input type="date" id="regDob" class="form-input">
                 </div>
-                <div>
+                <div class="form-group">
                     <label>الجنس</label>
-                    <select id="regGender" class="form-input">
+                    <select id="regGender" class="form-input" onchange="checkGender()">
                         <option value="male">ذكر</option>
                         <option value="female">أنثى</option>
                     </select>
                 </div>
             </div>
 
+            <div id="guardianSection">
+                <p style="margin:0 0 10px 0; font-size: 12px; color: #d63031; font-weight: bold;">🛡️ بيانات المُعرّف (ولي الأمر)</p>
+                <div class="form-group">
+                    <input type="text" id="guardianName" class="form-input" placeholder="اسم المعرف الكامل">
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="guardianPhone" class="form-input" placeholder="رقم جوال المعرف">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>مدينة السكن الدائم</label>
-                <input type="text" id="regCity" class="form-input" placeholder="مثلاً: الرياض، الدمام...">
+                <input type="text" id="regCity" class="form-input" placeholder="المدينة">
             </div>
 
             <div class="form-group">
                 <label>البريد الإلكتروني</label>
-                <input type="email" id="regEmail" class="form-input" placeholder="email@example.com">
+                <input type="email" id="regEmail" class="form-input" placeholder="example@mail.com">
             </div>
 
             <div class="form-group">
@@ -64,17 +85,7 @@
                 <input type="password" id="regPass" class="form-input" placeholder="********">
             </div>
 
-            <p class="location-note">
-                📍 سيتم تحديد موقعك الحالي لتوثيق أمان الحساب.
-            </p>
-
-            <button id="btnRegister" class="btn-main" style="width:100%; margin-top:15px; padding:15px;" onclick="handleRegister()">
-                إنشاء الحساب وتحديد الموقع
-            </button>
-            
-            <p style="text-align:center; font-size:13px; margin-top:15px;">
-                لديك حساب بالفعل؟ <a href="index.html" style="color:var(--primary); text-decoration:none; font-weight:bold;">سجل دخولك</a>
-            </p>
+            <button id="btnReg" class="btn-main" style="width:100%; margin-top:10px; padding:15px;" onclick="handleRegister()">إنشاء الحساب 🚀</button>
         </div>
     </div>
 
@@ -83,67 +94,67 @@
     import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // دالة جلب إحداثيات الـ GPS
-    async function getGPSLocation() {
+    // 1. مراقبة اختيار الجنس لإظهار/إخفاء قسم المعرف
+    window.checkGender = () => {
+        const gender = document.getElementById('regGender').value;
+        const section = document.getElementById('guardianSection');
+        section.style.display = (gender === 'female') ? 'block' : 'none';
+    };
+
+    // 2. دالة جلب الموقع الجغرافي GPS
+    async function getGPS() {
         return new Promise((resolve) => {
-            if (!navigator.geolocation) {
-                console.warn("المتصفح لا يدعم تحديد الموقع");
-                resolve(null);
-            }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                (err) => {
-                    console.error("رفض العضو إذن الموقع", err);
-                    resolve(null);
-                },
-                { timeout: 10000 }
-            );
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                    () => resolve(null),
+                    { timeout: 5000 }
+                );
+            } else resolve(null);
         });
     }
 
+    // 3. معالجة التسجيل
     window.handleRegister = async () => {
-        const name = document.getElementById('regName').value.trim();
-        const phone = document.getElementById('regPhone').value.trim();
-        const age = document.getElementById('regAge').value.trim();
-        const gender = document.getElementById('regGender').value;
-        const city = document.getElementById('regCity').value.trim();
+        const btn = document.getElementById('btnReg');
         const email = document.getElementById('regEmail').value.trim();
         const pass = document.getElementById('regPass').value.trim();
-        const btn = document.getElementById('btnRegister');
+        const gender = document.getElementById('regGender').value;
 
-        if(!name || !phone || !email || !pass) return alert("يرجى ملء كافة الحقول الأساسية");
+        // التحقق من الحقول
+        if(!email || !pass) return alert("يرجى إكمال البيانات الأساسية");
+        if(gender === 'female' && !document.getElementById('guardianName').value) return alert("يرجى إدخال بيانات المعرف");
 
         btn.disabled = true;
-        btn.innerText = "جاري تحديد الموقع وحفظ البيانات...";
+        btn.innerText = "جاري تحديد موقعك وحفظ البيانات...";
 
-        // 1. جلب الموقع الجغرافي (GPS)
-        const coords = await getGPSLocation();
+        const location = await getGPS();
 
         try {
-            // 2. إنشاء الحساب في Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const user = userCredential.user;
+            const uid = userCredential.user.uid;
 
-            // 3. تخزين البيانات في Firestore مع إحداثيات التسجيل (regLoc)
-            await setDoc(doc(db, "Users", user.uid), {
-                fullName: name,
-                phone: phone,
-                age: parseInt(age),
+            await setDoc(doc(db, "Users", uid), {
+                fullName: document.getElementById('regName').value,
+                phone: document.getElementById('regPhone').value,
+                dob: document.getElementById('regDob').value,
                 gender: gender,
-                city: city,
-                role: "user",
+                city: document.getElementById('regCity').value,
+                email: email,
+                guardianName: gender === 'female' ? document.getElementById('guardianName').value : null,
+                guardianPhone: gender === 'female' ? document.getElementById('guardianPhone').value : null,
+                regLoc: location, // حفظ الموقع الجغرافي هنا
                 status: "pending",
-                regLoc: coords, // تخزين خط الطول والعرض
+                role: "user",
                 createdAt: serverTimestamp()
             });
 
-            alert("تم التسجيل بنجاح! بانتظار موافقة الإدارة لتفعيل حسابك.");
-            window.location.href = "index.html";
-
-        } catch (error) {
-            alert("فشل التسجيل: " + error.message);
+            alert("تم التسجيل بنجاح! حسابك بانتظار تفعيل الإدارة.");
+            window.location.replace("login.html");
+        } catch (e) {
+            alert("خطأ: " + e.message);
             btn.disabled = false;
-            btn.innerText = "إنشاء الحساب وتحديد الموقع";
+            btn.innerText = "إنشاء الحساب 🚀";
         }
     };
 </script>
