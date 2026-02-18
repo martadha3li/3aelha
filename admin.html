@@ -3,154 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | الإدارة العامة</title>
+    <title>لوحة الإدارة | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; padding: 15px; }
-        .stat-card { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid var(--primary); }
-        .stat-card h3 { font-size: 24px; margin: 5px 0; color: var(--primary); }
-        .stat-card span { font-size: 12px; color: gray; }
+        .admin-wrapper { padding: 15px; max-width: 600px; margin: auto; }
+        
+        /* كروت الإحصائيات */
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 3px solid var(--primary); }
+        .stat-card h3 { font-size: 22px; color: var(--primary); margin: 5px 0; }
+        .stat-card span { font-size: 11px; color: var(--text-muted); font-weight: bold; }
 
-        .admin-section { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
-        .admin-section h2 { font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        /* الأقسام */
+        .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
+        .section-header h2 { font-size: 15px; margin: 0; color: var(--text-main); }
 
-        .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        
-        .role-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #eef6ff; color: var(--primary); font-weight: bold; }
-        
-        .chat-btn { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-        
-        .request-card { background: #fffdf5; border: 1px solid #fcebb6; padding: 12px; border-radius: 12px; margin-bottom: 10px; }
-        .request-actions { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-approve { background: var(--accent); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
-        .btn-reject { background: var(--danger); color: white; border: none; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
+        /* قوائم المستخدمين */
+        .admin-list-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
+        .user-meta { display: flex; align-items: center; gap: 10px; }
+        .user-meta img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .user-name { font-size: 13px; font-weight: bold; }
+        .user-role { font-size: 10px; background: #eef6ff; color: var(--primary); padding: 2px 8px; border-radius: 10px; }
+
+        /* أزرار الإجراءات */
+        .action-btns { display: flex; gap: 5px; }
+        .btn-chat { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        .btn-action { background: #f0f0f0; color: #333; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; }
+
+        /* طلبات الصلاحيات */
+        .req-box { background: #fff9e6; border: 1px solid #ffeeba; padding: 12px; border-radius: 15px; margin-bottom: 10px; }
+        .req-info { font-size: 12px; margin-bottom: 10px; }
+        .req-btns { display: flex; gap: 10px; }
+        .btn-ok { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 8px; font-weight: bold; }
+        .btn-no { background: var(--danger); color: white; border: none; padding: 6px 15px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-            <button onclick="location.href='news.html'" style="border:none; background:none; font-size:20px;">🏠</button>
-            <b>لوحة تحكم المدير</b>
+            <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
+            <b style="font-size: 16px;">إدارة المنصة</b>
         </div>
-        <img src="logo.png" style="height: 35px;">
+        <img src="logo.png" style="height: 35px; border-radius: 5px;">
     </div>
 
-    <div class="admin-grid">
-        <div class="stat-card"><h3 id="newsCount">0</h3><span>إجمالي الأخبار</span></div>
-        <div class="stat-card"><h3 id="catCount">0</h3><span>التصنيفات</span></div>
-        <div class="stat-card"><h3 id="usersCount">0</h3><span>الأعضاء</span></div>
-    </div>
-
-    <div class="admin-section">
-        <h2>📥 طلبات ترقية الصلاحيات</h2>
-        <div id="requestsList">
-            <p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات معلقة حالياً</p>
+    <div class="admin-wrapper">
+        <div class="stat-grid">
+            <div class="stat-card"><h3>الأخبار</h3><span id="newsCount">0</span></div>
+            <div class="stat-card"><h3>التصنيفات</h3><span id="catCount">0</span></div>
+            <div class="stat-card"><h3>الأعضاء</h3><span id="usersCount">0</span></div>
+            <div class="stat-card"><h3>الطلبات</h3><span id="reqCount">0</span></div>
         </div>
-    </div>
 
-    <div class="admin-section">
-        <h2>🛠️ طاقم الإدارة والمحررين</h2>
-        <div id="adminTeam"></div>
-    </div>
+        <div class="admin-section">
+            <div class="section-header"><h2>📥 طلبات الترقية</h2></div>
+            <div id="requestsContainer">
+                <p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات معلقة</p>
+            </div>
+        </div>
 
-    <div style="padding: 15px;">
-        <button class="btn-main" style="width:100%;" onclick="openRequestModal()">طلب ترقية صلاحية 🚀</button>
+        <div class="admin-section">
+            <div class="section-header"><h2>🛠️ فريق العمل</h2></div>
+            <div id="teamContainer"></div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-header">
+                <h2>📁 التصنيفات الحالية</h2>
+                <button class="btn-action" onclick="addCategory()">+ إضافة</button>
+            </div>
+            <div id="catsContainer" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+        </div>
     </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // حماية الصفحة: للمدير فقط
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const s = await getDoc(doc(db, "Users", user.uid));
-            if (s.data().role !== 'admin') {
-                alert("عذراً، هذه الصفحة مخصصة للمدير العام فقط.");
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role !== 'admin') {
+                alert("صلاحية مدير فقط!");
                 location.href = 'news.html';
             }
-            loadAdminData();
+            startAdminListeners();
         } else { location.href = 'index.html'; }
     });
 
-    function loadAdminData() {
-        // 1. حساب الإحصائيات
+    function startAdminListeners() {
+        // تحديث الإحصائيات
         onSnapshot(collection(db, "News"), s => document.getElementById('newsCount').innerText = s.size);
         onSnapshot(collection(db, "Categories"), s => document.getElementById('catCount').innerText = s.size);
         onSnapshot(collection(db, "Users"), s => document.getElementById('usersCount').innerText = s.size);
+        onSnapshot(collection(db, "RoleRequests"), s => document.getElementById('reqCount').innerText = s.size);
 
-        // 2. عرض طاقم الإدارة
-        const teamQuery = query(collection(db, "Users"), where("role", "in", ["admin", "editor", "moderator"]));
-        onSnapshot(teamQuery, (snap) => {
-            const container = document.getElementById('adminTeam');
-            container.innerHTML = "";
-            snap.forEach(u => {
-                const data = u.data();
-                if(u.id === auth.currentUser.uid) return; // عدم إظهار المدير لنفسه
-                container.innerHTML += `
-                    <div class="user-item">
-                        <div class="user-info">
-                            <img src="${data.profileImg || 'https://via.placeholder.com/35'}" class="user-avatar">
-                            <div>
-                                <b>${data.fullName}</b><br>
-                                <span class="role-badge">${data.role}</span>
-                            </div>
+        // تحميل طلبات الصلاحيات
+        onSnapshot(collection(db, "RoleRequests"), snap => {
+            const cont = document.getElementById('requestsContainer');
+            if(snap.empty) { cont.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات معلقة</p>'; return; }
+            cont.innerHTML = "";
+            snap.forEach(r => {
+                const req = r.data();
+                cont.innerHTML += `
+                    <div class="req-box">
+                        <div class="req-info">👤 <b>${req.userName}</b> يطلب صلاحية: <b>${req.requestedRole}</b></div>
+                        <div class="req-btns">
+                            <button class="btn-ok" onclick="handleRoleReq('${r.id}', '${req.userId}', '${req.requestedRole}', true)">موافقة</button>
+                            <button class="btn-no" onclick="handleRoleReq('${r.id}', null, null, false)">رفض</button>
                         </div>
-                        <button class="chat-btn" onclick="goToChat('${u.id}')">💬 دردشة</button>
                     </div>`;
             });
         });
 
-        // 3. عرض طلبات الصلاحيات
-        onSnapshot(collection(db, "RoleRequests"), (snap) => {
-            const list = document.getElementById('requestsList');
-            if(snap.empty) { list.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">لا توجد طلبات</p>'; return; }
-            list.innerHTML = "";
-            snap.forEach(r => {
-                const req = r.data();
-                list.innerHTML += `
-                    <div class="request-card">
-                        <b>👤 ${req.userName}</b> يطلب صلاحية: <span style="color:var(--primary); font-weight:bold;">${req.requestedRole}</span>
-                        <div class="request-actions">
-                            <button class="btn-approve" onclick="handleRequest('${r.id}', '${req.userId}', '${req.requestedRole}', true)">موافقة ✅</button>
-                            <button class="btn-reject" onclick="handleRequest('${r.id}', null, null, false)">رفض ❌</button>
+        // تحميل فريق الإدارة (المدراء والمحررين)
+        const teamQ = query(collection(db, "Users"), where("role", "in", ["admin", "editor"]));
+        onSnapshot(teamQ, snap => {
+            const cont = document.getElementById('teamContainer');
+            cont.innerHTML = "";
+            snap.forEach(u => {
+                const user = u.data();
+                if(u.id === auth.currentUser.uid) return;
+                cont.innerHTML += `
+                    <div class="admin-list-item">
+                        <div class="user-meta">
+                            <img src="${user.profileImg || 'https://via.placeholder.com/35'}">
+                            <div>
+                                <div class="user-name">${user.fullName}</div>
+                                <div class="user-role">${user.role === 'admin' ? 'مدير' : 'محرر'}</div>
+                            </div>
                         </div>
+                        <button class="btn-chat" onclick="location.href='chat.html?target=${u.id}'">💬 دردشة</button>
                     </div>`;
+            });
+        });
+
+        // تحميل التصنيفات
+        onSnapshot(collection(db, "Categories"), snap => {
+            const cont = document.getElementById('catsContainer');
+            cont.innerHTML = "";
+            snap.forEach(c => {
+                cont.innerHTML += `<span class="user-role" style="background:#eee; color:#333;">${c.data().name} <b onclick="delCat('${c.id}')" style="color:red; cursor:pointer; margin-right:5px;">✕</b></span>`;
             });
         });
     }
 
-    // الموافقة أو الرفض
-    window.handleRequest = async (reqId, userId, newRole, isApproved) => {
-        if (isApproved) {
-            await updateDoc(doc(db, "Users", userId), { role: newRole });
-            alert("تمت الموافقة وترقية العضو.");
-        }
-        await deleteDoc(doc(db, "RoleRequests", reqId));
+    // إدارة طلبات الصلاحية
+    window.handleRoleReq = async (id, uid, role, ok) => {
+        if(ok) await updateDoc(doc(db, "Users", uid), { role: role });
+        await deleteDoc(doc(db, "RoleRequests", id));
+        alert(ok ? "تمت الترقية بنجاح" : "تم رفض الطلب");
     };
 
-    // توجيه للدردشة
-    window.goToChat = (targetId) => {
-        location.href = `chat.html?target=${targetId}`;
+    // إدارة التصنيفات
+    window.addCategory = async () => {
+        const name = prompt("اسم التصنيف الجديد:");
+        if(name) await addDoc(collection(db, "Categories"), { name: name });
     };
-
-    // وظيفة طلب صلاحية (للتجربة)
-    window.openRequestModal = async () => {
-        const role = prompt("أدخل اسم الصلاحية المطلوبة (editor / moderator):");
-        if(role) {
-            const u = auth.currentUser;
-            const uSnap = await getDoc(doc(db, "Users", u.uid));
-            await addDoc(collection(db, "RoleRequests"), {
-                userId: u.uid,
-                userName: uSnap.data().fullName,
-                requestedRole: role,
-                timestamp: serverTimestamp()
-            });
-            alert("تم إرسال طلبك للإدارة العامة.");
-        }
-    };
+    window.delCat = async (id) => { if(confirm("حذف التصنيف؟")) await deleteDoc(doc(db, "Categories", id)); };
 </script>
 </body>
 </html>
