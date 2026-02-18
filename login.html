@@ -7,49 +7,33 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            padding: 20px;
-            background: #f8f9fa;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; padding: 20px; background: #f8f9fa;
         }
         .login-card {
-            background: white;
-            width: 100%;
-            max-width: 400px;
-            padding: 30px;
-            border-radius: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
+            background: white; width: 100%; max-width: 400px; padding: 30px;
+            border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center;
         }
         .logo-img { width: 80px; margin-bottom: 20px; border-radius: 15px; }
         .form-group { margin-bottom: 20px; text-align: right; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; font-size: 14px; }
         .form-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-family: inherit;
-            outline: none;
-            transition: 0.3s;
+            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
+            border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s;
         }
         .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
-        .btn-login {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
+        
+        /* تنسيق رابط نسيان كلمة المرور */
+        .forgot-link {
+            display: block; text-align: left; margin-top: -15px; margin-bottom: 20px;
+            font-size: 12px; color: #8e8e93; text-decoration: none; font-weight: 600;
         }
-        .btn-login:disabled { background: #ccc; }
+        .forgot-link:hover { color: var(--primary); }
+
+        .btn-login {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
         .error-msg { color: #ff3b30; font-size: 12px; margin-top: 10px; display: none; }
     </style>
 </head>
@@ -70,6 +54,8 @@
                 <label>كلمة المرور</label>
                 <input type="password" id="password" class="form-input" placeholder="********">
             </div>
+
+            <a href="forgot_password.html" class="forgot-link">نسيت كلمة المرور؟</a>
 
             <button id="loginBtn" class="btn-login" onclick="handleLogin()">دخول</button>
             <div id="errorMsg" class="error-msg"></div>
@@ -101,7 +87,6 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // الحل الجوهري: استبدال الصفحة بالكامل لضمان تحميل الحالة الجديدة
                 window.location.replace("news.html");
             } catch (error) {
                 console.error(error);
