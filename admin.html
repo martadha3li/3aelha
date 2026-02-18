@@ -16,6 +16,11 @@
         .stat-card h3 { font-size: 20px; color: var(--primary); margin: 5px 0; }
         .stat-card span { font-size: 11px; color: gray; font-weight: bold; }
 
+        /* أزرار الوصول السريع */
+        .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-quick { flex: 1; padding: 15px; border-radius: 15px; border: none; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; box-shadow: var(--shadow); }
+        .btn-quick:hover { opacity: 0.9; transform: translateY(-2px); }
+
         /* طلبات التفعيل */
         .req-box { padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #bdf0c9; background: #f2fff5; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
         .req-box:hover { transform: scale(1.01); box-shadow: var(--shadow); }
@@ -62,6 +67,15 @@
             <div class="stat-card"><h3 id="fCount">0</h3><span>الإناث 👩</span></div>
             <div class="stat-card"><h3 id="maxAge">0</h3><span>أكبر عمر 👴</span></div>
             <div class="stat-card"><h3 id="minAge">0</h3><span>أصغر عمر 👶</span></div>
+        </div>
+
+        <div class="quick-actions">
+            <button onclick="location.href='admin_categories.html'" class="btn-quick" style="background: #5856d6;">
+                📁 إدارة التصنيفات المتقدمة
+            </button>
+            <button onclick="location.href='admin_requests.html'" class="btn-quick" style="background: #ff9500;">
+                📬 إدارة كافة الطلبات
+            </button>
         </div>
 
         <div class="admin-section">
@@ -119,7 +133,7 @@
     });
 
     function initFullAdmin() {
-        // 1. الإحصائيات الذكية (تحديث حي)
+        // 1. الإحصائيات الذكية
         onSnapshot(collection(db, "Users"), snap => {
             let male = 0, female = 0, ages = [];
             document.getElementById('uCount').innerText = snap.size;
@@ -137,7 +151,7 @@
             }
         });
 
-        // 2. طلبات التفعيل (قابلة للنقر)
+        // 2. طلبات التفعيل
         onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
             const cont = document.getElementById('activationRequests');
             cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px; text-align:center;">لا توجد طلبات جديدة</p>' : "";
@@ -182,7 +196,6 @@
         });
     }
 
-    // --- وظيفة مراجعة العضو (Modal) ---
     window.showUserDetails = (uid, data) => {
         const modal = document.getElementById('userModal');
         document.getElementById('mUserName').innerText = data.fullName;
@@ -208,7 +221,6 @@
         document.getElementById('btnDel').onclick = () => { deleteUser(uid); modal.style.display = 'none'; };
     };
 
-    // --- تحديث الحالة + ترحيب تلقائي ---
     window.updateStatus = async (uid, s, name = "") => {
         await updateDoc(doc(db, "Users", uid), { status: s });
         if(s === 'active' && name !== "") {
