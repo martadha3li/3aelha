@@ -3,163 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول | منصة التواصل</title>
+    <title>تسجيل الدخول</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* تنسيقات إضافية لضمان ثبات الصفحة */
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            background-color: var(--bg-light);
         }
         .login-card {
-            width: 100%;
-            max-width: 400px;
+            width: 90%;
+            max-width: 380px;
             background: var(--white);
-            padding: 40px 30px;
-            border-radius: 30px;
+            padding: 30px;
+            border-radius: 25px;
             box-shadow: var(--shadow);
             text-align: center;
         }
-        .login-card h2 {
-            margin: 0 0 25px 0;
-            color: var(--text-main);
-            font-size: 22px;
-        }
         .form-input {
             width: 100%;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #e1e1e6;
-            border-radius: 15px;
+            padding: 14px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
             box-sizing: border-box;
             outline: none;
-            background: #f9f9fb;
             font-size: 16px;
-        }
-        .form-input:focus {
-            border-color: var(--primary);
-            background: white;
-        }
-        .links-group {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            font-size: 14px;
-        }
-        .links-group a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .error-msg {
-            color: var(--danger);
-            font-size: 13px;
-            margin-bottom: 10px;
-            display: none;
         }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <img src="logo.png" alt="Logo" style="width: 90px; height: auto; margin-bottom: 15px; border-radius: 18px;">
-        
-        <h2>مرحباً بك مجدداً</h2>
-
-        <div id="errorMessage" class="error-msg">بيانات الدخول غير صحيحة</div>
+        <img src="logo.png" style="width: 90px; border-radius: 15px; margin-bottom: 10px;">
+        <h2 style="margin-bottom: 20px; font-size: 20px;">تسجيل الدخول</h2>
 
         <input type="text" id="loginId" class="form-input" placeholder="رقم الجوال أو البريد">
         <input type="password" id="loginPass" class="form-input" placeholder="كلمة المرور">
         
-        <button class="btn-main" style="width: 100%; padding: 16px; font-size: 17px;" id="loginBtn">
-            تسجيل الدخول
-        </button>
+        <button class="btn-main" id="loginBtn" style="width: 100%; margin-top: 10px;">دخول</button>
 
-        <div class="links-group">
-            <a href="register.html">إنشاء حساب</a>
-            <span style="color: #ddd;">|</span>
-            <a href="forgot.html" style="color: var(--danger);">نسيت كلمة المرور؟</a>
+        <div style="margin-top: 20px; font-size: 14px; display: flex; justify-content: center; gap: 15px;">
+            <a href="register.html" style="text-decoration: none; color: var(--primary); font-weight: bold;">حساب جديد</a>
+            <span style="color: #ccc;">|</span>
+            <a href="forgot.html" style="text-decoration: none; color: var(--danger); font-weight: bold;">نسيت كلمة المرور؟</a>
         </div>
     </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // تعريف الدالة داخل النطاق وربطها بالزر
+    // منع التحديث التلقائي: نتحقق من الحالة "مرة واحدة فقط" عند التحميل
+    // إذا كان المستخدم مسجل دخوله فعلاً، نرسله لصفحة الأخبار دون تكرار التوجيه
+    let isRedirecting = false;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user && !isRedirecting) {
+            isRedirecting = true;
+            window.location.replace("news.html"); // استخدام replace لمنع العودة للخلف وتكرار اللوب
+        }
+    });
+
     const handleLogin = async () => {
         const id = document.getElementById('loginId').value.trim();
         const pass = document.getElementById('loginPass').value;
         const btn = document.getElementById('loginBtn');
-        const errorDiv = document.getElementById('errorMessage');
 
-        if (!id || !pass) {
-            alert("يرجى إدخال البيانات كاملة");
-            return;
-        }
+        if (!id || !pass) return alert("أكمل البيانات");
 
         btn.disabled = true;
         btn.innerText = "جاري الدخول...";
-        errorDiv.style.display = "none";
-
-        let email = id;
 
         try {
-            // 1. إذا كان المدخل رقم جوال، نبحث عن الإيميل المرتبط به
+            let email = id;
+            // فحص إذا كان المدخل رقم جوال
             if (!id.includes('@')) {
                 const q = query(collection(db, "Users"), where("phone", "==", id));
                 const snap = await getDocs(q);
-                
-                if (snap.empty) {
-                    throw new Error("رقم الجوال غير مسجل لدينا");
-                }
+                if (snap.empty) throw new Error("رقم الجوال غير مسجل");
                 email = snap.docs[0].data().email;
             }
 
-            // 2. محاولة تسجيل الدخول
             const userCred = await signInWithEmailAndPassword(auth, email, pass);
-            const user = userCred.user;
-
-            // 3. جلب بيانات المستخدم للتأكد من الحالة والصلاحية
-            const userDoc = await getDoc(doc(db, "Users", user.uid));
+            const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
             
             if (userDoc.exists()) {
-                const userData = userDoc.data();
-
-                if (userData.status === "disabled") {
+                const data = userDoc.data();
+                if (data.status === "disabled") {
                     await auth.signOut();
-                    alert("عذراً، هذا الحساب معطل حالياً من قبل الإدارة.");
+                    alert("حسابك معطل");
                     location.reload();
                     return;
                 }
-
-                // عرض الصلاحية والترحيب
-                const role = userData.role || "عضو";
-                alert(`أهلاً بك يا ${userData.fullName} \n صلاحيتك الحالية: ${role}`);
-                
-                // التوجه للرئيسية
-                window.location.href = "news.html";
+                isRedirecting = true;
+                window.location.replace("news.html");
             }
-
-        } catch (error) {
+        } catch (e) {
             btn.disabled = false;
-            btn.innerText = "تسجيل الدخول";
-            errorDiv.style.display = "block";
-            errorDiv.innerText = "خطأ: " + error.message;
-            console.error(error);
+            btn.innerText = "دخول";
+            alert("خطأ: " + e.message);
         }
     };
 
-    // ربط الدالة بالزر برمجياً (أفضل من onclick في الـ HTML)
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
 </script>
-
 </body>
 </html>
