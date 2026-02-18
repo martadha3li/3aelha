@@ -3,51 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول</title>
-    <link rel="stylesheet" href="style.css">
+    <title>نظام إدارة المنزل - نسخة الأخبار</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .login-card { max-width: 380px; margin: 100px auto; background: white; padding: 30px; border-radius: 30px; text-align: center; box-shadow: var(--shadow); }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 15px; box-sizing: border-box; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .card { border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin-bottom: 20px; border: none; }
+        .news-card { border-right: 5px solid #ffc107; background: #fff; transition: 0.3s; }
+        .news-card:hover { transform: translateY(-5px); }
+        .admin-section { background-color: #ffffff; border-top: 5px solid #0d6efd; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <img src="logo.png" style="width: 100px; border-radius: 20px; margin-bottom: 20px;">
-        <h2>تسجيل الدخول</h2>
-        <input type="text" id="loginId" placeholder="رقم الجوال أو البريد">
-        <input type="password" id="loginPass" placeholder="كلمة المرور">
-        <button class="btn-main" style="width:100%; background:var(--primary); color:white; border:none; padding:15px; border-radius:15px; font-weight:bold;" onclick="handleLogin()">دخول</button>
-        <div style="margin-top:20px; font-size:14px;">
-            <a href="forgot.html" style="color:var(--danger); text-decoration:none;">نسيت كلمة المرور؟</a> | 
-            <a href="register.html" style="color:var(--primary); text-decoration:none;">حساب جديد</a>
-        </div>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🏠 لوحة تحكم المنزل الذكي</h2>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#newsModal">
+            📣 إضافة خبر جديد
+        </button>
     </div>
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div class="row" id="newsContainer">
+        </div>
 
-    window.handleLogin = async () => {
-        const id = document.getElementById('loginId').value.trim();
-        const pass = document.getElementById('loginPass').value;
-        let email = id;
+    <hr class="my-5">
 
-        if (!id.includes('@')) {
-            const q = query(collection(db, "Users"), where("phone", "==", id));
-            const snap = await getDocs(q);
-            if (snap.empty) return alert("الرقم غير مسجل");
-            email = snap.docs[0].data().email;
+    <div class="card admin-section p-4">
+        <h4>👥 إدارة الأعضاء والجداول</h4>
+        <div class="row g-3 align-items-end mb-4">
+            <div class="col-md-3">
+                <input type="text" id="memberName" class="form-control" placeholder="اسم العضو">
+            </div>
+            <div class="col-md-6 d-flex gap-3">
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="canWash"> <label>غسيل</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="canClean"> <label>نظافة</label></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" id="canCook"> <label>طبخ</label></div>
+            </div>
+            <div class="col-md-3">
+                <button onclick="addMember()" class="btn btn-primary w-100">إضافة عضو +</button>
+            </div>
+        </div>
+        <button onclick="generateSchedules()" class="btn btn-success w-25">🎲 تحديث الجداول عشوائياً</button>
+    </div>
+</div>
+
+<div class="modal fade" id="newsModal" tabindex="-1" aria-labelledby="newsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newsModalLabel">إضافة خبر أو إعلان للمنزل</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="newsForm">
+          <div class="mb-3">
+            <label class="form-label">عنوان الخبر</label>
+            <input type="text" id="newsTitle" class="form-control" placeholder="مثلاً: اجتماع عائلي، أو ملاحظة" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">تفاصيل الخبر</label>
+            <textarea id="newsContent" class="form-control" rows="3" placeholder="اكتب التفاصيل هنا..." required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" onclick="saveNews()" class="btn btn-warning">نشر الخبر الآن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // تهيئة البيانات من LocalStorage
+    let newsList = JSON.parse(localStorage.getItem('homeNews')) || [];
+    let members = JSON.parse(localStorage.getItem('homeTasksMembers')) || [];
+
+    // وظيفة حفظ الخبر الجديد
+    function saveNews() {
+        const title = document.getElementById('newsTitle').value;
+        const content = document.getElementById('newsContent').value;
+
+        if (!title || !content) {
+            alert("يرجى ملء جميع الخانات");
+            return;
         }
 
-        try {
-            const userCred = await signInWithEmailAndPassword(auth, email, pass);
-            const userDoc = await getDoc(doc(db, "Users", userCred.user.uid));
-            const role = userDoc.data().role || "عضو";
-            alert("مرحباً بك.. صلاحيتك: " + role);
-            window.location.href = "news.html";
-        } catch (e) { alert("خطأ في الدخول"); }
-    };
+        const newEntry = {
+            id: Date.now(),
+            title: title,
+            content: content,
+            date: new Date().toLocaleString('ar-SA')
+        };
+
+        newsList.unshift(newEntry); // إضافة الخبر في البداية
+        localStorage.setItem('homeNews', JSON.stringify(newsList));
+
+        // إغلاق النافذة المنبثقة تلقائياً
+        const modalElement = document.getElementById('newsModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        modal.hide();
+
+        // مسح الحقول ورسم الأخبار مجدداً
+        document.getElementById('newsForm').reset();
+        renderNews();
+    }
+
+    // عرض الأخبار في الصفحة
+    function renderNews() {
+        const container = document.getElementById('newsContainer');
+        if (newsList.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">لا توجد أخبار حالياً</p>';
+            return;
+        }
+
+        container.innerHTML = newsList.map(news => `
+            <div class="col-md-6 mb-3">
+                <div class="card p-3 news-card">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="text-warning">${news.title}</h5>
+                        <button onclick="deleteNews(${news.id})" class="btn-close" style="font-size: 0.7rem;"></button>
+                    </div>
+                    <p class="mb-1">${news.content}</p>
+                    <small class="text-muted" style="font-size: 0.7rem;">🕒 ${news.date}</small>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function deleteNews(id) {
+        newsList = newsList.filter(n => n.id !== id);
+        localStorage.setItem('homeNews', JSON.stringify(newsList));
+        renderNews();
+    }
+
+    // تشغيل العرض عند فتح الصفحة
+    renderNews();
+
+    // (وظائف الأعضاء المتبقية من الكود السابق تضاف هنا بنفس الطريقة)
+    function addMember() { /* ... كما في الكود السابق ... */ }
 </script>
+
 </body>
 </html>
