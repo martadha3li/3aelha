@@ -3,25 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة التصنيفات المتقدمة</title>
+    <title>إدارة التصنيفات | التمييز الذكي</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-wrapper { padding: 15px; max-width: 800px; margin: auto; }
+        .admin-wrapper { padding: 15px; max-width: 850px; margin: auto; }
         .category-card { background: white; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
         
-        /* نموذج الإضافة */
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--primary); }
-        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s; }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
-
         /* جدول التصنيفات */
-        .cat-table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; margin-top: 10px; }
-        .cat-table th { background: #f8f9fa; padding: 15px; text-align: center; font-size: 14px; border-bottom: 2px solid #eee; }
-        .cat-table td { padding: 15px; border-bottom: 1px solid #f5f5f5; text-align: center; font-size: 13px; }
+        .cat-table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
+        .cat-table th { background: #f8f9fa; padding: 15px; text-align: center; border-bottom: 2px solid #eee; }
+        .cat-table td { padding: 15px; border-bottom: 1px solid #f5f5f5; text-align: center; font-size: 14px; transition: 0.3s; }
 
-        .btn-save { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; }
-        .action-btn { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; color: white; font-size: 12px; font-weight: bold; margin: 0 2px; }
+        /* تمييز التكرار */
+        .duplicate-warning { font-weight: bold; border-right: 8px solid; }
+        
+        .btn-save { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .action-btn { padding: 8px; border-radius: 10px; border: none; cursor: pointer; color: white; margin: 0 3px; }
     </style>
 </head>
 <body style="background: #f8f9fa;">
@@ -29,32 +26,30 @@
     <div class="top-bar">
         <div style="display:flex; align-items:center; gap:10px;">
             <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-            <b>إدارة التصنيفات المتقدمة</b>
+            <b>إدارة التصنيفات الفعلية</b>
         </div>
         <img src="logo.png" style="height: 35px; border-radius: 5px;">
     </div>
 
     <div class="admin-wrapper">
         <div class="category-card">
-            <h2 style="font-size: 18px; margin-bottom: 15px;">🆕 إضافة تصنيف جديد</h2>
-            <div class="input-group">
-                <label>اسم التصنيف (يظهر في القائمة الجانبية):</label>
-                <input type="text" id="catName" class="form-input" placeholder="مثلاً: أخبار عاجلة، تعازي...">
-            </div>
-            <div class="input-group">
-                <label>العنوان الافتراضي (يظهر تلقائياً عند كتابة خبر):</label>
-                <input type="text" id="catDefTitle" class="form-input" placeholder="مثلاً: يتقدم مجلس العائلة بخالص العزاء لـ...">
-            </div>
-            <button class="btn-save" onclick="saveCategory()">حفظ التصنيف الجديد ✨</button>
+            <h2 style="font-size: 18px; margin-bottom: 15px;">🆕 تسجيل صنف جديد</h2>
+            <input type="text" id="catName" class="form-input" placeholder="اسم التصنيف" style="width:100%; margin-bottom:10px; padding:12px; border-radius:10px; border:1px solid #ddd;">
+            <input type="text" id="catDefTitle" class="form-input" placeholder="العنوان الافتراضي المقترح" style="width:100%; margin-bottom:10px; padding:12px; border-radius:10px; border:1px solid #ddd;">
+            <button class="btn-save" onclick="saveCategory()">حفظ في قاعدة البيانات ✅</button>
         </div>
 
         <div class="category-card" style="padding: 10px;">
-            <h2 style="font-size: 18px; padding: 15px;">📁 التصنيفات الحالية</h2>
+            <div class="section-header" style="padding:15px;">
+                <h2 style="font-size: 17px;">📁 قائمة التصنيفات الحالية (الفعلية)</h2>
+                <small style="color:gray;">التصنيفات الملونة بنفس اللون تعني أنها متكررة</small>
+            </div>
             <div style="overflow-x: auto;">
                 <table class="cat-table">
                     <thead>
                         <tr>
-                            <th>التصنيف</th>
+                            <th>الحالة</th>
+                            <th>اسم التصنيف</th>
                             <th>العنوان الافتراضي</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -70,28 +65,54 @@
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // حماية الصفحة
+    // قائمة ألوان عشوائية للتمييز
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF33A8', '#33FFF5', '#F5FF33', '#FFA533'];
+    let colorIndex = 0;
+
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.data().role !== 'admin') location.href = 'news.html';
-            loadCategories();
+            if (snap.data().role === 'admin') loadCategories();
+            else location.href = 'news.html';
         } else location.href = 'index.html';
     });
 
-    // 1. جلب وعرض التصنيفات
     function loadCategories() {
-        onSnapshot(query(collection(db, "Categories"), orderBy("createdAt", "desc")), snap => {
+        onSnapshot(query(collection(db, "Categories"), orderBy("name", "asc")), snap => {
             const tbody = document.getElementById('categoriesTableBody');
             tbody.innerHTML = "";
-            snap.forEach(c => {
-                const d = c.data();
+            
+            const namesCount = {};
+            const nameColors = {};
+            const categories = [];
+
+            // الخطوة 1: جلب البيانات وحساب التكرار
+            snap.forEach(doc => {
+                const data = doc.data();
+                categories.push({ id: doc.id, ...data });
+                namesCount[data.name] = (namesCount[data.name] || 0) + 1;
+            });
+
+            // الخطوة 2: توزيع الألوان على المتكررين
+            Object.keys(namesCount).forEach(name => {
+                if (namesCount[name] > 1) {
+                    nameColors[name] = colors[colorIndex % colors.length];
+                    colorIndex++;
+                }
+            });
+
+            // الخطوة 3: عرض البيانات في الجدول
+            categories.forEach(c => {
+                const isDuplicate = namesCount[c.name] > 1;
+                const rowColor = isDuplicate ? nameColors[c.name] : 'transparent';
+                
                 tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight:bold;">${d.name}</td>
-                        <td style="color:gray;">${d.defaultTitle || '---'}</td>
+                    <tr class="${isDuplicate ? 'duplicate-warning' : ''}" style="border-right-color: ${rowColor}; background: ${isDuplicate ? rowColor + '15' : ''}">
+                        <td>${isDuplicate ? '⚠️ متكرر' : '✅ فريد'}</td>
+                        <td style="font-weight:bold; color: ${isDuplicate ? rowColor : ''}">${c.name}</td>
+                        <td style="color:gray;">${c.defaultTitle || '---'}</td>
                         <td>
-                            <button class="action-btn" style="background:#007aff" onclick="editCat('${c.id}', '${d.name}', '${d.defaultTitle}')">✏️</button>
+                            <button class="action-btn" style="background:#007aff" onclick="editCat('${c.id}', '${c.name}', '${c.defaultTitle}')">✏️</button>
                             <button class="action-btn" style="background:#ff3b30" onclick="deleteCat('${c.id}')">🗑️</button>
                         </td>
                     </tr>
@@ -100,43 +121,22 @@
         });
     }
 
-    // 2. حفظ تصنيف جديد
     window.saveCategory = async () => {
         const name = document.getElementById('catName').value.trim();
         const defTitle = document.getElementById('catDefTitle').value.trim();
-
-        if(!name) return alert("يرجى إدخال اسم التصنيف");
-
-        await addDoc(collection(db, "Categories"), {
-            name: name,
-            defaultTitle: defTitle,
-            createdAt: serverTimestamp()
-        });
-
-        document.getElementById('catName').value = "";
-        document.getElementById('catDefTitle').value = "";
-        alert("تمت إضافة التصنيف بنجاح ✅");
+        if(!name) return;
+        await addDoc(collection(db, "Categories"), { name, defaultTitle: defTitle, createdAt: serverTimestamp() });
+        document.getElementById('catName').value = ""; document.getElementById('catDefTitle').value = "";
     };
 
-    // 3. تعديل تصنيف
     window.editCat = async (id, oldName, oldTitle) => {
         const newName = prompt("تعديل اسم التصنيف:", oldName);
         const newTitle = prompt("تعديل العنوان الافتراضي:", oldTitle);
-        
-        if (newName) {
-            await updateDoc(doc(db, "Categories", id), {
-                name: newName,
-                defaultTitle: newTitle || ""
-            });
-            alert("تم التحديث بنجاح");
-        }
+        if (newName) await updateDoc(doc(db, "Categories", id), { name: newName, defaultTitle: newTitle || "" });
     };
 
-    // 4. حذف تصنيف
     window.deleteCat = async (id) => {
-        if(confirm("هل أنت متأكد من حذف هذا التصنيف؟ سيؤدي ذلك لإزالته من القائمة الجانبية.")) {
-            await deleteDoc(doc(db, "Categories", id));
-        }
+        if(confirm("حذف التصنيف نهائياً؟")) await deleteDoc(doc(db, "Categories", id));
     };
 </script>
 </body>
