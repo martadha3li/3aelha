@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المسابقات | لوحة التحكم</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-wrapper { padding: 15px; max-width: 900px; margin: auto; }
+        .comp-card { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--primary); }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; }
+        
+        /* نتائج المسابقات والقرعة */
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .results-table th, .results-table td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        .winner-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; color: white; text-align: center; }
+        .correct { color: #34c759; font-weight: bold; }
+        .wrong { color: #ff3b30; }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+
+    <div class="top-bar">
+        <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+        <b>إدارة المسابقات والجوائز</b>
+    </div>
+
+    <div class="admin-wrapper">
+        <div class="comp-card">
+            <h2>🏆 إنشاء مسابقة جديدة</h2>
+            <div class="form-group">
+                <label>اسم المسابقة</label>
+                <input type="text" id="compName" class="form-input" placeholder="مثلاً: مسابقة رمضان الكبرى">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group"><label>تاريخ البداية</label><input type="datetime-local" id="startDate" class="form-input"></div>
+                <div class="form-group"><label>تاريخ النهاية</label><input type="datetime-local" id="endDate" class="form-input"></div>
+            </div>
+            <button class="btn-main" onclick="createNewCompetition()" style="width:100%;">حفظ المسابقة ✅</button>
+        </div>
+
+        <div class="comp-card">
+            <h2>❓ إضافة سؤال</h2>
+            <div class="form-group">
+                <label>اختر المسابقة</label>
+                <select id="targetComp" class="form-input"></select>
+            </div>
+            <div class="form-group">
+                <label>نص السؤال</label>
+                <input type="text" id="qText" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>الخيارات</label>
+                <input type="text" id="opt1" class="form-input" placeholder="الخيار الأول" style="margin-bottom: 5px;">
+                <input type="text" id="opt2" class="form-input" placeholder="الخيار الثاني" style="margin-bottom: 5px;">
+                <input type="text" id="opt3" class="form-input" placeholder="الخيار الثالث">
+            </div>
+            <div class="form-group">
+                <label>رقم الإجابة الصحيحة</label>
+                <select id="correctOpt" class="form-input">
+                    <option value="1">الخيار 1</option>
+                    <option value="2">الخيار 2</option>
+                    <option value="3">الخيار 3</option>
+                </select>
+            </div>
+            <button class="btn-main" onclick="addQuestion()" style="width:100%; background:var(--accent);">إضافة السؤال للمسابقة</button>
+        </div>
+
+        <div class="comp-card">
+            <h2>📊 نتائج المشاركين</h2>
+            <div class="form-group">
+                <select id="filterComp" class="form-input" onchange="loadResults()"><option value="">اختر مسابقة لعرض نتائجها</option></select>
+            </div>
+            <table class="results-table">
+                <thead>
+                    <tr><th>المشارك</th><th>السؤال</th><th>النتيجة</th></tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+            <button class="btn-main" onclick="drawWinner()" style="width:100%; margin-top:20px; background:#5856d6;">🎰 إجراء القرعة (للإجابات الصحيحة)</button>
+        </div>
+    </div>
+
+    <div id="winnerModal" class="winner-modal" onclick="this.style.display='none'">
+        <div>
+            <h1 style="font-size: 50px;">🎊</h1>
+            <h2 id="winnerName" style="font-size: 30px;"></h2>
+            <p>ألف مبروك للفائز بالقرعة!</p>
+            <small>(اضغط للإغلاق)</small>
+        </div>
+    </div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, addDoc, onSnapshot, query, where, getDocs, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // تحميل المسابقات في القوائم
+    onSnapshot(collection(db, "Competitions"), snap => {
+        const selects = [document.getElementById('targetComp'), document.getElementById('filterComp')];
+        selects.forEach(s => {
+            s.innerHTML = '<option value="">-- اختر المسابقة --</option>';
+            snap.forEach(doc => s.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`);
+        });
+    });
+
+    window.createNewCompetition = async () => {
+        const name = document.getElementById('compName').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        if(name && start && end) {
+            await addDoc(collection(db, "Competitions"), { name, start, end, createdAt: serverTimestamp() });
+            alert("تم إنشاء المسابقة");
+        }
+    };
+
+    window.addQuestion = async () => {
+        const compId = document.getElementById('targetComp').value;
+        const text = document.getElementById('qText').value;
+        const options = [document.getElementById('opt1').value, document.getElementById('opt2').value, document.getElementById('opt3').value];
+        const correct = document.getElementById('correctOpt').value;
+        
+        if(compId && text) {
+            await addDoc(collection(db, `Competitions/${compId}/Questions`), { text, options, correct, createdAt: serverTimestamp() });
+            alert("تم إضافة السؤال");
+        }
+    };
+
+    window.loadResults = () => {
+        const compId = document.getElementById('filterComp').value;
+        if(!compId) return;
+        onSnapshot(query(collection(db, "CompResults"), where("compId", "==", compId)), snap => {
+            const body = document.getElementById('resultsBody');
+            body.innerHTML = "";
+            snap.forEach(d => {
+                const res = d.data();
+                body.innerHTML += `<tr>
+                    <td>${res.userName}</td>
+                    <td>${res.qId}</td>
+                    <td class="${res.isCorrect ? 'correct' : 'wrong'}">${res.isCorrect ? '✅ صح' : '❌ خطأ'}</td>
+                </tr>`;
+            });
+        });
+    };
+
+    window.drawWinner = async () => {
+        const compId = document.getElementById('filterComp').value;
+        const snap = await getDocs(query(collection(db, "CompResults"), where("compId", "==", compId), where("isCorrect", "==", true)));
+        const winners = [];
+        snap.forEach(d => winners.push(d.data().userName));
+        
+        if(winners.length > 0) {
+            const randomWinner = winners[Math.floor(Math.random() * winners.length)];
+            document.getElementById('winnerName').innerText = randomWinner;
+            document.getElementById('winnerModal').style.display = 'flex';
+        } else {
+            alert("لا يوجد فائزون بإجابات صحيحة بعد");
+        }
+    };
+</script>
+</body>
+</html>
