@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الطلبات والبيانات | إدارة المنصة</title>
+    <title>مركز الطلبات والرقابة الأمنية | منح الصلاحيات</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .admin-wrapper { padding: 15px; max-width: 1000px; margin: auto; }
         .req-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 25px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; margin-bottom: 15px; }
         
-        /* إحصائية متوسط العمر */
         .age-avg-box { background: linear-gradient(45deg, var(--primary), #5856d6); color: white; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; }
         .age-avg-box h1 { font-size: 32px; margin: 5px 0; }
 
-        /* قائمة الأعضاء المختصرة */
-        .compact-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .compact-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
         .compact-item { background: #f8f9fa; padding: 12px; border-radius: 15px; border-right: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
         
         .security-alert { background: #fff1f1; border: 1px solid #ff3b30; color: #d63031; padding: 10px; border-radius: 12px; font-size: 11px; margin-top: 8px; }
         .badge { padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
+        
+        .btn-role { background: white; border: 1px solid #ddd; padding: 5px 10px; border-radius: 10px; cursor: pointer; font-size: 11px; transition: 0.3s; }
+        .btn-role:hover { background: var(--primary); color: white; border-color: var(--primary); }
     </style>
 </head>
 <body style="background: #f4f7f6;">
@@ -41,7 +42,7 @@
         </div>
         
         <div class="req-section">
-            <div class="section-header"><h2>👥 نظرة سريعة على الأعضاء</h2></div>
+            <div class="section-header"><h2>👥 نظرة سريعة على الأعضاء ومنح الصلاحيات</h2></div>
             <div class="compact-list" id="compactUserList">
                 <p style="color:gray; font-size:12px;">جاري جلب القائمة...</p>
             </div>
@@ -61,7 +62,7 @@
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, orderBy, limit, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, orderBy, limit, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -72,7 +73,7 @@
     });
 
     function initSecurityPage() {
-        // --- 1. جلب بيانات Users لحساب المتوسط والقائمة المختصرة ---
+        // --- 1. جلب بيانات Users لحساب المتوسط والقائمة المختصرة + زر الصلاحيات ---
         onSnapshot(collection(db, "Users"), snap => {
             const compactList = document.getElementById('compactUserList');
             const avgEl = document.getElementById('averageAge');
@@ -83,26 +84,24 @@
 
             snap.forEach(u => {
                 const d = u.data();
+                const uid = u.id;
                 
-                // حساب متوسط العمر
                 if(d.age) {
                     totalAge += parseInt(d.age);
                     countWithAge++;
                 }
 
-                // عرض القائمة المختصرة
                 compactList.innerHTML += `
                     <div class="compact-item">
-                        <div>
+                        <div style="flex:1;">
                             <div style="font-weight:bold; font-size:13px;">${d.fullName}</div>
-                            <div style="font-size:11px; color:gray;">العمر: ${d.age || 'غير محدد'}</div>
+                            <div style="font-size:11px; color:gray;">العمر: ${d.age || '--'} | <span class="badge" style="background:#eef6ff; color:var(--primary);">${d.role || 'user'}</span></div>
                         </div>
-                        <span class="badge" style="background:#eef6ff; color:var(--primary);">${d.role || 'عضو'}</span>
+                        <button class="btn-role" onclick="changeUserRole('${uid}', '${d.fullName}', '${d.role || 'user'}')">🛡️ منح صلاحية</button>
                     </div>
                 `;
             });
 
-            // تحديث متوسط العمر
             if(countWithAge > 0) {
                 avgEl.innerText = Math.round(totalAge / countWithAge);
             }
@@ -116,11 +115,10 @@
                 const d = h.data();
                 let alertUI = "";
                 
-                // حساب المسافة (إذا كانت متوفرة)
                 if(d.regLoc && d.changeLoc) {
                     const dist = calculateDistance(d.regLoc.lat, d.regLoc.lng, d.changeLoc.lat, d.changeLoc.lng);
                     if(dist > 600) {
-                        alertUI = `<div class="security-alert">⚠️ تحذير: تغيير من موقع بعيد (${dist.toFixed(0)} كم)</div>`;
+                        alertUI = `<div class="security-alert">⚠️ تحذير: تغيير من منطقة بعيدة (${dist.toFixed(0)} كم)</div>`;
                     }
                 }
 
@@ -136,7 +134,7 @@
             });
         });
 
-        // --- 3. آخر 7 أعضاء مسجلين (بيانات كاملة) ---
+        // --- 3. آخر 7 أعضاء مسجلين ---
         onSnapshot(query(collection(db, "Users"), orderBy("createdAt", "desc"), limit(7)), snap => {
             const cont = document.getElementById('recentUsers');
             cont.innerHTML = "";
@@ -149,13 +147,31 @@
                             <div style="font-size:13px; font-weight:bold;">${d.fullName}</div>
                             <div style="font-size:11px; color:gray;">${d.city || 'المدينة غير محددة'} | سجل في: ${new Date(d.createdAt?.toDate()).toLocaleDateString('ar-EG')}</div>
                         </div>
+                        <button class="btn-role" onclick="changeUserRole('${u.id}', '${d.fullName}', '${d.role || 'user'}')">🛡️</button>
                     </div>
                 `;
             });
         });
     }
 
-    // معادلة حساب المسافة الجغرافية
+    // دالة تغيير الرتبة (الصلاحيات)
+    window.changeUserRole = async (uid, name, currentRole) => {
+        const newRole = prompt(`تعديل صلاحية العضو: ${name}\nالصلاحية الحالية: ${currentRole}\n\nاختر واحدة مما يلي واكتبها بدقة:\n(admin) - مدير كل الأدوات\n(editor) - محرر أخبار\n(user) - عضو عادي`, currentRole);
+        
+        if (newRole && ['admin', 'editor', 'user'].includes(newRole.toLowerCase())) {
+            try {
+                await updateDoc(doc(db, "Users", uid), {
+                    role: newRole.toLowerCase()
+                });
+                alert(`تم منح ${name} صلاحية ${newRole} بنجاح ✅`);
+            } catch (e) {
+                alert("حدث خطأ أثناء تحديث الصلاحية");
+            }
+        } else if (newRole) {
+            alert("يرجى كتابة اسم الصلاحية بشكل صحيح (admin أو editor أو user)");
+        }
+    };
+
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371;
         const dLat = (lat2-lat1) * Math.PI / 180;
