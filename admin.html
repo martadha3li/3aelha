@@ -3,56 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة الشاملة</title>
+    <title>لوحة الإدارة | الإدارة العامة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-wrapper { padding: 15px; max-width: 800px; margin: auto; }
         .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
-        .request-item { background: #fdfdfd; border: 1px solid #eee; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .cat-tag { background: #eef6ff; padding: 8px 15px; border-radius: 12px; font-size: 13px; display: flex; align-items: center; gap: 10px; border: 1px solid #d0e3ff; }
-        .btn-action-ok { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 12px; border-bottom: 1px solid #f5f5f5; text-align: center; }
-        .role-badge { background: #f0f0f0; padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; border-bottom: 3px solid var(--primary); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        .btn-ok { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+        .cat-tag { background: #eef6ff; padding: 5px 10px; border-radius: 10px; font-size: 12px; margin: 5px; display: inline-block; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
-            <b>مركز الإدارة والتحكم</b>
-        </div>
-        <img src="logo.png" style="height: 35px; border-radius: 5px;">
+        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
+        <b>مركز التحكم الشامل</b>
+        <img src="logo.png" style="height: 35px;">
     </div>
 
-    <div class="admin-wrapper">
-        <div class="admin-section">
-            <div class="section-header">
-                <h2>📁 إدارة تصنيفات الأخبار</h2>
-                <button class="btn-action-ok" onclick="addNewCategory()">+ إضافة تصنيف</button>
-            </div>
-            <div id="categoriesList" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+    <div style="padding: 15px; max-width: 800px; margin: auto;">
+        
+        <div class="stat-grid">
+            <div class="stat-card"><h3>الأعضاء</h3><span id="uCount">0</span></div>
+            <div class="stat-card"><h3>الأخبار</h3><span id="nCount">0</span></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>📥 طلبات تفعيل الأعضاء الجدد</h2></div>
-            <div id="activationRequests"></div>
+            <h2>📁 إدارة التصنيفات والعناوين</h2>
+            <button class="btn-ok" onclick="addCat()">+ إضافة تصنيف</button>
+            <div id="catsList" style="margin-top:10px;"></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>🛠️ فريق الإدارة</h2></div>
-            <div id="adminTeamList"></div>
+            <h2>📥 طلبات تفعيل الأعضاء</h2>
+            <div id="pendingList"></div>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>👥 قاعدة بيانات الأعضاء</h2></div>
-            <input type="text" id="userSearch" placeholder="🔍 ابحث برقم الجوال..." onkeyup="filterUsers()" class="form-input" style="width:100%; margin-bottom:15px;">
+            <h2>👥 قاعدة بيانات الأعضاء والبحث</h2>
+            <input type="text" id="uSearch" placeholder="بحث برقم الجوال..." onkeyup="searchUsers()" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
             <div style="overflow-x:auto;">
                 <table>
                     <thead><tr><th>الاسم</th><th>الجوال</th><th>الصلاحية</th><th>الإجراء</th></tr></thead>
-                    <tbody id="usersTableBody"></tbody>
+                    <tbody id="uTable"></tbody>
                 </table>
             </div>
         </div>
@@ -62,68 +57,61 @@
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // التحقق من الصلاحية
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.data().role !== 'admin') { location.href = 'news.html'; }
+            const s = await getDoc(doc(db, "Users", user.uid));
+            if (s.data().role !== 'admin') location.href='news.html';
             initAdmin();
-        } else { location.href = 'index.html'; }
+        } else location.href='index.html';
     });
 
     function initAdmin() {
-        // إدارة التصنيفات
-        onSnapshot(collection(db, "Categories"), snap => {
-            const cont = document.getElementById('categoriesList');
-            cont.innerHTML = "";
-            snap.forEach(c => {
-                const d = c.data();
-                cont.innerHTML += `<div class="cat-tag" title="العنوان الافتراضي: ${d.defaultTitle || 'لا يوجد'}">
-                    <b>${d.name}</b> <span onclick="delCat('${c.id}')" style="color:red; cursor:pointer;">✕</span>
-                </div>`;
-            });
+        onSnapshot(collection(db, "Users"), s => document.getElementById('uCount').innerText = s.size);
+        onSnapshot(collection(db, "News"), s => document.getElementById('nCount').innerText = s.size);
+
+        // التصنيفات
+        onSnapshot(collection(db, "Categories"), s => {
+            const cont = document.getElementById('catsList'); cont.innerHTML = "";
+            s.forEach(c => { cont.innerHTML += `<div class="cat-tag">${c.data().name} <b onclick="delCat('${c.id}')" style="color:red; cursor:pointer;">✕</b></div>`; });
         });
 
         // طلبات التفعيل
-        onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
-            const cont = document.getElementById('activationRequests');
-            cont.innerHTML = snap.empty ? '<p style="font-size:12px; color:gray;">لا توجد طلبات</p>' : "";
-            snap.forEach(u => {
-                cont.innerHTML += `<div class="request-item">
-                    <div><b>${u.data().fullName}</b></div>
-                    <button class="btn-action-ok" onclick="updateUserStatus('${u.id}', 'active')">تفعيل</button>
-                </div>`;
-            });
+        onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), s => {
+            const cont = document.getElementById('pendingList'); cont.innerHTML = s.empty ? "لا توجد طلبات" : "";
+            s.forEach(u => { cont.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+                <span>${u.data().fullName}</span> <button class="btn-ok" onclick="updateStatus('${u.id}', 'active')">تفعيل</button>
+            </div>`; });
         });
 
         // جدول الأعضاء
-        onSnapshot(collection(db, "Users"), snap => {
-            const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = "";
-            snap.forEach(u => {
+        onSnapshot(collection(db, "Users"), s => {
+            const tbody = document.getElementById('uTable'); tbody.innerHTML = "";
+            s.forEach(u => {
                 const d = u.data();
                 tbody.innerHTML += `<tr>
-                    <td>${d.fullName}</td>
-                    <td>${d.phone}</td>
-                    <td><span class="role-badge">${d.role || 'عضو'}</span></td>
-                    <td><button onclick="editRole('${u.id}')" style="border:none; background:none; cursor:pointer;">⚙️</button></td>
+                    <td>${d.fullName}</td><td>${d.phone}</td><td>${d.role || 'عضو'}</td>
+                    <td><button onclick="editUser('${u.id}')">⚙️</button> <button onclick="delUser('${u.id}')" style="color:red">🗑️</button></td>
                 </tr>`;
             });
         });
     }
 
-    window.addNewCategory = async () => {
-        const name = prompt("اسم التصنيف الجديد:");
-        if(!name) return;
-        const defTitle = prompt(`العنوان الافتراضي لـ (${name}):`, "اكتب العنوان هنا...");
-        await addDoc(collection(db, "Categories"), { name, defaultTitle: defTitle || "", createdAt: serverTimestamp() });
+    window.addCat = async () => {
+        const n = prompt("اسم التصنيف:");
+        const t = prompt("العنوان الافتراضي:");
+        if(n) await addDoc(collection(db, "Categories"), { name: n, defaultTitle: t || "" });
     };
-
     window.delCat = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "Categories", id)); };
-    window.updateUserStatus = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s });
-    window.editRole = async (id) => {
-        const r = prompt("الصلاحية (admin / editor / user):");
+    window.updateStatus = async (id, st) => await updateDoc(doc(db, "Users", id), { status: st });
+    window.delUser = async (id) => { if(confirm("حذف العضو؟")) await deleteDoc(doc(db, "Users", id)); };
+    window.editUser = async (id) => {
+        const r = prompt("الصلاحية (admin/editor/user):");
         if(r) await updateDoc(doc(db, "Users", id), { role: r });
+    };
+    window.searchUsers = () => {
+        const val = document.getElementById('uSearch').value;
+        const rows = document.querySelectorAll('#uTable tr');
+        rows.forEach(r => r.style.display = r.cells[1].innerText.includes(val) ? "" : "none");
     };
 </script>
 </body>
