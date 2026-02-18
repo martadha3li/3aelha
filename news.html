@@ -204,24 +204,42 @@
         t.style.display = t.style.display === 'block' ? 'none' : 'block';
     };
 
-    window.loadCommentsRealtime = (id) => {
-        onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (s) => {
-            const countEl = document.getElementById(`c-count-${id}`);
-            if(countEl) countEl.innerText = s.size;
-            const list = document.getElementById(`list-${id}`);
-            if(list) {
-                list.innerHTML = "";
-                s.forEach(c => { list.innerHTML += `<div style="margin-bottom:5px; font-size:12px;"><b>${c.data().userName}:</b> ${c.data().text}</div>`; });
-            }
-        });
-    };
+   // ابحث عن دالة loadCommentsRealtime واستبدلها بهذا الكود المطور:
+window.loadCommentsRealtime = (id) => {
+    onSnapshot(query(collection(db, `News/${id}/Comments`), orderBy("timestamp", "asc")), (s) => {
+        const countEl = document.getElementById(`c-count-${id}`);
+        if(countEl) countEl.innerText = s.size;
+        
+        const list = document.getElementById(`list-${id}`);
+        if(list) {
+            list.innerHTML = "";
+            s.forEach(c => {
+                const comm = c.data();
+                // التعديل: إضافة رابط حول الاسم يوجه لبروفايل العضو عبر الـ UID
+                list.innerHTML += `
+                    <div style="margin-bottom:8px; font-size:12px; display:flex; align-items:flex-start; gap:5px;">
+                        <a href="profile.html?uid=${comm.userId}" style="text-decoration:none; color:var(--primary); font-weight:bold;">
+                            ${comm.userName}:
+                        </a>
+                        <span style="color:#444;">${comm.text}</span>
+                    </div>`;
+            });
+        }
+    });
+};
 
-    window.sendComment = async (id) => {
-        const inp = document.getElementById(`inp-${id}`);
-        if(!inp.value.trim()) return;
-        await addDoc(collection(db, `News/${id}/Comments`), { text: inp.value, userName: userData.fullName, timestamp: serverTimestamp() });
-        inp.value = "";
-    };
+// تأكد عند إرسال التعليق (دالة sendComment) من تخزين userId
+window.sendComment = async (id) => {
+    const inp = document.getElementById(`inp-${id}`);
+    if(!inp.value.trim()) return;
+    await addDoc(collection(db, `News/${id}/Comments`), { 
+        text: inp.value, 
+        userName: userData.fullName, 
+        userId: auth.currentUser.uid, // ضروري جداً لربط البروفايل
+        timestamp: serverTimestamp() 
+    });
+    inp.value = "";
+};
 
     window.handleCommEnter = (e, id) => { if(e.key === 'Enter') window.sendComment(id); };
     window.deletePost = async (id) => { if(confirm("هل تريد حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id)); };
@@ -229,3 +247,4 @@
 </script>
 </body>
 </html>
+
