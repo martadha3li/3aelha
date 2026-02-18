@@ -59,12 +59,64 @@
 
     <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
 
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span>حسابي</span></a>
-    </nav>
+   <nav class="bottom-nav">
+    <a href="news.html" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span>الرئيسية</span>
+    </a>
+    <a href="chat.html" class="nav-item">
+        <span class="nav-icon">💬</span>
+        <span>الدردشة</span>
+    </a>
+    <a href="competitions.html" class="nav-item">
+        <span class="nav-icon">🏆</span>
+        <span>المسابقات</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span>حسابي</span>
+    </a>
+</nav>
 
+<style>
+    /* تحديث بسيط للتنسيق ليتناسب مع 4 أيقونات */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70px; /* زيادة الطول قليلاً للراحة */
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(15px);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        border-top: 1px solid #eee;
+        z-index: 2000;
+        box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
+        padding-bottom: env(safe-area-inset-bottom); /* لدعم آيفون الجديد */
+    }
+    
+    .nav-item {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #8e8e93;
+        font-size: 10px; /* تصغير الخط قليلاً لتناسب المسافات */
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+    .nav-item.active {
+        color: var(--primary);
+    }
+
+    .nav-icon {
+        font-size: 22px;
+        margin-bottom: 4px;
+    }
+</style>
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, query, orderBy, onSnapshot, doc, getDoc, where, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -247,4 +299,5 @@ window.sendComment = async (id) => {
 </script>
 </body>
 </html>
+
 
