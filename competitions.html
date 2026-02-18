@@ -3,81 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المسابقات | العائلة</title>
+    <title>المسابقات النشطة | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .comp-wrapper { padding: 15px; padding-bottom: 100px; }
+        .comp-card { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; border-right: 5px solid var(--primary); }
+        .question-box { background: #f8f9fa; padding: 15px; border-radius: 15px; margin-top: 15px; }
+        .opt-btn { width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        .opt-btn:hover { background: #eef6ff; border-color: var(--primary); }
+        .opt-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; }
+        .answered-tag { color: #34c759; font-size: 11px; font-weight: bold; margin-top: 10px; display: block; }
+    </style>
 </head>
-<body style="background: #f8f9fa;">
+<body style="background: #f4f7f6;">
+
     <div class="top-bar">
         <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
-        <b>المسابقات القائمة</b>
+        <b>المسابقات والجوائز 🏆</b>
+        <div style="width:20px;"></div>
     </div>
 
-    <div id="compList" style="padding: 15px;">
-        <p style="text-align: center; color: gray;">جاري جلب المسابقات المتاحة...</p>
+    <div class="comp-wrapper" id="compContainer">
+        <p id="loadingMsg" style="text-align: center; color: gray; margin-top: 50px;">جاري جلب المسابقات النشطة...</p>
     </div>
+
+    <nav class="bottom-nav">
+        <a href="news.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="competitions.html" class="nav-item active"><span class="nav-icon">🏆</span><span>المسابقات</span></a>
+        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span>حسابي</span></a>
+    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, addDoc, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, where, addDoc, getDoc, getDocs, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let currentUser = null;
+
     auth.onAuthStateChanged(async user => {
         if(user) {
             const s = await getDoc(doc(db, "Users", user.uid));
             currentUser = s.data();
             currentUser.uid = user.uid;
-            loadActiveCompetitions();
-        }
+            loadCompetitions();
+        } else { window.location.replace("login.html"); }
     });
 
-    function loadActiveCompetitions() {
-        const now = new Date().toISOString();
-        onSnapshot(collection(db, "Competitions"), snap => {
-            const cont = document.getElementById('compList');
-            cont.innerHTML = "";
-            snap.forEach(compDoc => {
+    async function loadCompetitions() {
+        const container = document.getElementById('compContainer');
+        const now = new Date();
+
+        onSnapshot(collection(db, "Competitions"), async (snap) => {
+            if (snap.empty) {
+                container.innerHTML = '<p style="text-align:center; color:gray;">لا توجد مسابقات حالياً</p>';
+                return;
+            }
+
+            container.innerHTML = "";
+            document.getElementById('loadingMsg')?.remove();
+
+            for (const compDoc of snap.docs) {
                 const comp = compDoc.data();
-                // فحص الجدولة
-                if(now >= comp.start && now <= comp.end) {
-                    const div = document.createElement('div');
-                    div.className = 'comp-card';
-                    div.innerHTML = `<h3>🏆 ${comp.name}</h3><div id="q-${compDoc.id}"></div>`;
-                    cont.appendChild(div);
-                    loadQuestions(compDoc.id);
+                const startDate = new Date(comp.start);
+                const endDate = new Date(comp.end);
+
+                // فحص إذا كانت المسابقة جارية حالياً
+                if (now >= startDate && now <= endDate) {
+                    const compDiv = document.createElement('div');
+                    compDiv.className = 'comp-card';
+                    compDiv.innerHTML = `
+                        <h3 style="margin:0; color:var(--primary);">🏆 ${comp.name}</h3>
+                        <small style="color:gray;">ينتهي العرض في: ${endDate.toLocaleString('ar-EG')}</small>
+                        <div id="questions-for-${compDoc.id}"></div>
+                    `;
+                    container.appendChild(compDiv);
+                    
+                    // جلب الأسئلة التابعة لهذه المسابقة
+                    loadQuestions(compDoc.id, comp.name);
                 }
-            });
+            }
         });
     }
 
-    function loadQuestions(compId) {
-        onSnapshot(collection(db, `Competitions/${compId}/Questions`), snap => {
-            const qCont = document.getElementById(`q-${compId}`);
-            snap.forEach(qDoc => {
+    async function loadQuestions(compId, compName) {
+        const qContainer = document.getElementById(`questions-for-${compId}`);
+        
+        onSnapshot(collection(db, `Competitions/${compId}/Questions`), async (snap) => {
+            qContainer.innerHTML = "";
+            
+            for (const qDoc of snap.docs) {
                 const q = qDoc.data();
-                qCont.innerHTML += `
-                    <div style="margin-top:15px; background:#f9f9f9; padding:15px; border-radius:15px;">
-                        <p><b>السؤال:</b> ${q.text}</p>
-                        ${q.options.map((opt, i) => `
-                            <button onclick="submitAnswer('${compId}', '${qDoc.id}', ${i+1}, ${q.correct})" 
-                                    style="width:100%; margin-top:5px; padding:10px; border-radius:10px; border:1px solid #ddd; cursor:pointer;">
-                                ${opt}
-                            </button>
-                        `).join('')}
-                    </div>
+                
+                // فحص إذا كان العضو قد أجاب مسبقاً على هذا السؤال
+                const answeredQuery = query(
+                    collection(db, "CompResults"), 
+                    where("userId", "==", currentUser.uid),
+                    where("qId", "==", qDoc.id)
+                );
+                const answeredSnap = await getDocs(answeredQuery);
+                const alreadyAnswered = !answeredSnap.empty;
+
+                const qBox = document.createElement('div');
+                qBox.className = 'question-box';
+                qBox.innerHTML = `
+                    <p style="margin-bottom:10px;"><b>❓ ${q.text}</b></p>
+                    ${q.options.map((opt, i) => `
+                        <button class="opt-btn" 
+                            ${alreadyAnswered ? 'disabled' : ''} 
+                            onclick="submitAnswer('${compId}', '${compName}', '${qDoc.id}', ${i+1}, ${q.correct})">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                    ${alreadyAnswered ? '<span class="answered-tag">✅ تم تسجيل إجابتك مسبقاً</span>' : ''}
                 `;
-            });
+                qContainer.appendChild(qBox);
+            }
         });
     }
 
-    window.submitAnswer = async (compId, qId, chosen, correct) => {
-        await addDoc(collection(db, "CompResults"), {
-            compId, qId,
-            userId: currentUser.uid,
-            userName: currentUser.fullName,
-            isCorrect: (chosen == correct),
-            timestamp: new Date()
-        });
-        alert("تم تسجيل إجابتك، شكراً لمشاركتك!");
+    window.submitAnswer = async (compId, compName, qId, chosen, correct) => {
+        try {
+            await addDoc(collection(db, "CompResults"), {
+                compId: compId,
+                compName: compName,
+                qId: qId,
+                userId: currentUser.uid,
+                userName: currentUser.fullName,
+                isCorrect: (chosen == correct),
+                timestamp: serverTimestamp()
+            });
+            alert("تم إرسال إجابتك بنجاح! حظاً موفقاً في القرعة 🥳");
+        } catch (e) {
+            alert("حدث خطأ أثناء إرسال الإجابة");
+        }
     };
 </script>
 </body>
