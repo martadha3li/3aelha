@@ -7,27 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .profile-wrapper { padding-bottom: 100px; }
-        .profile-header { 
-            background: white; padding: 30px 20px; 
-            text-align: center; border-radius: 0 0 35px 35px; 
-            box-shadow: var(--shadow); position: relative;
-        }
-        
+        .profile-header { background: white; padding: 30px 20px; text-align: center; border-radius: 0 0 35px 35px; box-shadow: var(--shadow); position: relative; }
         .image-section { position: relative; width: 110px; height: 110px; margin: auto; }
         .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: #eee; }
         .change-photo-btn { position: absolute; bottom: 0; left: 0; background: var(--primary); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; cursor: pointer; }
         .age-badge { position: absolute; top: 0; right: 0; background: var(--accent); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; font-size: 14px; }
-
         .data-card { background: white; margin: 15px; border-radius: 20px; padding: 10px 20px; box-shadow: var(--shadow); }
         .data-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f9f9; }
         .label { color: #8e8e93; font-size: 12px; font-weight: bold; }
-        .value { color: #1c1c1e; font-weight: 600; font-size: 14px; }
-
-        .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: bold; color: #8e8e93; cursor: pointer; border-radius: 12px; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        
-        .mini-news-card { background: white; padding: 12px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .mini-news-card img { width: 45px; height: 45px; border-radius: 10px; object-fit: cover; }
+        .value { color: #1c1c1e; font-weight: 600; }
+        .mini-news-card { background: white; padding: 10px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body style="background: #f8f9fa;">
@@ -47,7 +36,7 @@
                 <input type="file" id="imgUpload" hidden accept="image/*" onchange="uploadImage()">
             </div>
             <h2 id="uName" style="margin: 12px 0 5px 0; font-size: 18px;">جاري التحميل...</h2>
-            <span id="uRole" style="background: #eef6ff; color: var(--primary); padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: bold;">عضو</span>
+            <span id="uRole" style="background: #eef6ff; color: var(--primary); padding: 3px 10px; border-radius: 10px; font-size: 11px;">عضو</span>
         </div>
 
         <div class="data-card">
@@ -55,99 +44,71 @@
             <div class="data-row"><span class="label">المدينة</span> <span id="uCity" class="value">--</span></div>
         </div>
 
-        <div class="activity-section">
-            <div style="display: flex; background: white; margin: 0 15px; border-radius: 15px; padding: 5px; box-shadow: var(--shadow);">
-                <button class="tab-btn active" id="postsTabBtn" onclick="switchTab('myPosts', this)">✍️ المنشورات</button>
-                <button class="tab-btn" id="likesTabBtn" onclick="switchTab('likedPosts', this)">❤️ الإعجابات</button>
-            </div>
-            <div id="activityContent" style="padding: 15px;"></div>
-        </div>
+        <div id="activityContent" style="padding: 15px;"></div>
     </div>
-
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
-        <a href="profile.html" class="nav-item active"><span class="nav-icon">👤</span><span>حسابي</span></a>
-    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // جلب المعرف من الرابط
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewUid = urlParams.get('uid');
+    // 1. استخراج الـ UID من الرابط فوراً
+    const params = new URLSearchParams(window.location.search);
+    const viewUid = params.get('uid');
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            // تحديد أي بروفايل سنعرض
-            const targetUid = viewUid || user.uid;
-            const isMyProfile = (targetUid === user.uid);
-
-            try {
-                const snap = await getDoc(doc(db, "Users", targetUid));
-                if (snap.exists()) {
-                    const data = snap.data();
-                    renderProfile(data, isMyProfile);
-                    loadUserPosts(targetUid, isMyProfile);
-                } else {
-                    document.getElementById('uName').innerText = "عضو غير مسجل";
+    // 2. دالة جلب البيانات الأساسية
+    async function fetchUserProfile(targetId, isCurrent) {
+        try {
+            const snap = await getDoc(doc(db, "Users", targetId));
+            if (snap.exists()) {
+                const data = snap.data();
+                
+                // تعبئة البيانات
+                document.getElementById('uName').innerText = data.fullName || "بدون اسم";
+                document.getElementById('uPhone').innerText = data.phone || "--";
+                document.getElementById('uCity').innerText = data.city || "غير محددة";
+                document.getElementById('uRole').innerText = data.role || "عضو";
+                if(data.profileImg) document.getElementById('uImg').src = data.profileImg;
+                
+                if(data.dob) {
+                    const age = new Date().getFullYear() - new Date(data.dob).getFullYear();
+                    document.getElementById('uAge').innerText = age;
                 }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('uName').innerText = "خطأ في التحميل";
+
+                // تخصيص الواجهة
+                if(!isCurrent) {
+                    document.getElementById('changeImgBtn').style.display = 'none';
+                    document.getElementById('pageTitle').innerText = "بروفايل العضو";
+                }
+                
+                loadUserActivity(targetId);
             }
+        } catch (e) { console.error("Error:", e); }
+    }
+
+    // 3. مستمع حالة الدخول
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // الأولوية للرابط، إذا لم يوجد نعرض بروفايل المستخدم الحالي
+            const finalUid = viewUid ? viewUid : user.uid;
+            const isMe = (finalUid === user.uid);
+            fetchUserProfile(finalUid, isMe);
         } else {
             window.location.replace("login.html");
         }
     });
 
-    function renderProfile(data, isMine) {
-        document.getElementById('uName').innerText = data.fullName || "بدون اسم";
-        document.getElementById('uPhone').innerText = data.phone || "--";
-        document.getElementById('uCity').innerText = data.city || "غير محددة";
-        document.getElementById('uRole').innerText = data.role || "عضو";
-        
-        if(data.profileImg) document.getElementById('uImg').src = data.profileImg;
-        
-        if(data.dob) {
-            const age = new Date().getFullYear() - new Date(data.dob).getFullYear();
-            document.getElementById('uAge').innerText = age;
-        }
-
-        // تخصيص الواجهة إذا كان البروفايل ليس لي
-        if(!isMine) {
-            document.getElementById('changeImgBtn').style.display = 'none';
-            document.getElementById('pageTitle').innerText = "ملف العضو";
-            document.getElementById('postsTabBtn').innerText = "✍️ منشوراته";
-            document.getElementById('likesTabBtn').innerText = "❤️ إعجاباته";
-        }
-    }
-
-    async function loadUserPosts(uid, isMine) {
+    async function loadUserActivity(uid) {
         const container = document.getElementById('activityContent');
-        container.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">جاري تحميل النشاطات...</p>';
-        
-        try {
-            const q = query(collection(db, "News"), where("authorId", "==", uid));
-            const snap = await getDocs(q);
-            
-            container.innerHTML = snap.empty ? `<p style="text-align:center; color:gray; font-size:12px;">لا توجد منشورات ${isMine ? 'لديك' : 'لهذا العضو'}</p>` : "";
-            
-            snap.forEach(d => {
-                const item = d.data();
-                container.innerHTML += `
-                    <div class="mini-news-card">
-                        <img src="${item.img || 'logo.png'}">
-                        <div style="flex:1;">
-                            <div style="font-size:13px; font-weight:bold;">${item.title}</div>
-                            <div style="font-size:10px; color:gray;">📅 ${new Date(item.publishDate).toLocaleDateString('ar-EG')}</div>
-                        </div>
-                    </div>`;
-            });
-        } catch (e) {
-            container.innerHTML = "خطأ في جلب المنشورات";
-        }
+        const q = query(collection(db, "News"), where("authorId", "==", uid));
+        const snap = await getDocs(q);
+        container.innerHTML = `<h3 style="font-size:14px; margin-bottom:10px;">${viewUid ? 'منشورات العضو' : 'منشوراتي'}</h3>`;
+        snap.forEach(d => {
+            const item = d.data();
+            container.innerHTML += `<div class="mini-news-card">
+                <img src="${item.img || 'logo.png'}" style="width:40px; height:40px; border-radius:8px;">
+                <div style="font-size:13px; font-weight:bold;">${item.title}</div>
+            </div>`;
+        });
     }
 
     window.uploadImage = async () => {
@@ -155,18 +116,11 @@
         if(!file) return;
         const reader = new FileReader();
         reader.onloadend = async () => {
-            const base64Img = reader.result;
-            await updateDoc(doc(db, "Users", auth.currentUser.uid), { profileImg: base64Img });
-            document.getElementById('uImg').src = base64Img;
-            alert("تم تحديث صورتك الشخصية ✅");
+            const base = reader.result;
+            await updateDoc(doc(db, "Users", auth.currentUser.uid), { profileImg: base });
+            document.getElementById('uImg').src = base;
         };
         reader.readAsDataURL(file);
-    };
-
-    window.switchTab = (type, btn) => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        // يمكن إضافة استعلام الإعجابات هنا بنفس طريقة loadUserPosts
     };
 </script>
 </body>
