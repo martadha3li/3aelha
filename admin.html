@@ -2,50 +2,73 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة الإدارة | الإحصائيات</title>
+    <title>لوحة الإدارة الشاملة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .stat-box { background: white; padding: 20px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); }
-        .admin-nav { display: flex; gap: 10px; padding: 15px; overflow-x: auto; }
-        .nav-card { background: var(--primary); color: white; padding: 10px 20px; border-radius: 12px; text-decoration: none; white-space: nowrap; }
+        .admin-container { padding: 15px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .user-row { background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; color: white; }
+        .status-pending { background: var(--danger); }
+        .status-active { background: var(--accent); }
+        .guardian-note { font-size: 11px; background: #fff5f5; padding: 5px; border-radius: 5px; margin-top: 5px; border: 1px dashed red; }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <b>⚙️ لوحة الإدارة</b>
-        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
+        <b>⚙️ إدارة المنصة</b>
+        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:20px;">🏠</button>
     </div>
 
-    <div class="admin-nav">
-        <a href="admin_users.html" class="nav-card">👥 إدارة الأعضاء</a>
-        <a href="admin_requests.html" class="nav-card">📥 طلبات التفعيل</a>
-        <a href="admin_categories.html" class="nav-card">📁 التصنيفات</a>
-    </div>
+    <div class="admin-container">
+        <div class="stat-grid" id="statsArea">
+            </div>
 
-    <div class="stat-grid">
-        <div class="stat-box"><h3>الذكور</h3><p id="mCount" style="font-size:24px; font-weight:bold; color:var(--primary);">0</p></div>
-        <div class="stat-box"><h3>الإناث</h3><p id="fCount" style="font-size:24px; font-weight:bold; color:var(--primary);">0</p></div>
-        <div class="stat-box"><h3>أكبر عمر</h3><p id="maxAge" style="font-size:24px; font-weight:bold;">0</p></div>
-        <div class="stat-box"><h3>أصغر عمر</h3><p id="minAge" style="font-size:24px; font-weight:bold;">0</p></div>
+        <h3>👥 إدارة الأعضاء والطلبات</h3>
+        <div id="usersManager"></div>
     </div>
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // 1. الإحصائيات والإدارة
     onSnapshot(collection(db, "Users"), snap => {
-        let m=0, f=0, ages=[];
+        let m=0, f=0, total=snap.size;
+        const manager = document.getElementById('usersManager');
+        manager.innerHTML = "";
+        
         snap.forEach(d => {
             const u = d.data();
-            if(u.gender === 'male') m++; else f++;
-            if(u.dob) ages.push(new Date().getFullYear() - new Date(u.dob).getFullYear());
+            if(u.role === 'admin') return;
+            u.gender === 'male' ? m++ : f++;
+            
+            const isFemale = u.gender === 'female';
+            manager.innerHTML += `
+                <div class="user-row">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b>${u.fullName}</b> <span class="badge ${u.status === 'active' ? 'status-active' : 'status-pending'}">${u.status}</span>
+                            <div style="font-size:11px; color:gray;">${u.phone} | صلاحية: ${u.role || 'عضو'}</div>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="changeRole('${d.id}', 'editor')" style="font-size:10px;">ترقية لمحرر</button>
+                            <button onclick="toggleUser('${d.id}', '${u.status}')" style="font-size:10px;">${u.status === 'active' ? 'تعطيل' : 'تفعيل'}</button>
+                            <button onclick="deleteU('${d.id}')" style="font-size:10px; color:red;">حذف</button>
+                        </div>
+                    </div>
+                    ${(isFemale && u.guardianName) ? `<div class="guardian-note">🛡️ المعرف: ${u.guardianName} (${u.guardianPhone})</div>` : ''}
+                </div>`;
         });
-        document.getElementById('mCount').innerText = m;
-        document.getElementById('fCount').innerText = f;
-        document.getElementById('maxAge').innerText = ages.length ? Math.max(...ages) : 0;
-        document.getElementById('minAge').innerText = ages.length ? Math.min(...ages) : 0;
+        
+        document.getElementById('statsArea').innerHTML = `
+            <div class="stat-box"><h3>الذكور</h3><p>${m}</p></div>
+            <div class="stat-box"><h3>الإناث</h3><p>${f}</p></div>`;
     });
+
+    window.changeRole = async (id, role) => await updateDoc(doc(db, "Users", id), { role });
+    window.toggleUser = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s === 'active' ? 'disabled' : 'active' });
+    window.deleteU = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
 </script>
 </body>
 </html>
