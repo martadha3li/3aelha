@@ -3,99 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول</title>
+    <title>منصة العائلة | جاري التحميل</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body {
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: var(--bg-light);
-            /* نمنع التفاعل حتى تتأكد الصفحة من حالة المستخدم */
-            visibility: hidden; 
+            background-color: #ffffff; /* يمكنك تغييرها للونك المفضل */
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .login-card {
-            width: 90%;
-            max-width: 380px;
-            background: var(--white);
-            padding: 40px 30px;
-            border-radius: 30px;
-            box-shadow: var(--shadow);
+
+        .splash-container {
             text-align: center;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .logo-splash {
+            width: 150px; /* تحكم في حجم الشعار من هنا */
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 30px; /* إذا كان الشعار يحتاج زوايا ناعمة */
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary, #007aff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .welcome-text {
+            color: var(--primary, #007aff);
+            font-weight: bold;
+            font-size: 18px;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-card" id="mainCard">
-        <img src="logo.png" style="width: 100px; height: auto; border-radius: 20px; margin-bottom: 15px;">
-        <h2 style="margin-bottom: 25px; color: var(--text-main);">تسجيل الدخول</h2>
-
-        <input type="text" id="loginId" class="form-input" placeholder="رقم الجوال أو البريد" style="width:100%; padding:15px; margin-bottom:10px; border-radius:12px; border:1px solid #ddd;">
-        <input type="password" id="loginPass" class="form-input" placeholder="كلمة المرور" style="width:100%; padding:15px; margin-bottom:15px; border-radius:12px; border:1px solid #ddd;">
+    <div class="splash-container">
+        <img src="logo.png" alt="شعار العائلة" class="logo-splash">
         
-        <button class="btn-main" id="loginBtn" style="width: 100%; padding: 16px;">دخول</button>
-
-        <div style="margin-top: 25px; font-size: 14px; display: flex; justify-content: center; gap: 20px;">
-            <a href="register.html" style="text-decoration: none; color: var(--primary); font-weight: bold;">حساب جديد</a>
-            <span style="color: #ddd;">|</span>
-            <a href="forgot.html" style="text-decoration: none; color: var(--danger); font-weight: bold;">نسيت؟</a>
-        </div>
+        <div class="welcome-text">منصة العائلة</div>
+        <div class="loader"></div>
     </div>
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script type="module">
+        import { auth } from './config.js';
 
-    // القفل البرمجي لمنع التكرار
-    let checkDone = false;
-
-    onAuthStateChanged(auth, (user) => {
-        if (checkDone) return; // إذا تم الفحص مسبقاً لا تفعل شيئاً
-        
-        if (user) {
-            checkDone = true;
-            // إذا كان مسجلاً، اذهب للأخبار وتوقف عن تنفيذ أي كود آخر في هذه الصفحة
-            window.location.replace("news.html");
-        } else {
-            checkDone = true;
-            // إذا لم يكن مسجلاً، اظهر الصفحة للمستخدم وابقى فيها
-            document.body.style.visibility = "visible";
-        }
-    });
-
-    const handleLogin = async () => {
-        const id = document.getElementById('loginId').value.trim();
-        const pass = document.getElementById('loginPass').value;
-        const btn = document.getElementById('loginBtn');
-
-        if (!id || !pass) return alert("أكمل البيانات");
-
-        btn.disabled = true;
-        btn.innerText = "جاري الدخول...";
-
-        try {
-            let email = id;
-            if (!id.includes('@')) {
-                const q = query(collection(db, "Users"), where("phone", "==", id));
-                const snap = await getDocs(q);
-                if (snap.empty) throw new Error("رقم الجوال غير مسجل");
-                email = snap.docs[0].data().email;
-            }
-
-            const userCred = await signInWithEmailAndPassword(auth, email, pass);
-            // عند نجاح الدخول، الانتقال سيحدث تلقائياً عبر onAuthStateChanged بالأعلى
-        } catch (e) {
-            btn.disabled = false;
-            btn.innerText = "دخول";
-            alert("خطأ: " + e.message);
-        }
-    };
-
-    document.getElementById('loginBtn').addEventListener('click', handleLogin);
-</script>
+        // وظيفة التحقق والتوجيه التلقائي
+        window.onload = () => {
+            // ننتظر 2.5 ثانية ليعيش المستخدم تجربة الشعار ثم نوجهه
+            setTimeout(() => {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        // إذا كان مسجل دخول بالفعل يذهب للأخبار مباشرة
+                        window.location.replace("news.html");
+                    } else {
+                        // إذا لم يسجل يذهب لصفحة الدخول الجديدة
+                        window.location.replace("login.html");
+                    }
+                });
+            }, 2500); // 2500 ميلي ثانية تعني ثانيتين ونصف
+        };
+    </script>
 </body>
 </html>
