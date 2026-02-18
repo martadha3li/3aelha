@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بروفايل العضو</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .profile-header { background: white; padding: 40px 20px; text-align: center; border-radius: 0 0 35px 35px; box-shadow: var(--shadow); }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: #eee; }
+        .data-card { background: white; margin: 20px 15px; border-radius: 20px; padding: 10px 20px; box-shadow: var(--shadow); }
+        .data-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f9f9f9; }
+        .label { color: #8e8e93; font-size: 13px; font-weight: bold; }
+        .value { color: #1c1c1e; font-weight: 600; }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+
+    <div class="top-bar">
+        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
+        <b>بروفايل العضو</b>
+        <div style="width:20px;"></div>
+    </div>
+
+    <div id="loader" style="text-align:center; margin-top:50px; color:gray;">جاري تحميل بيانات العضو...</div>
+
+    <div id="profileContent" style="display:none;">
+        <div class="profile-header">
+            <img id="uImg" src="https://via.placeholder.com/110" class="profile-img">
+            <h2 id="uName" style="margin: 15px 0 5px 0; font-size: 20px;"></h2>
+            <span id="uRole" style="background: #eef6ff; color: var(--primary); padding: 4px 12px; border-radius: 12px; font-size: 12px;">عضو</span>
+        </div>
+
+        <div class="data-card">
+            <div class="data-row"><span class="label">المدينة</span> <span id="uCity" class="value">--</span></div>
+            <div class="data-row"><span class="label">الجنس</span> <span id="uGender" class="value">--</span></div>
+            <div class="data-row"><span class="label">تاريخ الانضمام</span> <span id="uDate" class="value">--</span></div>
+        </div>
+
+        <h3 style="margin-right:20px; font-size:16px;">✍️ منشورات العضو</h3>
+        <div id="userPosts" style="padding: 0 15px 100px 15px;"></div>
+    </div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 1. التقاط الـ UID من الرابط فوراً
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUid = urlParams.get('uid');
+
+    if (!targetUid) {
+        document.getElementById('loader').innerText = "خطأ: لم يتم العثور على معرف العضو";
+    } else {
+        loadMemberData();
+    }
+
+    async function loadMemberData() {
+        try {
+            // 2. جلب بيانات العضو من مجموعة Users
+            const userSnap = await getDoc(doc(db, "Users", targetUid));
+            
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                
+                // تعبئة الواجهة
+                document.getElementById('uName').innerText = data.fullName;
+                document.getElementById('uCity').innerText = data.city || "غير محددة";
+                document.getElementById('uGender').innerText = data.gender === 'male' ? 'ذكر' : 'أنثى';
+                document.getElementById('uImg').src = data.profileImg || 'https://via.placeholder.com/110';
+                
+                if(data.createdAt) {
+                    document.getElementById('uDate').innerText = new Date(data.createdAt.toDate()).toLocaleDateString('ar-EG');
+                }
+
+                // إظهار المحتوى وإخفاء اللودر
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('profileContent').style.display = 'block';
+
+                // 3. جلب منشورات هذا العضو
+                loadMemberPosts();
+            } else {
+                document.getElementById('loader').innerText = "هذا العضو غير موجود في قاعدة البيانات";
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('loader').innerText = "حدث خطأ أثناء جلب البيانات";
+        }
+    }
+
+    async function loadMemberPosts() {
+        const postsCont = document.getElementById('userPosts');
+        const q = query(collection(db, "News"), where("authorId", "==", targetUid));
+        const snap = await getDocs(q);
+        
+        if(snap.empty) {
+            postsCont.innerHTML = '<p style="color:gray; font-size:12px; text-align:center;">لا توجد منشورات لهذا العضو</p>';
+            return;
+        }
+
+        snap.forEach(d => {
+            const post = d.data();
+            postsCont.innerHTML += `
+                <div style="background:white; padding:12px; border-radius:15px; margin-bottom:10px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow);">
+                    <img src="${post.img || 'logo.png'}" style="width:45px; height:45px; border-radius:10px; object-fit:cover;">
+                    <div style="font-size:13px; font-weight:bold;">${post.title}</div>
+                </div>`;
+        });
+    }
+</script>
+</body>
+</html>
