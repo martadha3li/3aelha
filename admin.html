@@ -3,51 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة | الإدارة العامة</title>
+    <title>لوحة الإدارة الشاملة | مركز التحكم</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        .admin-wrapper { padding: 15px; max-width: 900px; margin: auto; }
         .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; border-bottom: 3px solid var(--primary); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        /* كروت الإحصائيات */
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid var(--primary); }
+        .stat-card h3 { font-size: 22px; color: var(--primary); margin: 5px 0; }
+
+        /* الطلبات الملونة */
+        .req-box { padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
+        .req-phone { background: #eef6ff; border-color: #bcd9ff; }
+        .req-pass { background: #fff1f1; border-color: #ffcccc; }
+        .req-role { background: #fff9e6; border-color: #ffeeba; }
+        .req-activation { background: #f2fff5; border-color: #bdf0c9; }
+
+        /* الجدول والبحث */
+        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
-        .btn-ok { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-        .cat-tag { background: #eef6ff; padding: 5px 10px; border-radius: 10px; font-size: 12px; margin: 5px; display: inline-block; }
+        th { background: #f8f9fa; padding: 12px; border-bottom: 2px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f5f5f5; text-align: center; }
+
+        .btn-group { display: flex; gap: 5px; justify-content: center; }
+        .mini-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; color: white; font-weight: bold; }
+        .role-badge { background: #eef6ff; color: var(--primary); padding: 3px 8px; border-radius: 8px; font-size: 11px; }
+        .cat-tag { background: #f0f0f0; padding: 8px 12px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 8px; margin: 5px; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
-        <b>مركز التحكم الشامل</b>
-        <img src="logo.png" style="height: 35px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
+            <b style="font-size: 16px;">الإدارة العامة للمنصة</b>
+        </div>
+        <img src="logo.png" style="height: 35px; border-radius: 5px;">
     </div>
 
-    <div style="padding: 15px; max-width: 800px; margin: auto;">
-        
+    <div class="admin-wrapper">
         <div class="stat-grid">
-            <div class="stat-card"><h3>الأعضاء</h3><span id="uCount">0</span></div>
-            <div class="stat-card"><h3>الأخبار</h3><span id="nCount">0</span></div>
+            <div class="stat-card"><h3 id="uCount">0</h3><span>الأعضاء</span></div>
+            <div class="stat-card"><h3 id="nCount">0</h3><span>الأخبار</span></div>
+            <div class="stat-card"><h3 id="rCount">0</h3><span>الطلبات</span></div>
         </div>
 
         <div class="admin-section">
-            <h2>📁 إدارة التصنيفات والعناوين</h2>
-            <button class="btn-ok" onclick="addCat()">+ إضافة تصنيف</button>
-            <div id="catsList" style="margin-top:10px;"></div>
+            <div class="section-header"><h2>🛠️ فريق الإدارة والمحررين</h2></div>
+            <div id="adminTeamList"></div>
         </div>
 
         <div class="admin-section">
-            <h2>📥 طلبات تفعيل الأعضاء</h2>
-            <div id="pendingList"></div>
+            <div class="section-header"><h2>📥 طلبات تفعيل الحسابات الجديدة</h2></div>
+            <div id="activationRequests"></div>
         </div>
 
         <div class="admin-section">
-            <h2>👥 قاعدة بيانات الأعضاء والبحث</h2>
-            <input type="text" id="uSearch" placeholder="بحث برقم الجوال..." onkeyup="searchUsers()" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;">
-            <div style="overflow-x:auto;">
+            <div class="section-header"><h2>📬 طلبات التعديل والترقية</h2></div>
+            <div id="mixedRequests"></div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-header">
+                <h2>📁 تصنيفات الأخبار والعناوين</h2>
+                <button onclick="addNewCategory()" class="mini-btn" style="background:var(--primary)">+ إضافة</button>
+            </div>
+            <div id="categoriesList"></div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-header"><h2>👥 قاعدة بيانات كافة الأعضاء</h2></div>
+            <input type="text" id="userSearch" class="form-input" style="width:100%; margin-bottom:15px;" placeholder="🔍 ابحث برقم الجوال أو الاسم..." onkeyup="filterUsers()">
+            <div class="table-container">
                 <table>
-                    <thead><tr><th>الاسم</th><th>الجوال</th><th>الصلاحية</th><th>الإجراء</th></tr></thead>
-                    <tbody id="uTable"></tbody>
+                    <thead>
+                        <tr><th>الاسم</th><th>الجوال</th><th>الصلاحية</th><th>الحالة</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -59,59 +94,119 @@
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const s = await getDoc(doc(db, "Users", user.uid));
-            if (s.data().role !== 'admin') location.href='news.html';
-            initAdmin();
-        } else location.href='index.html';
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.data().role !== 'admin') location.href = 'news.html';
+            initFullAdmin();
+        } else location.href = 'index.html';
     });
 
-    function initAdmin() {
+    function initFullAdmin() {
+        // الإحصائيات
         onSnapshot(collection(db, "Users"), s => document.getElementById('uCount').innerText = s.size);
         onSnapshot(collection(db, "News"), s => document.getElementById('nCount').innerText = s.size);
 
-        // التصنيفات
-        onSnapshot(collection(db, "Categories"), s => {
-            const cont = document.getElementById('catsList'); cont.innerHTML = "";
-            s.forEach(c => { cont.innerHTML += `<div class="cat-tag">${c.data().name} <b onclick="delCat('${c.id}')" style="color:red; cursor:pointer;">✕</b></div>`; });
+        // فريق الإدارة والدردشة
+        onSnapshot(query(collection(db, "Users"), where("role", "in", ["admin", "editor"])), snap => {
+            const cont = document.getElementById('adminTeamList');
+            cont.innerHTML = "";
+            snap.forEach(u => {
+                if(u.id === auth.currentUser.uid) return;
+                cont.innerHTML += `<div class="req-box" style="background:#f8f9fa;">
+                    <div><b>${u.data().fullName}</b> <span class="role-badge">${u.data().role}</span></div>
+                    <button class="mini-btn" style="background:var(--accent)" onclick="location.href='chat.html?target=${u.id}'">💬 دردشة</button>
+                </div>`;
+            });
         });
 
         // طلبات التفعيل
-        onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), s => {
-            const cont = document.getElementById('pendingList'); cont.innerHTML = s.empty ? "لا توجد طلبات" : "";
-            s.forEach(u => { cont.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span>${u.data().fullName}</span> <button class="btn-ok" onclick="updateStatus('${u.id}', 'active')">تفعيل</button>
-            </div>`; });
+        onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
+            const cont = document.getElementById('activationRequests');
+            cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px;">لا توجد طلبات معلقة</p>' : "";
+            snap.forEach(u => {
+                cont.innerHTML += `<div class="req-box req-activation">
+                    <div><b>${u.data().fullName}</b> (${u.data().phone})</div>
+                    <button class="mini-btn" style="background:#34c759" onclick="updateStatus('${u.id}', 'active')">تفعيل ✅</button>
+                </div>`;
+            });
         });
 
-        // جدول الأعضاء
-        onSnapshot(collection(db, "Users"), s => {
-            const tbody = document.getElementById('uTable'); tbody.innerHTML = "";
-            s.forEach(u => {
+        // إدارة الطلبات (جوال، باسورد، صلاحيات)
+        const reqs = ["PhoneRequests", "PasswordRequests", "RoleRequests"];
+        const mixedCont = document.getElementById('mixedRequests');
+        mixedCont.innerHTML = "";
+        reqs.forEach(col => {
+            onSnapshot(collection(db, col), snap => {
+                snap.forEach(r => {
+                    const d = r.data();
+                    let info = col === "PhoneRequests" ? `تغيير جوال إلى: ${d.newPhone}` : 
+                               col === "PasswordRequests" ? `طلب باسورد: ${d.requestedPass}` : `ترقية لـ: ${d.requestedRole}`;
+                    let cls = col === "PhoneRequests" ? "req-phone" : col === "PasswordRequests" ? "req-pass" : "req-role";
+                    
+                    mixedCont.innerHTML += `<div class="req-box ${cls}">
+                        <div><b>${d.userName}</b><br><small>${info}</small></div>
+                        <div class="btn-group">
+                            <button class="mini-btn" style="background:var(--primary)" onclick="approveAny('${col}', '${r.id}', '${d.userId}', '${d.newPhone || d.requestedPass || d.requestedRole}')">قبول</button>
+                            <button class="mini-btn" style="background:var(--danger)" onclick="deleteDoc(doc(db, '${col}', '${r.id}'))">رفض</button>
+                        </div>
+                    </div>`;
+                });
+            });
+        });
+
+        // جدول كافة الأعضاء والبحث
+        onSnapshot(collection(db, "Users"), snap => {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = "";
+            snap.forEach(u => {
                 const d = u.data();
                 tbody.innerHTML += `<tr>
-                    <td>${d.fullName}</td><td>${d.phone}</td><td>${d.role || 'عضو'}</td>
-                    <td><button onclick="editUser('${u.id}')">⚙️</button> <button onclick="delUser('${u.id}')" style="color:red">🗑️</button></td>
+                    <td>${d.fullName}</td><td>${d.phone}</td>
+                    <td><span class="role-badge">${d.role || 'عضو'}</span></td>
+                    <td style="color:${d.status === 'active' ? 'green' : 'red'}">${d.status}</td>
+                    <td><div class="btn-group">
+                        <button class="mini-btn" style="background:#007aff" onclick="editAny('${u.id}', 'fullName', 'الاسم الجديد')">✏️</button>
+                        <button class="mini-btn" style="background:#ff9500" onclick="updateStatus('${u.id}', '${d.status === 'active' ? 'stopped' : 'active'}')">🚫</button>
+                        <button class="mini-btn" style="background:#ff3b30" onclick="deleteUser('${u.id}')">🗑️</button>
+                    </div></td>
                 </tr>`;
+            });
+        });
+
+        // التصنيفات
+        onSnapshot(collection(db, "Categories"), snap => {
+            const cont = document.getElementById('categoriesList');
+            cont.innerHTML = "";
+            snap.forEach(c => {
+                cont.innerHTML += `<div class="cat-tag" title="العنوان: ${c.data().defaultTitle}">
+                    <b>${c.data().name}</b> <span onclick="deleteDoc(doc(db, 'Categories', '${c.id}'))" style="color:red; cursor:pointer;">✕</span>
+                </div>`;
             });
         });
     }
 
-    window.addCat = async () => {
-        const n = prompt("اسم التصنيف:");
-        const t = prompt("العنوان الافتراضي:");
-        if(n) await addDoc(collection(db, "Categories"), { name: n, defaultTitle: t || "" });
+    // --- الدوال التنفيذية ---
+    window.updateStatus = async (id, s) => await updateDoc(doc(db, "Users", id), { status: s });
+    window.deleteUser = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
+    window.editAny = async (id, field, msg) => { const val = prompt(msg); if(val) await updateDoc(doc(db, "Users", id), { [field]: val }); };
+    
+    window.approveAny = async (col, reqId, uid, val) => {
+        const field = col === "PhoneRequests" ? "phone" : col === "PasswordRequests" ? "tempPassword" : "role";
+        await updateDoc(doc(db, "Users", uid), { [field]: val });
+        await deleteDoc(doc(db, col, reqId));
+        alert("تم التنفيذ بنجاح.");
     };
-    window.delCat = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "Categories", id)); };
-    window.updateStatus = async (id, st) => await updateDoc(doc(db, "Users", id), { status: st });
-    window.delUser = async (id) => { if(confirm("حذف العضو؟")) await deleteDoc(doc(db, "Users", id)); };
-    window.editUser = async (id) => {
-        const r = prompt("الصلاحية (admin/editor/user):");
-        if(r) await updateDoc(doc(db, "Users", id), { role: r });
+
+    window.addNewCategory = async () => {
+        const name = prompt("اسم التصنيف:");
+        const def = prompt("العنوان الافتراضي للخبر:");
+        if(name) await addDoc(collection(db, "Categories"), { name, defaultTitle: def || "" });
     };
-    window.searchUsers = () => {
-        const val = document.getElementById('uSearch').value;
-        const rows = document.querySelectorAll('#uTable tr');
-        rows.forEach(r => r.style.display = r.cells[1].innerText.includes(val) ? "" : "none");
+
+    window.filterUsers = () => {
+        const val = document.getElementById('userSearch').value.toLowerCase();
+        document.querySelectorAll('#usersTableBody tr').forEach(tr => {
+            tr.style.display = (tr.innerText.toLowerCase().includes(val)) ? "" : "none";
+        });
     };
 </script>
 </body>
