@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المسابقات | النسخة المصححة</title>
+    <title>إدارة المسابقات | لوحة التحكم</title>
     <link rel="stylesheet" href="style.css">
     <style>
         :root { --primary: #5856d6; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; }
         body { background-color: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding-bottom: 50px; }
         .container { padding: 15px; max-width: 900px; margin: auto; }
         
-        /* بطاقات التصميم */
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #1c1c1e; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
-        /* المسابقات والأسئلة */
         .comp-item { border: 1px solid #e5e5ea; border-radius: 15px; padding: 15px; margin-bottom: 15px; background: #fff; }
         .q-list { margin-top: 10px; background: #f8f8fb; border-radius: 12px; padding: 10px; border: 1px dashed #ccc; }
         .q-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* الجدول */
         .table-wrapper { overflow-x: auto; background: white; border-radius: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th { padding: 12px; background: #f9f9f9; color: #8e8e93; font-size: 12px; border-bottom: 2px solid #eee; }
@@ -32,7 +29,6 @@
 
         .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #d1d1d6; margin-bottom: 12px; box-sizing: border-box; font-family: inherit; }
         
-        /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
         .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px; }
     </style>
@@ -61,7 +57,7 @@
     </div>
 
     <div class="card">
-        <div class="card-title">📊 نتائج المشاركين (المشاركات الحية)</div>
+        <div class="card-title">📊 نتائج المشاركين</div>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -75,7 +71,7 @@
                     </tr>
                 </thead>
                 <tbody id="resultsBody">
-                    <tr><td colspan="6" style="padding:20px; color:gray;">جاري جلب النتائج من القاعدة...</td></tr>
+                    <tr><td colspan="6" style="padding:20px; color:gray;">جاري جلب النتائج...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -102,7 +98,7 @@
     import { db } from './config.js';
     import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 1. إنشاء مسابقة جديدة ---
+    // --- 1. إنشاء مسابقة ---
     window.createNewCompetition = async () => {
         const title = document.getElementById('compTitle').value;
         const endDate = document.getElementById('compEndDate').value;
@@ -117,7 +113,7 @@
         } catch(e) { alert("خطأ في الإضافة: " + e.message); }
     };
 
-    // --- 2. جلب المسابقات والأسئلة ---
+    // --- 2. عرض المسابقات والأسئلة ---
     onSnapshot(collection(db, "Competitions"), (snap) => {
         const list = document.getElementById('compsList');
         list.innerHTML = snap.empty ? '<p style="text-align:center; color:gray;">لا توجد مسابقات</p>' : "";
@@ -163,10 +159,13 @@
         });
     }
 
-    // --- 3. جلب النتائج (تم التصحيح هنا) ---
-    // أزلنا الـ orderBy مؤقتاً لضمان ظهور البيانات دون الحاجة لـ Index حالياً
+    // --- 3. جلب النتائج (تم إضافة سطر الـ Console وتصحيح الحقول) ---
     onSnapshot(collection(db, "Answers"), (snap) => {
+        // السطر المطلوب للتأكد من وصول البيانات للمتصفح
+        console.log("عدد الإجابات المستلمة من قاعدة البيانات:", snap.size);
+
         const resBody = document.getElementById('resultsBody');
+        
         if (snap.empty) {
             resBody.innerHTML = '<tr><td colspan="6" style="padding:20px; color:gray;">لا توجد مشاركات مسجلة في مجموعة Answers</td></tr>';
             return;
@@ -175,9 +174,12 @@
         resBody.innerHTML = "";
         snap.forEach((d) => {
             const a = d.data();
+            // طباعة كل إجابة في الـ Console للفحص الدقيق إذا رغبت
+            console.log("بيانات الإجابة المستلمة:", a);
+
             resBody.innerHTML += `
                 <tr>
-                    <td style="text-align:right;"><b>${a.userName || 'مجهول'}</b></td>
+                    <td style="text-align:right;"><b>${a.userName || 'مجهول'}</b><br><small style="color:blue;">${a.userEmail || ''}</small></td>
                     <td>${a.userPhone || '--'}</td>
                     <td>${a.compTitle || '--'}</td>
                     <td>${a.questionText || '--'}</td>
@@ -189,11 +191,10 @@
             `;
         });
     }, (err) => {
-        console.error("خطأ جلب النتائج:", err);
-        document.getElementById('resultsBody').innerHTML = `<tr><td colspan="6" style="color:red;">خطأ: ${err.message}</td></tr>`;
+        console.error("فشل جلب النتائج من Firestore:", err);
     });
 
-    // --- التحكم بالـ Modals والوظائف ---
+    // --- الوظائف المساعدة ---
     window.openQModal = (id) => { document.getElementById('activeCompId').value = id; document.getElementById('qModal').style.display = 'flex'; };
     window.closeQModal = () => document.getElementById('qModal').style.display = 'none';
 
