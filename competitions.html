@@ -3,139 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المسابقات النشطة | منصة العائلة</title>
+    <title>المسابقات العائلية</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .comp-wrapper { padding: 15px; padding-bottom: 100px; }
-        .comp-card { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; border-right: 5px solid var(--primary); }
-        .question-box { background: #f8f9fa; padding: 15px; border-radius: 15px; margin-top: 15px; }
-        .opt-btn { width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
-        .opt-btn:hover { background: #eef6ff; border-color: var(--primary); }
-        .opt-btn:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; }
-        .answered-tag { color: #34c759; font-size: 11px; font-weight: bold; margin-top: 10px; display: block; }
+        .timer { font-size: 12px; color: #ff3b30; font-weight: bold; background: #fff2f2; padding: 4px 10px; border-radius: 10px; }
+        .option-btn { width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; }
+        .option-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .selected-correct { background: #d4edda !important; border-color: #28a745; }
+        .selected-wrong { background: #f8d7da !important; border-color: #dc3545; }
     </style>
 </head>
-<body style="background: #f4f7f6;">
+<body style="background: #f8f9fa;">
 
     <div class="top-bar">
-        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">🏠</button>
-        <b>المسابقات والجوائز 🏆</b>
-        <div style="width:20px;"></div>
+        <button onclick="location.href='news.html'">➡️</button>
+        <b>المسابقات النشطة</b>
     </div>
 
-    <div class="comp-wrapper" id="compContainer">
-        <p id="loadingMsg" style="text-align: center; color: gray; margin-top: 50px;">جاري جلب المسابقات النشطة...</p>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
-        <a href="competitions.html" class="nav-item active"><span class="nav-icon">🏆</span><span>المسابقات</span></a>
-        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span>حسابي</span></a>
-    </nav>
+    <div id="compsFeed" style="padding: 15px;"></div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDoc, getDocs, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, where, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let currentUser = null;
+    let userData = {}; // نفترض جلب بيانات المستخدم هنا كما في الصفحات السابقة
 
-    auth.onAuthStateChanged(async user => {
-        if(user) {
-            const s = await getDoc(doc(db, "Users", user.uid));
-            currentUser = s.data();
-            currentUser.uid = user.uid;
-            loadCompetitions();
-        } else { window.location.replace("login.html"); }
-    });
-
-    async function loadCompetitions() {
-        const container = document.getElementById('compContainer');
-        const now = new Date();
-
-        onSnapshot(collection(db, "Competitions"), async (snap) => {
-            if (snap.empty) {
-                container.innerHTML = '<p style="text-align:center; color:gray;">لا توجد مسابقات حالياً</p>';
+    function startCountdown(endTime, elementId) {
+        setInterval(() => {
+            const now = new Date().getTime();
+            const distance = endTime - now;
+            if (distance < 0) {
+                document.getElementById(elementId).innerHTML = "منتهية";
                 return;
             }
-
-            container.innerHTML = "";
-            document.getElementById('loadingMsg')?.remove();
-
-            for (const compDoc of snap.docs) {
-                const comp = compDoc.data();
-                const startDate = new Date(comp.start);
-                const endDate = new Date(comp.end);
-
-                // فحص إذا كانت المسابقة جارية حالياً
-                if (now >= startDate && now <= endDate) {
-                    const compDiv = document.createElement('div');
-                    compDiv.className = 'comp-card';
-                    compDiv.innerHTML = `
-                        <h3 style="margin:0; color:var(--primary);">🏆 ${comp.name}</h3>
-                        <small style="color:gray;">ينتهي العرض في: ${endDate.toLocaleString('ar-EG')}</small>
-                        <div id="questions-for-${compDoc.id}"></div>
-                    `;
-                    container.appendChild(compDiv);
-                    
-                    // جلب الأسئلة التابعة لهذه المسابقة
-                    loadQuestions(compDoc.id, comp.name);
-                }
-            }
-        });
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            document.getElementById(elementId).innerHTML = `⏳ متبقي: ${days}ي ${hours}س ${mins}د`;
+        }, 1000);
     }
 
-    async function loadQuestions(compId, compName) {
-        const qContainer = document.getElementById(`questions-for-${compId}`);
+    onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
+        const feed = document.getElementById('compsFeed');
+        feed.innerHTML = "";
+        snap.forEach(async d => {
+            const c = d.data();
+            const timerId = `timer-${d.id}`;
+            const card = document.createElement('div');
+            card.className = "comp-card";
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0;">${c.title}</h3>
+                    <span id="${timerId}" class="timer">--</span>
+                </div>
+                <div id="questions-${d.id}" style="margin-top:15px;"></div>
+            `;
+            feed.appendChild(card);
+            startCountdown(new Date(c.endDate).getTime(), timerId);
+            loadUserQuestions(d.id, c.title);
+        });
+    });
+
+    async function loadUserQuestions(compId, compTitle) {
+        const qSnap = await getDocs(query(collection(db, `Competitions/${compId}/Questions`), where("active", "==", true)));
+        const cont = document.getElementById(`questions-${compId}`);
         
-        onSnapshot(collection(db, `Competitions/${compId}/Questions`), async (snap) => {
-            qContainer.innerHTML = "";
-            
-            for (const qDoc of snap.docs) {
-                const q = qDoc.data();
-                
-                // فحص إذا كان العضو قد أجاب مسبقاً على هذا السؤال
-                const answeredQuery = query(
-                    collection(db, "CompResults"), 
-                    where("userId", "==", currentUser.uid),
-                    where("qId", "==", qDoc.id)
-                );
-                const answeredSnap = await getDocs(answeredQuery);
-                const alreadyAnswered = !answeredSnap.empty;
+        qSnap.forEach(async qDoc => {
+            const q = qDoc.data();
+            // فحص هل جاوب العضو مسبقاً
+            const answeredSnap = await getDocs(query(collection(db, "Answers"), 
+                where("userId", "==", auth.currentUser.uid), 
+                where("questionId", "==", qDoc.id)));
 
-                const qBox = document.createElement('div');
-                qBox.className = 'question-box';
-                qBox.innerHTML = `
-                    <p style="margin-bottom:10px;"><b>❓ ${q.text}</b></p>
-                    ${q.options.map((opt, i) => `
-                        <button class="opt-btn" 
-                            ${alreadyAnswered ? 'disabled' : ''} 
-                            onclick="submitAnswer('${compId}', '${compName}', '${qDoc.id}', ${i+1}, ${q.correct})">
-                            ${opt}
-                        </button>
-                    `).join('')}
-                    ${alreadyAnswered ? '<span class="answered-tag">✅ تم تسجيل إجابتك مسبقاً</span>' : ''}
-                `;
-                qContainer.appendChild(qBox);
-            }
+            const isAnswered = !answeredSnap.empty;
+            let optionsHtml = "";
+            
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <button class="option-btn" 
+                        ${isAnswered ? 'disabled' : ''} 
+                        onclick="submitAnswer('${compId}', '${compTitle}', '${qDoc.id}', '${q.text}', '${opt}', '${q.correctOption}', this)">
+                        ${opt}
+                    </button>`;
+            });
+
+            cont.innerHTML += `
+                <div style="margin-bottom:20px; padding:10px; border-top:1px solid #eee;">
+                    <p><b>السؤال:</b> ${q.text}</p>
+                    ${optionsHtml}
+                    ${isAnswered ? '<p style="font-size:10px; color:blue;">تم إرسال إجابتك لهذا السؤال</p>' : ''}
+                </div>
+            `;
         });
     }
 
-    window.submitAnswer = async (compId, compName, qId, chosen, correct) => {
-        try {
-            await addDoc(collection(db, "CompResults"), {
-                compId: compId,
-                compName: compName,
-                qId: qId,
-                userId: currentUser.uid,
-                userName: currentUser.fullName,
-                isCorrect: (chosen == correct),
-                timestamp: serverTimestamp()
-            });
-            alert("تم إرسال إجابتك بنجاح! حظاً موفقاً في القرعة 🥳");
-        } catch (e) {
-            alert("حدث خطأ أثناء إرسال الإجابة");
-        }
+    window.submitAnswer = async (compId, compTitle, qId, qText, selected, correct, btn) => {
+        if(!confirm("هل أنت متأكد من هذه الإجابة؟ لا يمكن تغييرها لاحقاً.")) return;
+
+        const isCorrect = (selected === correct);
+        btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+        btn.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+
+        await addDoc(collection(db, "Answers"), {
+            userId: auth.currentUser.uid,
+            userName: userData.fullName,
+            userPhone: userData.phone,
+            userEmail: userData.email,
+            compId, compTitle,
+            questionId: qId,
+            questionText: qText,
+            selectedOption: selected,
+            isCorrect,
+            timestamp: new Date()
+        });
     };
 </script>
 </body>
