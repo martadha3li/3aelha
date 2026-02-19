@@ -212,6 +212,43 @@ if(!settings.publicChatEnabled) {
     };
     window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => window.location.replace("login.html")); };
 </script>
+    <div id="forceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; padding:25px; border-radius:25px; width:100%; max-width:400px; text-align:center;">
+        <h2 id="modalTitle">تحديث مطلوب</h2>
+        <div id="modalForm"></div>
+        <button onclick="saveRequiredData()" class="btn-main" style="width:100%; margin-top:15px;">حفظ ومتابعة</button>
+    </div>
+</div>
+
+<script>
+let activeRequestType = "";
+
+function showUpdateModal(type) {
+    activeRequestType = type;
+    const modal = document.getElementById('forceModal');
+    const form = document.getElementById('modalForm');
+    modal.style.display = 'flex';
+    
+    if(type === 'femaleUpdate') {
+        form.innerHTML = `
+            <input type="text" id="newNick" placeholder="الاسم المعرف" class="form-input" style="margin-bottom:10px;">
+            <input type="number" id="newPhone" placeholder="رقم الجوال" class="form-input" style="margin-bottom:10px;">
+            <select id="rel" class="form-input">
+                <option value="زوج">زوج</option> <option value="اب">أب</option>
+                <option value="اخ">أخ</option> <option value="ولي امر">ولي أمر</option>
+            </select>
+        `;
+    } else if(type === 'dobUpdate') {
+        form.innerHTML = `<input type="date" id="newDOB" class="form-input">`;
+    }
+}
+
+async function saveRequiredData() {
+    // هنا يتم تحديث بيانات العضو في Firestore واضافة حقل lastUpdate لكي لا تظهر النافذة مرة اخرى
+    // ثم إخفاء المودال: document.getElementById('forceModal').style.display = 'none';
+}
+</script>
 </body>
 </html>
+
 
