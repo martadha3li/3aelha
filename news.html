@@ -10,91 +10,82 @@
         body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 70px; }
         .container { padding: 15px; max-width: 600px; margin: auto; }
         
-        /* كروت الأخبار */
-        .news-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
-        .news-img { width: 100%; height: 220px; border-radius: 15px; object-fit: cover; margin-bottom: 12px; display: block; background: #eee; }
+        /* كرت الخبر الأصلي */
+        .news-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .news-img { width: 100%; height: auto; max-height: 250px; border-radius: 15px; object-fit: cover; margin-bottom: 12px; }
         .news-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #1c1c1e; }
         .news-desc { font-size: 14px; color: #444; line-height: 1.6; }
 
-        /* أدوات التحكم للمحرر */
-        .admin-tools { display: none; gap: 8px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0; flex-wrap: wrap; }
-        .admin-btn { border: none; padding: 8px 12px; border-radius: 10px; font-size: 11px; cursor: pointer; font-weight: bold; flex: 1; min-width: 80px; }
+        /* أدوات التحرير (أسفل الخبر) */
+        .admin-controls { 
+            display: none; /* مخفية للجميع وتظهر برمجياً للمحرر */
+            margin-top: 15px; padding-top: 12px; border-top: 1px solid #eee; 
+            gap: 10px; justify-content: space-around;
+        }
+        .adm-btn { border: none; padding: 8px 15px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1; }
         .btn-edit { background: #eef1ff; color: var(--primary); }
-        .btn-delete { background: #fff1f0; color: var(--danger); }
-        .btn-toggle { background: #f0fff4; color: var(--success); }
+        .btn-del { background: #fff1f0; color: var(--danger); }
+        .btn-hide { background: #f2f2f7; color: #666; }
         
-        .news-hidden { opacity: 0.6; border: 1px dashed var(--danger); }
-        
-        /* أنيميشن التنبيه */
-        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* حالة الخبر المعطل */
+        .disabled-news { opacity: 0.5; filter: grayscale(1); border: 1px dashed red; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <button onclick="location.href='profile.html'" style="border:none; background:none; font-size:22px;">👤</button>
+    <button onclick="toggleSidebar()" style="border:none; background:none; font-size:22px;">☰</button>
     <b>أخبار العائلة</b>
-    <div id="adminTag" style="display:none; background:gold; padding:2px 8px; border-radius:8px; font-size:10px; font-weight:bold;">محرر</div>
+    <div style="width:24px;"></div>
 </div>
 
 <div class="container" id="newsFeed">
-    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل الأخبار...</p>
-</div>
-
-<div class="bottom-nav">
-    <button onclick="location.href='news.html'" class="active">📰<br>الأخبار</button>
-    <button onclick="location.href='competitions.html'">🏆<br>المسابقات</button>
-    <button onclick="location.href='profile.html'">👤<br>ملفي</button>
+    <p style="text-align:center; padding:20px;">جاري تحميل الأخبار...</p>
 </div>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     let isAdmin = false;
 
-    // 1. التحقق من حالة المستخدم
     onAuthStateChanged(auth, user => {
         if (user) {
-            // غيّر هذا الإيميل لإيميلك الشخصي لتظهر لك أدوات التحرير
-            if (user.email === "admin@family.com") { 
-                isAdmin = true;
-                document.getElementById('adminTag').style.display = 'block';
-            }
+            // استبدل هذا بالإيميل الخاص بك لتظهر لك الأدوات
+            if (user.email === "admin@family.com") isAdmin = true;
             loadNews();
-            watchNotifications();
         } else {
             location.href = "login.html";
         }
     });
 
-    // 2. تحميل الأخبار
     function loadNews() {
         const q = query(collection(db, "News"), orderBy("createdAt", "desc"));
         onSnapshot(q, snap => {
             const feed = document.getElementById('newsFeed');
-            if (snap.empty) {
-                feed.innerHTML = "<p style='text-align:center; padding:20px;'>لا توجد أخبار منشورة حالياً.</p>";
-                return;
-            }
             feed.innerHTML = "";
+            
             snap.forEach(d => {
-                const n = d.data();
-                if (!n.visible && !isAdmin) return;
+                const news = d.data();
+                
+                // إخفاء الأخبار المعطلة عن المستخدم العادي
+                if (!news.visible && !isAdmin) return;
 
                 const card = document.createElement('div');
-                card.className = `news-card ${!n.visible ? 'news-hidden' : ''}`;
+                card.className = `news-card ${!news.visible ? 'disabled-news' : ''}`;
+                
                 card.innerHTML = `
-                    ${n.image ? `<img src="${n.image}" class="news-img">` : ''}
-                    <div class="news-title">${n.title} ${!n.visible ? ' (مخفي)' : ''}</div>
-                    <div class="news-desc">${n.content}</div>
-                    <div class="admin-tools" style="display: ${isAdmin ? 'flex' : 'none'}">
-                        <button class="admin-btn btn-edit" onclick="window.editNews('${d.id}')">✏️ تعديل</button>
-                        <button class="admin-btn btn-toggle" onclick="window.toggleVis('${d.id}', ${n.visible})">
-                            ${n.visible ? '👁️ إخفاء' : '👁️ إظهار'}
+                    ${news.image ? `<img src="${news.image}" class="news-img">` : ''}
+                    <div class="news-title">${news.title} ${!news.visible ? '(معطل 🚫)' : ''}</div>
+                    <div class="news-desc">${news.content}</div>
+                    
+                    <div class="admin-controls" style="display: ${isAdmin ? 'flex' : 'none'}">
+                        <button class="adm-btn btn-edit" onclick="window.goEdit('${d.id}')">✏️ تعديل</button>
+                        <button class="adm-btn btn-hide" onclick="window.toggleNews('${d.id}', ${news.visible})">
+                            ${news.visible ? '🔒 تعطيل' : '🔓 تفعيل'}
                         </button>
-                        <button class="admin-btn btn-delete" onclick="window.delNews('${d.id}')">🗑️ حذف</button>
+                        <button class="adm-btn btn-del" onclick="window.removeNews('${d.id}')">🗑️ حذف</button>
                     </div>
                 `;
                 feed.appendChild(card);
@@ -102,43 +93,18 @@
         });
     }
 
-    // 3. أدوات الإدارة (إتاحتها للنافذة العامة)
-    window.delNews = async (id) => {
-        if (confirm("حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id));
+    // ربط الدوال بالنافذة لتعمل مع onclick
+    window.removeNews = async (id) => {
+        if (confirm("هل تريد حذف هذا الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id));
     };
 
-    window.toggleVis = async (id, curr) => {
-        await updateDoc(doc(db, "News", id), { visible: !curr });
+    window.toggleNews = async (id, status) => {
+        await updateDoc(doc(db, "News", id), { visible: !status });
     };
 
-    window.editNews = (id) => {
+    window.goEdit = (id) => {
         location.href = `add_news.html?edit=${id}`;
     };
-
-    // 4. نظام التنبيهات الفورية المصلح
-    function watchNotifications() {
-        const qNotify = query(collection(db, "Notifications"), orderBy("createdAt", "desc"), limit(1));
-        let isFirst = true;
-
-        onSnapshot(qNotify, snap => {
-            if (isFirst) { isFirst = false; return; }
-            snap.docChanges().forEach(change => {
-                if (change.type === "added") {
-                    const data = change.doc.data();
-                    showPopup(data.title, data.message);
-                }
-            });
-        });
-    }
-
-    function showPopup(title, msg) {
-        const p = document.createElement('div');
-        p.style = `position:fixed; top:10px; left:10px; right:10px; background:var(--primary); color:white; padding:15px; border-radius:15px; z-index:10000; animation:slideDown 0.5s ease; box-shadow:0 5px 15px rgba(0,0,0,0.3);`;
-        p.innerHTML = `<b>🔔 ${title}</b><p style="margin:5px 0 0; font-size:12px;">${msg}</p>`;
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 5000);
-    }
-
 </script>
 </body>
 </html>
