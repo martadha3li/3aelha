@@ -3,108 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أخبار العائلة</title>
+    <title>منصة العائلة | التايم لاين</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; --danger: #ff3b30; --success: #34c759; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 70px; }
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        
-        /* كرت الخبر الأصلي */
-        .news-card { background: white; border-radius: 20px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .news-img { width: 100%; height: auto; max-height: 250px; border-radius: 15px; object-fit: cover; margin-bottom: 12px; }
-        .news-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #1c1c1e; }
-        .news-desc { font-size: 14px; color: #444; line-height: 1.6; }
+        .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 3000; transition: 0.3s; padding: 20px; }
+        .sidebar.active { right: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 2500; }
+        .sidebar-overlay.active { display: block; }
+        .cat-link { display: block; padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 12px; text-decoration: none; color: #333; font-weight: 600; }
+        .active-cat { background: var(--primary) !important; color: white !important; }
 
-        /* أدوات التحرير (أسفل الخبر) */
-        .admin-controls { 
-            display: none; /* مخفية للجميع وتظهر برمجياً للمحرر */
-            margin-top: 15px; padding-top: 12px; border-top: 1px solid #eee; 
-            gap: 10px; justify-content: space-around;
-        }
-        .adm-btn { border: none; padding: 8px 15px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; flex: 1; }
-        .btn-edit { background: #eef1ff; color: var(--primary); }
-        .btn-del { background: #fff1f0; color: var(--danger); }
-        .btn-hide { background: #f2f2f7; color: #666; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 2000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 11px; font-weight: bold; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+
+        .interaction-row { display: flex; gap: 20px; padding: 12px 18px; border-top: 1px solid #eee; align-items: center; }
+        .stat-item { cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 14px; }
+        .comments-dropdown { display: none; background: #fafafa; padding: 15px; border-top: 1px solid #eee; }
         
-        /* حالة الخبر المعطل */
-        .disabled-news { opacity: 0.5; filter: grayscale(1); border: 1px dashed red; }
+        #newsFeed { padding-top: 10px; padding-bottom: 100px; }
+        .floating-btn { bottom: 85px !important; z-index: 2100; }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <button onclick="toggleSidebar()" style="border:none; background:none; font-size:22px;">☰</button>
-    <b>أخبار العائلة</b>
-    <div style="width:24px;"></div>
-</div>
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2 style="color:var(--primary); border-bottom:1px solid #eee; padding-bottom:10px;">📁 التصنيفات</h2>
+        <a href="#" class="cat-link active-cat" id="cat-all" onclick="filterByCategory('الكل', this)">✨ الكل</a>
+        <div id="sideCats"></div>
+    </div>
 
-<div class="container" id="newsFeed">
-    <p style="text-align:center; padding:20px;">جاري تحميل الأخبار...</p>
-</div>
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:24px; cursor:pointer;" onclick="toggleSidebar()">☰</span>
+            <b style="color:var(--primary); font-size:18px;">منصة العائلة</b>
+        </div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="adminBtn" style="display:none; cursor:pointer; font-size:20px;" onclick="location.href='admin.html'">⚙️</span>
+            <span onclick="handleLogout()" style="cursor:pointer; font-size:20px;">🚪</span>
+        </div>
+    </div>
+
+    <div id="newsFeed">
+        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل الأخبار والمستجدات...</p>
+    </div>
+
+    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
+
+    <nav class="bottom-nav">
+        <a href="news.html" class="nav-item active"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="competitions.html" class="nav-item"><span class="nav-icon">🏆</span><span>المسابقات</span></a>
+        <a href="profile.html" class="nav-item"><span class="nav-icon">👤</span><span>حسابي</span></a>
+    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { collection, query, orderBy, onSnapshot, doc, getDoc, where, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let isAdmin = false;
+    let userUID, userData, currentCat = "الكل";
 
-    onAuthStateChanged(auth, user => {
+    auth.onAuthStateChanged(async (user) => {
         if (user) {
-            // استبدل هذا بالإيميل الخاص بك لتظهر لك الأدوات
-            if (user.email === "admin@family.com") isAdmin = true;
-            loadNews();
-        } else {
-            location.href = "login.html";
-        }
+            userUID = user.uid;
+            const s = await getDoc(doc(db, "Users", user.uid));
+            userData = s.data();
+            
+            if (userData.role === 'admin' || userData.role === 'editor') document.getElementById('addNewsBtn').style.display = 'block';
+            if (userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
+            
+            loadSidebar();
+            loadFeed();
+        } else { window.location.replace("login.html"); }
     });
 
-    function loadNews() {
-        const q = query(collection(db, "News"), orderBy("createdAt", "desc"));
-        onSnapshot(q, snap => {
-            const feed = document.getElementById('newsFeed');
-            feed.innerHTML = "";
-            
-            snap.forEach(d => {
-                const news = d.data();
-                
-                // إخفاء الأخبار المعطلة عن المستخدم العادي
-                if (!news.visible && !isAdmin) return;
-
-                const card = document.createElement('div');
-                card.className = `news-card ${!news.visible ? 'disabled-news' : ''}`;
-                
-                card.innerHTML = `
-                    ${news.image ? `<img src="${news.image}" class="news-img">` : ''}
-                    <div class="news-title">${news.title} ${!news.visible ? '(معطل 🚫)' : ''}</div>
-                    <div class="news-desc">${news.content}</div>
-                    
-                    <div class="admin-controls" style="display: ${isAdmin ? 'flex' : 'none'}">
-                        <button class="adm-btn btn-edit" onclick="window.goEdit('${d.id}')">✏️ تعديل</button>
-                        <button class="adm-btn btn-hide" onclick="window.toggleNews('${d.id}', ${news.visible})">
-                            ${news.visible ? '🔒 تعطيل' : '🔓 تفعيل'}
-                        </button>
-                        <button class="adm-btn btn-del" onclick="window.removeNews('${d.id}')">🗑️ حذف</button>
-                    </div>
-                `;
-                feed.appendChild(card);
+    function loadSidebar() {
+        onSnapshot(collection(db, "Categories"), snap => {
+            const cont = document.getElementById('sideCats');
+            cont.innerHTML = "";
+            snap.forEach(c => {
+                const name = c.data().name;
+                const link = document.createElement('a');
+                link.href = "#"; link.className = "cat-link"; link.innerText = name;
+                link.onclick = (e) => { e.preventDefault(); filterByCategory(name, link); };
+                cont.appendChild(link);
             });
         });
     }
 
-    // ربط الدوال بالنافذة لتعمل مع onclick
-    window.removeNews = async (id) => {
-        if (confirm("هل تريد حذف هذا الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id));
+    window.filterByCategory = (name, el) => {
+        currentCat = name;
+        document.querySelectorAll('.cat-link').forEach(l => l.classList.remove('active-cat'));
+        el.classList.add('active-cat');
+        if(window.innerWidth < 768) toggleSidebar();
+        loadFeed();
     };
 
-    window.toggleNews = async (id, status) => {
-        await updateDoc(doc(db, "News", id), { visible: !status });
+    function loadFeed() {
+        // العودة للنسخة البسيطة التي تعمل تماماً
+        let qry = collection(db, "News");
+        if (currentCat !== "الكل") {
+            qry = query(collection(db, "News"), where("category", "==", currentCat));
+        }
+
+        onSnapshot(qry, snap => {
+            const feed = document.getElementById('newsFeed');
+            feed.innerHTML = "";
+            
+            // ترتيب البيانات يدوياً إذا لم نستخدم orderBy لتجنب أخطاء Firebase
+            let docs = [];
+            snap.forEach(d => docs.push({id: d.id, ...d.data()}));
+            docs.sort((a, b) => b.publishDate - a.publishDate);
+
+            docs.forEach(n => {
+                const isAuth = (userUID === n.authorId) || (userData.role === 'admin' || userData.role === 'editor');
+                const hasLiked = n.likedBy?.includes(userUID);
+                
+                const card = document.createElement('div');
+                card.className = "news-card";
+                card.innerHTML = `
+                    <div class="news-body-content" style="padding:15px;">
+                        <h3 style="margin:0 0 10px 0;">${n.title}</h3>
+                        <div style="font-size:14px; color:#444;">${n.body}</div>
+                    </div>
+                    ${n.img ? `<img src="${n.img}" class="news-img-main" style="width:100%;">` : ''}
+                    <div class="interaction-row">
+                        <div class="stat-item" onclick="toggleLike('${n.id}', ${hasLiked})">
+                            <span>${hasLiked ? '❤️' : '🤍'}</span> <span>${n.likedBy?.length || 0}</span>
+                        </div>
+                        <div class="stat-item" onclick="toggleComments('${n.id}')">
+                            <span>💬</span> <span id="c-count-${n.id}">0</span>
+                        </div>
+                    </div>
+                    <div id="tray-${n.id}" class="comments-dropdown">
+                        <div id="list-${n.id}"></div>
+                        <div style="display:flex; gap:8px; margin-top:10px;">
+                            <input type="text" id="inp-${n.id}" placeholder="تعليق..." style="flex:1; padding:8px; border-radius:10px; border:1px solid #ddd;">
+                            <button onclick="sendComment('${n.id}')" style="background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:10px;">نشر</button>
+                        </div>
+                    </div>
+                `;
+                feed.appendChild(card);
+                loadCommentsRealtime(n.id);
+            });
+        });
+    }
+
+    window.loadCommentsRealtime = (id) => {
+        onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
+            const list = document.getElementById(`list-${id}`);
+            if(document.getElementById(`c-count-${id}`)) document.getElementById(`c-count-${id}`).innerText = s.size;
+            if(list) {
+                list.innerHTML = "";
+                s.forEach(c => {
+                    const comm = c.data();
+                    list.innerHTML += `<div style="margin-bottom:5px; font-size:12px;">
+                        <a href="user_profile.html?uid=${comm.userId}" style="text-decoration:none; color:var(--primary); font-weight:bold;">${comm.userName}:</a> 
+                        ${comm.text}
+                    </div>`;
+                });
+            }
+        });
     };
 
-    window.goEdit = (id) => {
-        location.href = `add_news.html?edit=${id}`;
+    window.sendComment = async (id) => {
+        const inp = document.getElementById(`inp-${id}`);
+        if(!inp.value.trim()) return;
+        await addDoc(collection(db, `News/${id}/Comments`), { 
+            text: inp.value, 
+            userName: userData.fullName, 
+            userId: userUID, 
+            timestamp: serverTimestamp() 
+        });
+        inp.value = "";
     };
+
+    window.toggleLike = async (id, liked) => {
+        await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
+    };
+
+    window.toggleComments = (id) => {
+        const t = document.getElementById(`tray-${id}`);
+        t.style.display = t.style.display === 'block' ? 'none' : 'block';
+    };
+
+    window.toggleSidebar = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+    window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => window.location.replace("login.html")); };
 </script>
 </body>
 </html>
