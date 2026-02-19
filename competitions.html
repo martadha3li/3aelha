@@ -3,28 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المسابقات | العداد الذكي</title>
+    <title>المسابقات | العداد المتقدم</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; }
-        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; }
+        :root { --primary: #5856d6; --bg: #f2f2f7; --accent: #ff9500; }
+        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 50px; }
         .container { padding: 15px; max-width: 600px; margin: auto; }
-        .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
-        .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; }
-        .correct { background: #34c759 !important; color: white; } .wrong { background: #ff3b30 !important; color: white; }
-        .next-q-timer { background: #fff9e6; color: #f39c12; padding: 12px; border-radius: 12px; text-align: center; font-weight: bold; border: 1px dashed #f39c12; margin-top: 10px; }
+        
+        /* بطاقة المسابقة */
+        .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
+        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        
+        /* عداد نهاية المسابقة */
+        .comp-end-timer { font-size: 11px; background: #fff5e6; color: var(--accent); padding: 5px 10px; border-radius: 8px; font-weight: bold; border: 1px solid #ffe0b2; }
+        
+        /* عداد السؤال القادم */
+        .next-q-timer { background: #eef1ff; color: var(--primary); padding: 15px; border-radius: 15px; text-align: center; border: 1px dashed var(--primary); margin: 15px 0; }
+        .timer-grid { display: flex; justify-content: center; gap: 10px; margin-top: 5px; }
+        .timer-unit { background: white; padding: 5px 8px; border-radius: 6px; min-width: 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .timer-label { font-size: 9px; display: block; color: #8e8e93; }
+
+        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+        .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; font-size: 14px; transition: 0.2s; }
+        .correct { background: #34c759 !important; color: white; border-color: #34c759; }
+        .wrong { background: #ff3b30 !important; color: white; border-color: #ff3b30; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
     <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b>المسابقات الحالية</b>
+    <b>المسابقات النشطة</b>
     <div style="width:24px;"></div>
 </div>
 
-<div class="container" id="compsFeed"></div>
+<div class="container" id="compsFeed">
+    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات والعدادات...</p>
+</div>
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -49,14 +64,23 @@
                 const c = d.data();
                 const card = document.createElement('div');
                 card.className = "comp-card";
-                card.innerHTML = `<h3>${c.title}</h3><div id="qs-${d.id}"></div>`;
+                card.innerHTML = `
+                    <div class="comp-header">
+                        <h3 style="margin:0;">${c.title}</h3>
+                        <div id="end-timer-${d.id}" class="comp-end-timer">جاري الحساب...</div>
+                    </div>
+                    <div id="qs-${d.id}"></div>
+                `;
                 feed.appendChild(card);
-                loadQs(d.id, c.title);
+                
+                // تشغيل عداد نهاية المسابقة
+                startCountdown(c.endDate, `end-timer-${d.id}`, "انتهت المسابقة");
+                loadQuestions(d.id, c.title);
             });
         });
     }
 
-    async function loadQs(cid, ctitle) {
+    async function loadQuestions(cid, ctitle) {
         const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
         const cont = document.getElementById(`qs-${cid}`);
         const now = new Date();
@@ -71,7 +95,6 @@
                 continue;
             }
 
-            // فحص الإجابة
             const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
             const isAns = !ansSnap.empty;
 
@@ -79,41 +102,75 @@
             qBox.className = "q-box";
             let optsHtml = "";
             q.options.forEach(opt => {
-                let cls = "";
-                if(isAns) {
-                    const myA = ansSnap.docs[0].data().selectedOption;
-                    if(opt === q.correctOption) cls = "correct";
-                    else if(opt === myA) cls = "wrong";
-                }
+                let cls = isAns ? (opt === q.correctOption ? "correct" : (opt === ansSnap.docs[0].data().selectedOption ? "wrong" : "")) : "";
                 optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
             });
-            qBox.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${q.text}</b> <span style="color:var(--primary); font-size:12px;">💎 ${q.points} ن</span></div>${optsHtml}`;
+            qBox.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${q.text}</b> <span style="color:var(--primary); font-size:12px;">💎 ${q.points} ن</span></div>${optsHtml}`;
             cont.appendChild(qBox);
         }
 
-        // عرض عداد واحد فقط لأقرب سؤال
+        // عداد السؤال القادم (أيام، ساعات، دقائق، ثواني)
         if (upcoming.length > 0) {
             upcoming.sort((a,b) => a.time - b.time);
             const nextT = upcoming[0].time;
             const timerDiv = document.createElement('div');
             timerDiv.className = "next-q-timer";
             cont.appendChild(timerDiv);
-            const x = setInterval(() => {
+            
+            setInterval(() => {
                 const diff = nextT - new Date();
-                if(diff <= 0) { clearInterval(x); location.reload(); }
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                timerDiv.innerHTML = `🔒 السؤال القادم سيفتح خلال: ${m}د و ${s}ث`;
+                if(diff <= 0) location.reload();
+                
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                timerDiv.innerHTML = `
+                    <span style="font-size:13px;">🔒 السؤال القادم يفتح خلال:</span>
+                    <div class="timer-grid">
+                        <div class="timer-unit"><b>${d}</b><span class="timer-label">يوم</span></div>
+                        <div class="timer-unit"><b>${h}</b><span class="timer-label">ساعة</span></div>
+                        <div class="timer-unit"><b>${m}</b><span class="timer-label">دقيقة</span></div>
+                        <div class="timer-unit"><b>${s}</b><span class="timer-label">ثانية</span></div>
+                    </div>
+                `;
             }, 1000);
         }
     }
 
+    // دالة العداد العامة
+    function startCountdown(dateStr, elementId, finishMsg) {
+        const target = new Date(dateStr).getTime();
+        const el = document.getElementById(elementId);
+        
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = target - now;
+            
+            if (diff < 0) {
+                clearInterval(timer);
+                el.innerHTML = finishMsg;
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            el.innerHTML = `⏳ ينتهي خلال: ${days}ي و ${hours}س و ${mins}د`;
+        }, 1000);
+    }
+
     window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
-        if(!confirm("إرسال الإجابة؟")) return;
+        if(!confirm("تأكيد الإجابة؟")) return;
         const isC = sel.trim() === corr.trim();
         await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid, userName: userData.fullName,
-            compTitle: ct, questionId: qid, questionText: qt,
+            userId: auth.currentUser.uid,
+            userName: userData.fullName || "غير معروف",
+            userPhone: userData.phone || "غير مسجل",
+            userEmail: auth.currentUser.email || "غير مسجل",
+            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
             selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
             timestamp: serverTimestamp()
         });
