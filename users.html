@@ -18,25 +18,21 @@
             background: white; border-radius: 20px; 
             overflow-x: auto; box-shadow: var(--shadow); 
         }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { background: #f8f9fa; color: #8e8e93; padding: 15px; text-align: center; font-size: 12px; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; } /* زدنا العرض لاستيعاب الايميل */
+        th { background: #f8f9fa; color: #8e8e93; padding: 15px; text-align: center; font-size: 12px; }
         td { padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 13px; }
-        tr:last-child td { border: none; }
+        
+        .email-text { color: #007aff; font-size: 12px; font-family: sans-serif; }
 
-        .btn-action { 
-            padding: 8px; border: none; border-radius: 10px; 
-            cursor: pointer; margin: 0 2px; transition: 0.2s; 
-        }
+        .btn-action { padding: 8px; border: none; border-radius: 10px; cursor: pointer; margin: 0 2px; }
         .btn-edit { background: #eefaf3; color: #34c759; }
         .btn-ban { background: #fff2f2; color: #ff3b30; }
         .btn-delete { background: #f2f2f7; color: #1c1c1e; }
-        .btn-action:active { transform: scale(0.9); }
         
         .role-badge { padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: bold; }
         .admin-role { background: #fff9e6; color: #ffcc00; }
         .user-role { background: #f2f7ff; color: #007aff; }
 
-        /* Modal Style */
         .modal-overlay { 
             display: none; position: fixed; inset: 0; 
             background: rgba(0,0,0,0.6); z-index: 5000; 
@@ -45,10 +41,10 @@
         }
         .modal-content { 
             background: white; padding: 25px; border-radius: 30px; 
-            width: 100%; max-width: 450px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+            width: 100%; max-width: 450px; 
         }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #444; }
+        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
         .form-input { 
             width: 100%; padding: 12px; border-radius: 12px; 
             border: 1px solid #eee; background: #f9f9f9; font-family: inherit;
@@ -64,13 +60,14 @@
     </div>
 
     <div class="users-wrapper">
-        <input type="text" id="userSearch" class="search-box" placeholder="🔎 ابحث عن اسم، رقم جوال، أو بريد..." oninput="searchTable()">
+        <input type="text" id="userSearch" class="search-box" placeholder="🔎 ابحث عن اسم، ايميل، أو رقم جوال..." oninput="searchTable()">
         
         <div class="table-container">
             <table id="usersTable">
                 <thead>
                     <tr>
                         <th>العضو</th>
+                        <th>الايميل</th>
                         <th>الجنس</th>
                         <th>الجوال</th>
                         <th>الصلاحية</th>
@@ -78,7 +75,7 @@
                     </tr>
                 </thead>
                 <tbody id="usersBody">
-                    <tr><td colspan="5" style="color:gray;">جاري تحميل البيانات...</td></tr>
+                    <tr><td colspan="6" style="color:gray;">جاري تحميل البيانات...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -92,6 +89,11 @@
             <div class="form-group">
                 <label>الاسم الكامل</label>
                 <input type="text" id="editName" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label>البريد الإلكتروني (للعرض فقط)</label>
+                <input type="text" id="editEmail" class="form-input" disabled style="background:#eee; cursor:not-allowed;">
             </div>
 
             <div class="form-group">
@@ -130,14 +132,8 @@
 
     const usersBody = document.getElementById('usersBody');
 
-    // تحميل البيانات حياً من Firestore
     onSnapshot(collection(db, "Users"), (snap) => {
         usersBody.innerHTML = "";
-        if (snap.empty) {
-            usersBody.innerHTML = '<tr><td colspan="5">لا يوجد أعضاء مسجلين</td></tr>';
-            return;
-        }
-
         snap.forEach(d => {
             const u = d.data();
             const id = d.id;
@@ -150,20 +146,20 @@
                         ${u.fullName}
                     </div>
                 </td>
+                <td class="email-text">${u.email || '--'}</td>
                 <td>${u.gender === 'male' ? 'ذكر' : 'أنثى'}</td>
                 <td>${u.phone || '--'}</td>
                 <td><span class="role-badge ${u.role === 'admin' ? 'admin-role' : 'user-role'}">${u.role || 'عضو'}</span></td>
                 <td>
-                    <button class="btn-action btn-edit" title="تعديل" onclick="openEditModal('${id}', '${u.fullName}', '${u.phone || ''}', '${u.role || 'member'}', '${u.gender || 'male'}')">✏️</button>
-                    <button class="btn-action btn-ban" title="حظر" onclick="toggleBan('${id}', ${u.isBanned || false})">${u.isBanned ? '✅' : '🚫'}</button>
-                    <button class="btn-action btn-delete" title="حذف" onclick="deleteUser('${id}')">🗑️</button>
+                    <button class="btn-action btn-edit" onclick="openEditModal('${id}', '${u.fullName}', '${u.phone || ''}', '${u.role || 'member'}', '${u.gender || 'male'}', '${u.email || ''}')">✏️</button>
+                    <button class="btn-action btn-ban" onclick="toggleBan('${id}', ${u.isBanned || false})">${u.isBanned ? '✅' : '🚫'}</button>
+                    <button class="btn-action btn-delete" onclick="deleteUser('${id}')">🗑️</button>
                 </td>
             `;
             usersBody.appendChild(tr);
         });
     });
 
-    // البحث السريع
     window.searchTable = () => {
         const term = document.getElementById('userSearch').value.toLowerCase();
         const rows = usersBody.getElementsByTagName('tr');
@@ -172,13 +168,13 @@
         }
     };
 
-    // التحكم بالنافذة المنبثقة
-    window.openEditModal = (id, name, phone, role, gender) => {
+    window.openEditModal = (id, name, phone, role, gender, email) => {
         document.getElementById('editUserId').value = id;
         document.getElementById('editName').value = name;
         document.getElementById('editPhone').value = phone;
         document.getElementById('editRole').value = role;
         document.getElementById('editGender').value = gender;
+        document.getElementById('editEmail').value = email; // عرض الايميل في النافذة
         document.getElementById('editModal').style.display = 'flex';
     };
 
@@ -186,7 +182,6 @@
         document.getElementById('editModal').style.display = 'none';
     };
 
-    // حفظ التعديلات
     window.saveUserUpdates = async () => {
         const id = document.getElementById('editUserId').value;
         const updates = {
@@ -196,28 +191,23 @@
             gender: document.getElementById('editGender').value
         };
 
-        if(!updates.fullName) return alert("الاسم مطلوب!");
-
         try {
             await updateDoc(doc(db, "Users", id), updates);
             closeEditModal();
-            // إشعار نجاح بسيط
-        } catch (e) { alert("فشل التحديث: " + e.message); }
+        } catch (e) { alert("خطأ: " + e.message); }
     };
 
-    // الحظر والحذف
     window.toggleBan = async (id, status) => {
-        if(confirm(status ? "إلغاء الحظر؟" : "هل تريد حظر هذا العضو من الدخول؟")) {
+        if(confirm(status ? "إلغاء الحظر؟" : "حظر العضو؟")) {
             await updateDoc(doc(db, "Users", id), { isBanned: !status });
         }
     };
 
     window.deleteUser = async (id) => {
-        if(confirm("سيتم حذف العضو نهائياً من النظام. هل أنت متأكد؟")) {
+        if(confirm("حذف العضو نهائياً؟")) {
             await deleteDoc(doc(db, "Users", id));
         }
     };
-
 </script>
 </body>
 </html>
