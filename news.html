@@ -24,6 +24,14 @@
         
         #newsFeed { padding-top: 10px; padding-bottom: 100px; }
         .floating-btn { bottom: 85px !important; z-index: 2100; }
+
+        /* ستايل أدوات التحكم الجديد */
+        .admin-tools { display: flex; justify-content: flex-end; gap: 10px; padding: 10px 15px; border-top: 1px dashed #eee; background: #fdfdfd; }
+        .adm-btn { border: none; background: none; cursor: pointer; font-size: 14px; padding: 5px; border-radius: 5px; }
+        .btn-hide-item { color: #666; }
+        .btn-edit-item { color: #5856d6; }
+        .btn-del-item { color: #ff3b30; }
+        .news-disabled { opacity: 0.5; filter: grayscale(1); }
     </style>
 </head>
 <body>
@@ -102,7 +110,6 @@
     };
 
     function loadFeed() {
-        // العودة للنسخة البسيطة التي تعمل تماماً
         let qry = collection(db, "News");
         if (currentCat !== "الكل") {
             qry = query(collection(db, "News"), where("category", "==", currentCat));
@@ -112,23 +119,26 @@
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
             
-            // ترتيب البيانات يدوياً إذا لم نستخدم orderBy لتجنب أخطاء Firebase
             let docs = [];
             snap.forEach(d => docs.push({id: d.id, ...d.data()}));
-            docs.sort((a, b) => b.publishDate - a.publishDate);
+            docs.sort((a, b) => (b.publishDate || 0) - (a.publishDate || 0));
 
             docs.forEach(n => {
-                const isAuth = (userUID === n.authorId) || (userData.role === 'admin' || userData.role === 'editor');
+                // شرط الظهور للمحررين (المحرر يرى كل شيء، العادي يرى المفعل فقط)
+                const isManager = (userData.role === 'admin' || userData.role === 'editor' || userUID === n.authorId);
+                if (!n.visible && !isManager) return;
+
                 const hasLiked = n.likedBy?.includes(userUID);
                 
                 const card = document.createElement('div');
-                card.className = "news-card";
+                card.className = `news-card ${!n.visible ? 'news-disabled' : ''}`;
                 card.innerHTML = `
                     <div class="news-body-content" style="padding:15px;">
                         <h3 style="margin:0 0 10px 0;">${n.title}</h3>
                         <div style="font-size:14px; color:#444;">${n.body}</div>
                     </div>
                     ${n.img ? `<img src="${n.img}" class="news-img-main" style="width:100%;">` : ''}
+                    
                     <div class="interaction-row">
                         <div class="stat-item" onclick="toggleLike('${n.id}', ${hasLiked})">
                             <span>${hasLiked ? '❤️' : '🤍'}</span> <span>${n.likedBy?.length || 0}</span>
@@ -137,6 +147,16 @@
                             <span>💬</span> <span id="c-count-${n.id}">0</span>
                         </div>
                     </div>
+
+                    ${isManager ? `
+                    <div class="admin-tools">
+                        <button class="adm-btn btn-hide-item" onclick="toggleVisibility('${n.id}', ${n.visible})">
+                            ${n.visible ? '🔒 تعطيل' : '🔓 تفعيل'}
+                        </button>
+                        <button class="adm-btn btn-edit-item" onclick="location.href='add_news.html?edit=${n.id}'">✏️ تعديل</button>
+                        <button class="adm-btn btn-del-item" onclick="deleteNews('${n.id}')">🗑️ حذف</button>
+                    </div>` : ''}
+
                     <div id="tray-${n.id}" class="comments-dropdown">
                         <div id="list-${n.id}"></div>
                         <div style="display:flex; gap:8px; margin-top:10px;">
@@ -150,6 +170,17 @@
             });
         });
     }
+
+    // دوال التحكم الجديدة
+    window.toggleVisibility = async (id, currentStatus) => {
+        await updateDoc(doc(db, "News", id), { visible: !currentStatus });
+    };
+
+    window.deleteNews = async (id) => {
+        if(confirm("هل أنت متأكد من حذف هذا الخبر نهائياً؟")) {
+            await deleteDoc(doc(db, "News", id));
+        }
+    };
 
     window.loadCommentsRealtime = (id) => {
         onSnapshot(collection(db, `News/${id}/Comments`), (s) => {
