@@ -3,183 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مركز الطلبات والرقابة الأمنية | منح الصلاحيات</title>
+    <title>إدارة طلبات الأعضاء والخصوصية</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .admin-wrapper { padding: 15px; max-width: 1000px; margin: auto; }
-        .req-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 25px; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; margin-bottom: 15px; }
+        .admin-container { padding: 15px; padding-bottom: 50px; }
+        .section-card { 
+            background: white; border-radius: 20px; padding: 20px; 
+            margin-bottom: 20px; box-shadow: var(--shadow); 
+        }
+        .section-title { 
+            display: flex; align-items: center; gap: 10px; 
+            margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px;
+        }
+        .control-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 0; border-bottom: 1px dashed #f0f0f0; 
+        }
+        .control-row:last-child { border: none; }
+        .control-info { flex: 1; margin-left: 10px; }
+        .control-info b { display: block; font-size: 14px; margin-bottom: 4px; }
+        .control-info small { color: #8e8e93; font-size: 11px; }
         
-        .age-avg-box { background: linear-gradient(45deg, var(--primary), #5856d6); color: white; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; }
-        .age-avg-box h1 { font-size: 32px; margin: 5px 0; }
-
-        .compact-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
-        .compact-item { background: #f8f9fa; padding: 12px; border-radius: 15px; border-right: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
-        
-        .security-alert { background: #fff1f1; border: 1px solid #ff3b30; color: #d63031; padding: 10px; border-radius: 12px; font-size: 11px; margin-top: 8px; }
-        .badge { padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; }
-        
-        .btn-role { background: white; border: 1px solid #ddd; padding: 5px 10px; border-radius: 10px; cursor: pointer; font-size: 11px; transition: 0.3s; }
-        .btn-role:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        /* أزرار الحالة */
+        .status-btn { 
+            padding: 8px 16px; border-radius: 12px; border: none; 
+            font-family: inherit; font-weight: bold; cursor: pointer; min-width: 90px; transition: 0.3s;
+        }
+        .btn-send { background: #5856d6; color: white; }
+        .btn-send:active { transform: scale(0.95); }
     </style>
 </head>
-<body style="background: #f4f7f6;">
+<body style="background: #f8f9fa;">
 
     <div class="top-bar">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-            <b>مركز الطلبات والرقابة الأمنية</b>
-        </div>
-        <img src="logo.png" style="height: 35px;">
+        <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+        <b>إدارة الطلبات والخصوصية</b>
+        <div style="width:20px;"></div>
     </div>
 
-    <div class="admin-wrapper">
-
-        <div class="age-avg-box">
-            <span>📊 متوسط أعمار العائلة المسجلين</span>
-            <h1 id="averageAge">0</h1>
-            <small>سنة</small>
-        </div>
+    <div class="admin-container">
         
-        <div class="req-section">
-            <div class="section-header"><h2>👥 نظرة سريعة على الأعضاء ومنح الصلاحيات</h2></div>
-            <div class="compact-list" id="compactUserList">
-                <p style="color:gray; font-size:12px;">جاري جلب القائمة...</p>
+        <div class="section-card">
+            <div class="section-title"><h3>🚨 طلبات تحديث البيانات</h3></div>
+            
+            <div class="control-row">
+                <div class="control-info">
+                    <b>تحديث بيانات الإناث</b>
+                    <small>طلب (الاسم المعرف، الجوال، صلة القرابة) إجبارياً</small>
+                </div>
+                <button class="btn-send status-btn" onclick="triggerRequest('requireFemaleUpdate')">إرسال</button>
+            </div>
+
+            <div class="control-row">
+                <div class="control-info">
+                    <b>طلب تاريخ الميلاد</b>
+                    <small>إجبار جميع الأعضاء على إدخال تاريخ ميلادهم</small>
+                </div>
+                <button class="btn-send status-btn" onclick="triggerRequest('requireDOBUpdate')">إرسال</button>
+            </div>
+
+            <div class="control-row">
+                <div class="control-info">
+                    <b>تحديث رقم الجوال</b>
+                    <small>طلب تحديث رقم الجوال لجميع المشتركين</small>
+                </div>
+                <button class="btn-send status-btn" onclick="triggerRequest('requirePhoneUpdate')">إرسال</button>
             </div>
         </div>
 
-        <div class="req-section">
-            <div class="section-header"><h2>🛡️ سجل أمن الحسابات (تغيير الباسورد)</h2></div>
-            <div id="passwordHistory"></div>
+        <div class="section-card">
+            <div class="section-title"><h3>💬 إعدادات الدردشة والبحث</h3></div>
+            
+            <div class="control-row">
+                <div class="control-info">
+                    <b>الدردشة العامة</b>
+                    <small>تعطيل أو تفعيل الدردشة الجماعية للكل</small>
+                </div>
+                <button id="publicChatBtn" class="status-btn" onclick="toggleOption('publicChatEnabled')">...</button>
+            </div>
+
+            <div class="control-row">
+                <div class="control-info">
+                    <b>الدردشة الخاصة</b>
+                    <small>منع أو تفعيل مراسلة الأعضاء لبعضهم</small>
+                </div>
+                <button id="privateChatBtn" class="status-btn" onclick="toggleOption('privateChatEnabled')">...</button>
+            </div>
+
+            <div class="control-row">
+                <div class="control-info">
+                    <b>التواصل بين الجنسين</b>
+                    <small>منع الذكور من مراسلة الإناث والعكس</small>
+                </div>
+                <button id="crossGenderBtn" class="status-btn" onclick="toggleOption('crossGenderChat')">...</button>
+            </div>
         </div>
 
-        <div class="req-section">
-            <div class="section-header"><h2>📅 آخر 7 أعضاء منضمين</h2></div>
-            <div id="recentUsers"></div>
-        </div>
-
+        <p style="text-align: center; font-size: 11px; color: gray;">* ملاحظة: الطلبات الإجبارية تظهر للعضو عند أول دخول له بعد الإرسال.</p>
     </div>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, orderBy, limit, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from './config.js';
+    import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.data().role === 'admin') initSecurityPage();
-            else location.href = 'news.html';
-        }
-    });
+    const globalSettingsRef = doc(db, "Settings", "GlobalSettings");
 
-    function initSecurityPage() {
-        // --- 1. جلب بيانات Users لحساب المتوسط والقائمة المختصرة + زر الصلاحيات ---
-        onSnapshot(collection(db, "Users"), snap => {
-            const compactList = document.getElementById('compactUserList');
-            const avgEl = document.getElementById('averageAge');
-            compactList.innerHTML = "";
-            
-            let totalAge = 0;
-            let countWithAge = 0;
-
-            snap.forEach(u => {
-                const d = u.data();
-                const uid = u.id;
-                
-                if(d.age) {
-                    totalAge += parseInt(d.age);
-                    countWithAge++;
-                }
-
-                compactList.innerHTML += `
-                    <div class="compact-item">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold; font-size:13px;">${d.fullName}</div>
-                            <div style="font-size:11px; color:gray;">العمر: ${d.age || '--'} | <span class="badge" style="background:#eef6ff; color:var(--primary);">${d.role || 'user'}</span></div>
-                        </div>
-                        <button class="btn-role" onclick="changeUserRole('${uid}', '${d.fullName}', '${d.role || 'user'}')">🛡️ منح صلاحية</button>
-                    </div>
-                `;
+    // دالة لإرسال طلب تحديث (يستخدم التوقيت لتمييز الطلبات الجديدة)
+    window.triggerRequest = async (field) => {
+        if(confirm("سيتم إجبار الفئة المستهدفة على التحديث عند دخولهم. استمرار؟")) {
+            await updateDoc(globalSettingsRef, { 
+                [field]: Date.now() 
             });
-
-            if(countWithAge > 0) {
-                avgEl.innerText = Math.round(totalAge / countWithAge);
-            }
-        });
-
-        // --- 2. سجل تغيير الباسورد والأمن الجغرافي ---
-        onSnapshot(query(collection(db, "PasswordHistory"), orderBy("timestamp", "desc")), snap => {
-            const cont = document.getElementById('passwordHistory');
-            cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px;">لا توجد سجلات أمنية</p>' : "";
-            snap.forEach(h => {
-                const d = h.data();
-                let alertUI = "";
-                
-                if(d.regLoc && d.changeLoc) {
-                    const dist = calculateDistance(d.regLoc.lat, d.regLoc.lng, d.changeLoc.lat, d.changeLoc.lng);
-                    if(dist > 600) {
-                        alertUI = `<div class="security-alert">⚠️ تحذير: تغيير من منطقة بعيدة (${dist.toFixed(0)} كم)</div>`;
-                    }
-                }
-
-                cont.innerHTML += `
-                    <div style="padding:10px; border-bottom:1px solid #eee;">
-                        <div style="display:flex; justify-content:space-between; font-size:13px;">
-                            <b>${d.userName}</b>
-                            <small>${new Date(d.timestamp?.toDate()).toLocaleDateString('ar-EG')}</small>
-                        </div>
-                        ${alertUI}
-                    </div>
-                `;
-            });
-        });
-
-        // --- 3. آخر 7 أعضاء مسجلين ---
-        onSnapshot(query(collection(db, "Users"), orderBy("createdAt", "desc"), limit(7)), snap => {
-            const cont = document.getElementById('recentUsers');
-            cont.innerHTML = "";
-            snap.forEach(u => {
-                const d = u.data();
-                cont.innerHTML += `
-                    <div style="display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid #f9f9f9;">
-                        <img src="${d.profileImg || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                        <div style="flex:1;">
-                            <div style="font-size:13px; font-weight:bold;">${d.fullName}</div>
-                            <div style="font-size:11px; color:gray;">${d.city || 'المدينة غير محددة'} | سجل في: ${new Date(d.createdAt?.toDate()).toLocaleDateString('ar-EG')}</div>
-                        </div>
-                        <button class="btn-role" onclick="changeUserRole('${u.id}', '${d.fullName}', '${d.role || 'user'}')">🛡️</button>
-                    </div>
-                `;
-            });
-        });
-    }
-
-    // دالة تغيير الرتبة (الصلاحيات)
-    window.changeUserRole = async (uid, name, currentRole) => {
-        const newRole = prompt(`تعديل صلاحية العضو: ${name}\nالصلاحية الحالية: ${currentRole}\n\nاختر واحدة مما يلي واكتبها بدقة:\n(admin) - مدير كل الأدوات\n(editor) - محرر أخبار\n(user) - عضو عادي`, currentRole);
-        
-        if (newRole && ['admin', 'editor', 'user'].includes(newRole.toLowerCase())) {
-            try {
-                await updateDoc(doc(db, "Users", uid), {
-                    role: newRole.toLowerCase()
-                });
-                alert(`تم منح ${name} صلاحية ${newRole} بنجاح ✅`);
-            } catch (e) {
-                alert("حدث خطأ أثناء تحديث الصلاحية");
-            }
-        } else if (newRole) {
-            alert("يرجى كتابة اسم الصلاحية بشكل صحيح (admin أو editor أو user)");
+            alert("تم إرسال الطلب بنجاح ✅");
         }
     };
 
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2-lat1) * Math.PI / 180;
-        const dLon = (lon2-lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    // دالة لتبديل الحالة (تفعيل/تعطيل)
+    window.toggleOption = async (field) => {
+        const snap = await getDoc(globalSettingsRef);
+        const currentValue = snap.data()[field];
+        await updateDoc(globalSettingsRef, { [field]: !currentValue });
+        loadSettings(); // تحديث الأزرار
+    };
+
+    // جلب الإعدادات الحالية وتلوين الأزرار
+    async function loadSettings() {
+        const snap = await getDoc(globalSettingsRef);
+        if (!snap.exists()) {
+            // إنشاء المستند لأول مرة إذا لم يكن موجوداً
+            await setDoc(globalSettingsRef, {
+                publicChatEnabled: true,
+                privateChatEnabled: true,
+                crossGenderChat: true,
+                requireFemaleUpdate: 0,
+                requireDOBUpdate: 0,
+                requirePhoneUpdate: 0
+            });
+            loadSettings();
+            return;
+        }
+
+        const data = snap.data();
+        updateButtonStyle('publicChatBtn', data.publicChatEnabled);
+        updateButtonStyle('privateChatBtn', data.privateChatEnabled);
+        updateButtonStyle('crossGenderBtn', data.crossGenderChat);
     }
+
+    function updateButtonStyle(btnId, status) {
+        const btn = document.getElementById(btnId);
+        if (status) {
+            btn.innerText = "مفعل ✅";
+            btn.style.background = "#34c759"; // أخضر
+            btn.style.color = "white";
+        } else {
+            btn.innerText = "معطل ❌";
+            btn.style.background = "#8e8e93"; // رمادي
+            btn.style.color = "white";
+        }
+    }
+
+    loadSettings();
 </script>
 </body>
 </html>
