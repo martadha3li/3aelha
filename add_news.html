@@ -3,51 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إضافة خبر جديد</title>
+    <title>تحرير الخبر | منصة العائلة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .container { padding: 20px; max-width: 600px; margin: auto; }
-        .preview-img { width: 100%; border-radius: 15px; margin-top: 10px; display: none; border: 1px solid #ddd; }
+        :root { --primary: #5856d6; --bg: #f2f2f7; }
+        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; font-size: 15px; }
+        .preview-img { width: 100%; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #eee; }
+        .btn-save { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
 <div id="loading" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>جاري النشر... يرجى الانتظار</p>
-</div>
-
-<div class="top-bar">
-    <button onclick="history.back()" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b>إضافة خبر عائلي</b>
-    <div style="width:24px;"></div>
+    <div style="font-size: 40px;">⏳</div>
+    <p>جاري معالجة البيانات...</p>
 </div>
 
 <div class="container">
     <div class="card">
-        <input type="text" id="newsTitle" placeholder="عنوان الخبر" class="form-input">
-        <textarea id="newsContent" placeholder="تفاصيل الخبر..." class="form-input" style="height: 150px;"></textarea>
+        <h2 id="pageTitle" style="text-align:center; color:var(--primary); margin-top:0;">إضافة خبر جديد</h2>
         
-        <label class="upload-btn" style="display: block; text-align: center; background: #eee; padding: 15px; border-radius: 12px; cursor: pointer;">
-            📸 ارفق صورة الخبر
-            <input type="file" id="newsImgInput" accept="image/*" style="display: none;" onchange="processImage(this)">
+        <input type="text" id="newsTitle" placeholder="عنوان الخبر" class="form-input">
+        
+        <select id="newsCat" class="form-input">
+            <option value="عام">عام</option>
+            </select>
+
+        <textarea id="newsBody" placeholder="اكتب تفاصيل الخبر هنا..." class="form-input" style="height: 150px; resize: none;"></textarea>
+        
+        <label style="display: block; text-align: center; background: #f0f0f7; padding: 15px; border-radius: 12px; cursor: pointer; margin-bottom: 15px; color: var(--primary); font-weight: bold;">
+            📸 ارفق أو غير صورة الخبر
+            <input type="file" id="imgInput" accept="image/*" style="display: none;" onchange="handleImage(this)">
         </label>
         
         <img id="imgPreview" class="preview-img">
         
-        <button id="publishBtn" onclick="publishNews()" class="btn-main" style="margin-top: 20px; width: 100%;">نشر الخبر الآن</button>
+        <button id="submitBtn" onclick="saveNews()" class="btn-save">نشر الخبر</button>
     </div>
 </div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db, auth } from './config.js';
+    import { collection, doc, getDoc, getDocs, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let compressedImage = ""; // سيخزن نص الصورة المضغوطة
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit'); // جلب ID الخبر من الرابط
+    let compressedBase64 = "";
 
-    // وظيفة معالجة وضغط الصورة لضمان عدم تعليق المتصفح
-    window.processImage = (input) => {
+    // 1. عند تشغيل الصفحة
+    window.onload = async () => {
+        loadCategories();
+        if (editId) {
+            document.getElementById('pageTitle').innerText = "تعديل الخبر";
+            document.getElementById('submitBtn').innerText = "حفظ التغييرات";
+            fillData(editId);
+        }
+    };
+
+    // 2. تحميل التصنيفات من قاعدة البيانات
+    async function loadCategories() {
+        const snap = await getDocs(collection(db, "Categories"));
+        const select = document.getElementById('newsCat');
+        snap.forEach(c => {
+            const name = c.data().name;
+            const opt = document.createElement('option');
+            opt.value = name; opt.innerText = name;
+            select.appendChild(opt);
+        });
+    }
+
+    // 3. جلب بيانات الخبر في حالة "التعديل"
+    async function fillData(id) {
+        const s = await getDoc(doc(db, "News", id));
+        if (s.exists()) {
+            const n = s.data();
+            document.getElementById('newsTitle').value = n.title;
+            document.getElementById('newsBody').value = n.body;
+            document.getElementById('newsCat').value = n.category || "عام";
+            if (n.img) {
+                compressedBase64 = n.img;
+                const preview = document.getElementById('imgPreview');
+                preview.src = n.img;
+                preview.style.display = 'block';
+            }
+        }
+    }
+
+    // 4. معالجة وضغط الصورة
+    window.handleImage = (input) => {
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
@@ -56,21 +103,16 @@
                 img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // تحديد أبعاد معقولة (مثلاً عرض 800 بكسل كحد أقصى)
                     const maxWidth = 800;
                     const scale = maxWidth / img.width;
                     canvas.width = maxWidth;
                     canvas.height = img.height * scale;
-
+                    const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    // تحويلها لـ Base64 بجودة متوسطة (0.7) لتقليل الحجم جداً
-                    compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                    compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     
                     const preview = document.getElementById('imgPreview');
-                    preview.src = compressedImage;
+                    preview.src = compressedBase64;
                     preview.style.display = 'block';
                 };
             };
@@ -78,34 +120,45 @@
         }
     };
 
-    window.publishNews = async () => {
+    // 5. وظيفة الحفظ (إضافة أو تعديل)
+    window.saveNews = async () => {
         const title = document.getElementById('newsTitle').value;
-        const content = document.getElementById('newsContent').value;
+        const body = document.getElementById('newsBody').value;
+        const cat = document.getElementById('newsCat').value;
         const loader = document.getElementById('loading');
-        const btn = document.getElementById('publishBtn');
 
-        if (!title || !content) return alert("يرجى كتابة العنوان والتفاصيل");
+        if (!title || !body) return alert("يرجى تعبئة الحقول الأساسية");
 
         loader.style.display = 'flex';
-        btn.disabled = true;
 
         try {
-            await addDoc(collection(db, "News"), {
+            const newsData = {
                 title: title,
-                content: content,
-                image: compressedImage, // الصورة هنا نصية وخفيفة
+                body: body,
+                category: cat,
+                img: compressedBase64,
                 visible: true,
-                createdAt: serverTimestamp()
-            });
+                publishDate: Date.now() // للترتيب
+            };
 
-            alert("تم نشر الخبر بنجاح! 🎉");
+            if (editId) {
+                // تحديث خبر موجود
+                await updateDoc(doc(db, "News", editId), newsData);
+                alert("تم تحديث الخبر بنجاح ✅");
+            } else {
+                // إضافة خبر جديد
+                newsData.authorId = auth.currentUser.uid;
+                newsData.likedBy = [];
+                newsData.createdAt = serverTimestamp();
+                await addDoc(collection(db, "News"), newsData);
+                alert("تم نشر الخبر بنجاح 🎉");
+            }
             location.href = "news.html";
-        } catch (error) {
-            console.error("Error publishing news:", error);
-            alert("حدث خطأ أثناء النشر، تأكد من حجم الصورة.");
+        } catch (e) {
+            console.error(e);
+            alert("حدث خطأ، حاول مرة أخرى.");
         } finally {
             loader.style.display = 'none';
-            btn.disabled = false;
         }
     };
 </script>
