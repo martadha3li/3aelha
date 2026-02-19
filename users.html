@@ -3,115 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الأعضاء | لوحة التحكم</title>
+    <title>إدارة الأعضاء | المنصة</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .users-wrapper { padding: 15px; overflow-x: auto; }
-        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; font-family: inherit; }
+        .users-wrapper { padding: 15px; padding-bottom: 50px; }
+        .search-box { 
+            width: 100%; padding: 14px; border-radius: 15px; 
+            border: 1px solid #ddd; margin-bottom: 20px; 
+            font-family: inherit; font-size: 14px; outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
         
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; font-size: 13px; box-shadow: var(--shadow); }
-        th { background: var(--primary); color: white; padding: 12px; text-align: center; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; white-space: nowrap; }
+        .table-container { 
+            background: white; border-radius: 20px; 
+            overflow-x: auto; box-shadow: var(--shadow); 
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: #f8f9fa; color: #8e8e93; padding: 15px; text-align: center; font-size: 12px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: center; font-size: 13px; }
         tr:last-child td { border: none; }
 
-        .btn-action { padding: 5px 8px; border: none; border-radius: 6px; cursor: pointer; margin: 2px; font-size: 12px; color: white; }
-        .btn-edit { background: #34c759; }
-        .btn-ban { background: #ff3b30; }
-        .btn-delete { background: #1c1c1e; }
+        .btn-action { 
+            padding: 8px; border: none; border-radius: 10px; 
+            cursor: pointer; margin: 0 2px; transition: 0.2s; 
+        }
+        .btn-edit { background: #eefaf3; color: #34c759; }
+        .btn-ban { background: #fff2f2; color: #ff3b30; }
+        .btn-delete { background: #f2f2f7; color: #1c1c1e; }
+        .btn-action:active { transform: scale(0.9); }
         
-        .role-badge { padding: 2px 6px; border-radius: 5px; font-size: 10px; font-weight: bold; }
-        .admin-role { background: #ffcc00; color: #000; }
-        .user-role { background: #eef6ff; color: var(--primary); }
+        .role-badge { padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        .admin-role { background: #fff9e6; color: #ffcc00; }
+        .user-role { background: #f2f7ff; color: #007aff; }
+
+        /* Modal Style */
+        .modal-overlay { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(0,0,0,0.6); z-index: 5000; 
+            align-items: center; justify-content: center; padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content { 
+            background: white; padding: 25px; border-radius: 30px; 
+            width: 100%; max-width: 450px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #444; }
+        .form-input { 
+            width: 100%; padding: 12px; border-radius: 12px; 
+            border: 1px solid #eee; background: #f9f9f9; font-family: inherit;
+        }
     </style>
 </head>
-<body style="background: #f8f9fa;">
+<body style="background: #f4f7f6;">
 
     <div class="top-bar">
-        <button onclick="location.href='admin_requests.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-        <b>جدول إدارة الأعضاء</b>
+        <button onclick="location.href='admin_requests.html'" style="border:none; background:none; font-size:22px; cursor:pointer;">➡️</button>
+        <b>قائمة التحكم بالأعضاء</b>
         <div style="width:20px;"></div>
     </div>
 
     <div class="users-wrapper">
-        <input type="text" id="userSearch" class="search-box" placeholder="ابحث عن عضو بالاسم أو رقم الجوال..." oninput="searchTable()">
+        <input type="text" id="userSearch" class="search-box" placeholder="🔎 ابحث عن اسم، رقم جوال، أو بريد..." oninput="searchTable()">
         
-        <table id="usersTable">
-            <thead>
-                <tr>
-                    <th>الاسم</th>
-                    <th>الجنس</th>
-                    <th>الجوال</th>
-                    <th>الصلاحية</th>
-                    <th>الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody id="usersBody">
+        <div class="table-container">
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>العضو</th>
+                        <th>الجنس</th>
+                        <th>الجوال</th>
+                        <th>الصلاحية</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="usersBody">
+                    <tr><td colspan="5" style="color:gray;">جاري تحميل البيانات...</td></tr>
                 </tbody>
-        </table>
+            </table>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-bottom:20px; text-align:center;">✏️ تحرير الحساب</h3>
+            <input type="hidden" id="editUserId">
+            
+            <div class="form-group">
+                <label>الاسم الكامل</label>
+                <input type="text" id="editName" class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label>رقم الجوال</label>
+                <input type="number" id="editPhone" class="form-input">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:25px;">
+                <div class="form-group">
+                    <label>الصلاحية</label>
+                    <select id="editRole" class="form-input">
+                        <option value="member">عضو</option>
+                        <option value="editor">محرر</option>
+                        <option value="admin">مدير</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الجنس</label>
+                    <select id="editGender" class="form-input">
+                        <option value="male">ذكر</option>
+                        <option value="female">أنثى</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeEditModal()" style="flex:1; padding:12px; border:none; border-radius:15px; background:#f2f2f7; font-weight:bold; cursor:pointer;">إلغاء</button>
+                <button onclick="saveUserUpdates()" style="flex:2; padding:12px; border:none; border-radius:15px; background:var(--primary); color:white; font-weight:bold; cursor:pointer;">حفظ التغييرات</button>
+            </div>
+        </div>
     </div>
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const usersBody = document.getElementById('usersBody');
 
-    // تحميل الأعضاء بشكل حي
+    // تحميل البيانات حياً من Firestore
     onSnapshot(collection(db, "Users"), (snap) => {
         usersBody.innerHTML = "";
+        if (snap.empty) {
+            usersBody.innerHTML = '<tr><td colspan="5">لا يوجد أعضاء مسجلين</td></tr>';
+            return;
+        }
+
         snap.forEach(d => {
             const u = d.data();
             const id = d.id;
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-weight:bold;">${u.fullName}</td>
+                <td style="text-align:right; font-weight:600;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${u.profileImg || 'https://via.placeholder.com/30'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                        ${u.fullName}
+                    </div>
+                </td>
                 <td>${u.gender === 'male' ? 'ذكر' : 'أنثى'}</td>
                 <td>${u.phone || '--'}</td>
                 <td><span class="role-badge ${u.role === 'admin' ? 'admin-role' : 'user-role'}">${u.role || 'عضو'}</span></td>
                 <td>
-                    <button class="btn-action btn-edit" onclick="editUser('${id}', '${u.fullName}')">✏️</button>
-                    <button class="btn-action btn-ban" onclick="toggleBan('${id}', ${u.isBanned})">${u.isBanned ? '✅ فك' : '🚫 منع'}</button>
-                    <button class="btn-action btn-delete" onclick="deleteUser('${id}')">🗑️</button>
+                    <button class="btn-action btn-edit" title="تعديل" onclick="openEditModal('${id}', '${u.fullName}', '${u.phone || ''}', '${u.role || 'member'}', '${u.gender || 'male'}')">✏️</button>
+                    <button class="btn-action btn-ban" title="حظر" onclick="toggleBan('${id}', ${u.isBanned || false})">${u.isBanned ? '✅' : '🚫'}</button>
+                    <button class="btn-action btn-delete" title="حذف" onclick="deleteUser('${id}')">🗑️</button>
                 </td>
             `;
             usersBody.appendChild(tr);
         });
     });
 
-    // 1. وظيفة البحث
+    // البحث السريع
     window.searchTable = () => {
-        const input = document.getElementById('userSearch').value.toLowerCase();
+        const term = document.getElementById('userSearch').value.toLowerCase();
         const rows = usersBody.getElementsByTagName('tr');
         for (let row of rows) {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
         }
     };
 
-    // 2. وظيفة تعديل الصلاحية أو الاسم (بشكل مبسط)
-    window.editUser = async (id, oldName) => {
-        const newName = prompt("تعديل اسم العضو:", oldName);
-        const newRole = prompt("تعديل الصلاحية (admin / editor / member):");
-        if (newName || newRole) {
-            await updateDoc(doc(db, "Users", id), { 
-                fullName: newName || oldName,
-                role: newRole || "member"
-            });
-            alert("تم التحديث");
+    // التحكم بالنافذة المنبثقة
+    window.openEditModal = (id, name, phone, role, gender) => {
+        document.getElementById('editUserId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editPhone').value = phone;
+        document.getElementById('editRole').value = role;
+        document.getElementById('editGender').value = gender;
+        document.getElementById('editModal').style.display = 'flex';
+    };
+
+    window.closeEditModal = () => {
+        document.getElementById('editModal').style.display = 'none';
+    };
+
+    // حفظ التعديلات
+    window.saveUserUpdates = async () => {
+        const id = document.getElementById('editUserId').value;
+        const updates = {
+            fullName: document.getElementById('editName').value,
+            phone: document.getElementById('editPhone').value,
+            role: document.getElementById('editRole').value,
+            gender: document.getElementById('editGender').value
+        };
+
+        if(!updates.fullName) return alert("الاسم مطلوب!");
+
+        try {
+            await updateDoc(doc(db, "Users", id), updates);
+            closeEditModal();
+            // إشعار نجاح بسيط
+        } catch (e) { alert("فشل التحديث: " + e.message); }
+    };
+
+    // الحظر والحذف
+    window.toggleBan = async (id, status) => {
+        if(confirm(status ? "إلغاء الحظر؟" : "هل تريد حظر هذا العضو من الدخول؟")) {
+            await updateDoc(doc(db, "Users", id), { isBanned: !status });
         }
     };
 
-    // 3. وظيفة منع العضو من الدخول
-    window.toggleBan = async (id, currentStatus) => {
-        const nextStatus = !currentStatus;
-        if(confirm(nextStatus ? "هل تريد منع هذا العضو من دخول المنصة؟" : "هل تريد فك الحظر عن العضو؟")) {
-            await updateDoc(doc(db, "Users", id), { isBanned: nextStatus });
-        }
-    };
-
-    // 4. وظيفة حذف العضو نهائياً
     window.deleteUser = async (id) => {
-        if(confirm("تحذير! سيتم حذف العضو نهائياً من قاعدة البيانات. استمرار؟")) {
+        if(confirm("سيتم حذف العضو نهائياً من النظام. هل أنت متأكد؟")) {
             await deleteDoc(doc(db, "Users", id));
         }
     };
