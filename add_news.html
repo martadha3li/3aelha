@@ -6,99 +6,107 @@
     <title>إضافة خبر جديد</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .editor-box { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); }
-        .rich-editor { min-height: 250px; border: 1px solid #ddd; padding: 15px; border-radius: 12px; outline: none; background: #fff; margin-bottom: 15px; }
-        .input-label { font-size: 13px; font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
-        .select-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; outline: none; }
+        .container { padding: 20px; max-width: 600px; margin: auto; }
+        .preview-img { width: 100%; border-radius: 15px; margin-top: 10px; display: none; border: 1px solid #ddd; }
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <button onclick="location.href='news.html'" style="border:none; background:none; font-size:20px;">✕</button>
-        <b>نشر خبر احترافي</b>
-        <button class="btn-main" id="publishBtn">نشر</button>
-    </div>
 
-    <div class="editor-box">
-        <label class="input-label">📁 تصنيف الخبر:</label>
-        <select id="postCategory" class="select-input">
-            <option value="">-- اختر التصنيف --</option>
-        </select>
+<div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>جاري النشر... يرجى الانتظار</p>
+</div>
 
-        <label class="input-label">📝 عنوان الخبر:</label>
-        <input type="text" id="postTitle" placeholder="عنوان الخبر هنا..." class="form-input" style="width:100%; margin-bottom:15px; font-weight:bold;">
+<div class="top-bar">
+    <button onclick="history.back()" style="border:none; background:none; font-size:22px;">➡️</button>
+    <b>إضافة خبر عائلي</b>
+    <div style="width:24px;"></div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <input type="text" id="newsTitle" placeholder="عنوان الخبر" class="form-input">
+        <textarea id="newsContent" placeholder="تفاصيل الخبر..." class="form-input" style="height: 150px;"></textarea>
         
-        <div id="editor" class="rich-editor" contenteditable="true"></div>
-
-        <label class="input-label">📸 صورة الخبر:</label>
-        <input type="file" id="imgFile" accept="image/*" onchange="handleImg()" style="margin-bottom:15px;">
-        <input type="hidden" id="imgBase64">
-
-        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #eee; padding-top:10px;">
-            <span style="font-size:13px;">👁️ عرض للمحررين فقط</span>
-            <input type="checkbox" id="tempView">
-        </div>
+        <label class="upload-btn" style="display: block; text-align: center; background: #eee; padding: 15px; border-radius: 12px; cursor: pointer;">
+            📸 ارفق صورة الخبر
+            <input type="file" id="newsImgInput" accept="image/*" style="display: none;" onchange="processImage(this)">
+        </label>
+        
+        <img id="imgPreview" class="preview-img">
+        
+        <button id="publishBtn" onclick="publishNews()" class="btn-main" style="margin-top: 20px; width: 100%;">نشر الخبر الآن</button>
     </div>
+</div>
 
 <script type="module">
-    import { db, auth } from './config.js';
-    import { collection, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from './config.js';
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let categoriesMap = {}; // لتخزين العناوين الافتراضية
+    let compressedImage = ""; // سيخزن نص الصورة المضغوطة
 
-    // تحميل التصنيفات
-    onSnapshot(collection(db, "Categories"), snap => {
-        const select = document.getElementById('postCategory');
-        select.innerHTML = '<option value="">-- اختر التصنيف --</option>';
-        snap.forEach(d => {
-            const cat = d.data();
-            categoriesMap[cat.name] = cat.defaultTitle;
-            select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
-        });
-    });
+    // وظيفة معالجة وضغط الصورة لضمان عدم تعليق المتصفح
+    window.processImage = (input) => {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // تحديد أبعاد معقولة (مثلاً عرض 800 بكسل كحد أقصى)
+                    const maxWidth = 800;
+                    const scale = maxWidth / img.width;
+                    canvas.width = maxWidth;
+                    canvas.height = img.height * scale;
 
-    // ربط اختيار التصنيف بتغيير العنوان
-    document.getElementById('postCategory').onchange = function() {
-        const titleInput = document.getElementById('postTitle');
-        if (categoriesMap[this.value]) {
-            titleInput.value = categoriesMap[this.value];
-            titleInput.style.border = "1px solid var(--primary)";
-        } else {
-            titleInput.value = "";
-            titleInput.style.border = "1px solid #ddd";
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // تحويلها لـ Base64 بجودة متوسطة (0.7) لتقليل الحجم جداً
+                    compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    const preview = document.getElementById('imgPreview');
+                    preview.src = compressedImage;
+                    preview.style.display = 'block';
+                };
+            };
+            reader.readAsDataURL(file);
         }
     };
 
-    window.handleImg = () => {
-        const file = document.getElementById('imgFile').files[0];
-        const reader = new FileReader();
-        reader.onloadend = () => document.getElementById('imgBase64').value = reader.result;
-        if(file) reader.readAsDataURL(file);
-    };
+    window.publishNews = async () => {
+        const title = document.getElementById('newsTitle').value;
+        const content = document.getElementById('newsContent').value;
+        const loader = document.getElementById('loading');
+        const btn = document.getElementById('publishBtn');
 
-    document.getElementById('publishBtn').onclick = async () => {
-        const title = document.getElementById('postTitle').value;
-        const body = document.getElementById('editor').innerHTML;
-        const category = document.getElementById('postCategory').value;
-        const img = document.getElementById('imgBase64').value;
-        const isStopped = document.getElementById('tempView').checked;
+        if (!title || !content) return alert("يرجى كتابة العنوان والتفاصيل");
 
-        if(!title || !body || !category) return alert("أكمل كافة البيانات");
+        loader.style.display = 'flex';
+        btn.disabled = true;
 
-        const uSnap = await getDoc(doc(db, "Users", auth.currentUser.uid));
-        const uData = uSnap.data();
+        try {
+            await addDoc(collection(db, "News"), {
+                title: title,
+                content: content,
+                image: compressedImage, // الصورة هنا نصية وخفيفة
+                visible: true,
+                createdAt: serverTimestamp()
+            });
 
-        await addDoc(collection(db, "News"), {
-            title, body, category, img, isStopped,
-            authorId: auth.currentUser.uid,
-            authorName: uData.fullName,
-            authorImg: uData.profileImg || "",
-            publishDate: Date.now(),
-            likedBy: []
-        });
-
-        alert("تم النشر بنجاح!");
-        location.href = "news.html";
+            alert("تم نشر الخبر بنجاح! 🎉");
+            location.href = "news.html";
+        } catch (error) {
+            console.error("Error publishing news:", error);
+            alert("حدث خطأ أثناء النشر، تأكد من حجم الصورة.");
+        } finally {
+            loader.style.display = 'none';
+            btn.disabled = false;
+        }
     };
 </script>
 </body>
