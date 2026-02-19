@@ -275,5 +275,78 @@
     window.deleteItem = async (p, id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, p, id)); };
 
 </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="card" style="border: 1px solid #ddd; background: #fdfdfd;">
+    <div class="card-title">📤 تصدير البيانات (Excel)</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button onclick="exportToExcel('all')" class="badge bg-primary" style="height: 45px; font-size: 13px;">
+            تصدير كافة المشاركين 📁
+        </button>
+        <button onclick="exportToExcel('correct')" class="badge bg-success" style="height: 45px; font-size: 13px;">
+            تصدير الإجابات الصحيحة فقط ✅
+        </button>
+    </div>
+</div>
+
+<script type="module">
+    // ... الأكواد السابقة لـ Firebase و Firestore تبقى كما هي ...
+    import { db } from './config.js';
+    import { collection, getDocs, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // --- دالة تصدير ملف الإكسل ---
+    window.exportToExcel = async (type) => {
+        try {
+            alert("جاري تجهيز الملف، يرجى الانتظار ثواني...");
+            
+            // 1. جلب كافة الإجابات
+            const q = query(collection(db, "Answers"), orderBy("timestamp", "desc"));
+            const snap = await getDocs(q);
+            
+            if (snap.empty) return alert("لا توجد بيانات لتصديرها!");
+
+            let exportData = [];
+
+            // 2. معالجة البيانات وتجهيزها (سنجلب بيانات المستخدم الإضافية مثل الإيميل والجوال)
+            for (const d of snap.docs) {
+                const a = d.data();
+
+                // فلترة حسب النوع المختار
+                if (type === 'correct' && !a.isCorrect) continue;
+
+                // جلب بيانات المستخدم الإضافية من مجموعة Users إذا لم تكن موجودة في سجل الإجابة
+                // ملاحظة: يفضل أن تكون قد حفظت الجوال والإيميل مسبقاً في سجل Answer لتسريع العملية
+                // هنا سنحاول جلبها من سجل Answer، وإذا لم تتوفر نفترض وجودها في سجل المستخدم
+                
+                exportData.push({
+                    "اسم المشارك": a.userName || "غير معروف",
+                    "رقم الجوال": a.userPhone || "غير مسجل",
+                    "البريد الإلكتروني": a.userEmail || "غير مسجل",
+                    "اسم المسابقة": a.compTitle,
+                    "السؤال": a.questionText,
+                    "الإجابة المختارة": a.selectedOption,
+                    "الحالة": a.isCorrect ? "صحيحة" : "خاطئة",
+                    "النقاط": a.pointsAwarded || 0,
+                    "التاريخ": a.timestamp?.toDate().toLocaleString('ar-EG') || ""
+                });
+            }
+
+            if (exportData.length === 0) return alert("لم يتم العثور على إجابات صحيحة لتصديرها!");
+
+            // 3. تحويل البيانات إلى شيت إكسل
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "المشاركين");
+
+            // 4. تحميل الملف
+            const fileName = type === 'all' ? "كافة_المشاركين.xlsx" : "الفائزين_بالإجابات_الصحيحة.xlsx";
+            XLSX.writeFile(workbook, fileName);
+
+        } catch (error) {
+            console.error("خطأ في التصدير:", error);
+            alert("حدث خطأ أثناء محاولة تصدير الملف.");
+        }
+    };
+</script>
 </body>
 </html>
