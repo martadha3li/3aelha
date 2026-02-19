@@ -3,36 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مسابقات العائلة | نقاطي</title>
+    <title>المسابقات | العداد الذكي</title>
     <link rel="stylesheet" href="style.css">
     <style>
         :root { --primary: #5856d6; --bg: #f2f2f7; }
-        body { background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding-bottom: 50px; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; }
         .container { padding: 15px; max-width: 600px; margin: auto; }
-        .user-stats { background: var(--primary); color: white; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; }
         .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
         .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; }
         .correct { background: #34c759 !important; color: white; } .wrong { background: #ff3b30 !important; color: white; }
-        .next-q-timer { background: #eef1ff; color: var(--primary); padding: 10px; border-radius: 10px; font-size: 13px; text-align: center; margin-top: 10px; border: 1px dashed var(--primary); }
+        .next-q-timer { background: #fff9e6; color: #f39c12; padding: 12px; border-radius: 12px; text-align: center; font-weight: bold; border: 1px dashed #f39c12; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
     <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b>منصة المسابقات</b>
+    <b>المسابقات الحالية</b>
     <div style="width:24px;"></div>
 </div>
 
-<div class="container">
-    <div class="user-stats">
-        <h2 id="totalPoints" style="margin:0;">0</h2>
-        <p style="margin:0; opacity:0.8;">إجمالي نقاطك المستحقة ✨</p>
-    </div>
-
-    <div id="compsFeed"></div>
-</div>
+<div class="container" id="compsFeed"></div>
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -44,22 +36,10 @@
     onAuthStateChanged(auth, async user => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
-            if (snap.exists()) { 
-                userData = snap.data(); 
-                loadMyPoints(user.uid);
-                loadComps(); 
-            } else location.href = "profile.html";
+            userData = snap.data();
+            loadComps();
         } else location.href = "login.html";
     });
-
-    // جلب نقاط المستخدم الحالي
-    function loadMyPoints(uid) {
-        onSnapshot(query(collection(db, "Answers"), where("userId", "==", uid)), snap => {
-            let total = 0;
-            snap.forEach(d => { if(d.data().isCorrect) total += 10; });
-            document.getElementById('totalPoints').innerText = total;
-        });
-    }
 
     function loadComps() {
         onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
@@ -80,25 +60,18 @@
         const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
         const cont = document.getElementById(`qs-${cid}`);
         const now = new Date();
+        let upcoming = [];
 
-        qSnap.forEach(async qDoc => {
+        for (const qDoc of qSnap.docs) {
             const q = qDoc.data();
             const showAt = new Date(q.showAt);
 
             if (showAt > now) {
-                const timerDiv = document.createElement('div');
-                timerDiv.className = "next-q-timer";
-                cont.appendChild(timerDiv);
-                const x = setInterval(() => {
-                    const diff = new Date(q.showAt) - new Date();
-                    if (diff <= 0) { clearInterval(x); location.reload(); }
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    timerDiv.innerHTML = `🔒 سؤال جديد سيفتح بعد: ${m}د و ${s}ث`;
-                }, 1000);
-                return;
+                upcoming.push({ time: showAt });
+                continue;
             }
 
+            // فحص الإجابة
             const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
             const isAns = !ansSnap.empty;
 
@@ -112,20 +85,37 @@
                     if(opt === q.correctOption) cls = "correct";
                     else if(opt === myA) cls = "wrong";
                 }
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}',this)">${opt}</button>`;
+                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
             });
-            qBox.innerHTML = `<b>${q.text}</b>${optsHtml}`;
+            qBox.innerHTML = `<div style="display:flex; justify-content:space-between;"><b>${q.text}</b> <span style="color:var(--primary); font-size:12px;">💎 ${q.points} ن</span></div>${optsHtml}`;
             cont.appendChild(qBox);
-        });
+        }
+
+        // عرض عداد واحد فقط لأقرب سؤال
+        if (upcoming.length > 0) {
+            upcoming.sort((a,b) => a.time - b.time);
+            const nextT = upcoming[0].time;
+            const timerDiv = document.createElement('div');
+            timerDiv.className = "next-q-timer";
+            cont.appendChild(timerDiv);
+            const x = setInterval(() => {
+                const diff = nextT - new Date();
+                if(diff <= 0) { clearInterval(x); location.reload(); }
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                timerDiv.innerHTML = `🔒 السؤال القادم سيفتح خلال: ${m}د و ${s}ث`;
+            }, 1000);
+        }
     }
 
-    window.sendAns = async (cid, ct, qid, qt, sel, corr, btn) => {
-        if(!confirm("إرسال الإجابة النهائية؟")) return;
+    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
+        if(!confirm("إرسال الإجابة؟")) return;
         const isC = sel.trim() === corr.trim();
         await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid, userName: userData.fullName, userPhone: userData.phone,
-            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
-            selectedOption: sel, isCorrect: isC, timestamp: serverTimestamp()
+            userId: auth.currentUser.uid, userName: userData.fullName,
+            compTitle: ct, questionId: qid, questionText: qt,
+            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
+            timestamp: serverTimestamp()
         });
         location.reload();
     };
