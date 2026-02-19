@@ -3,38 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المسابقات النشطة</title>
+    <title>المسابقات | المتسابقين</title>
     <link rel="stylesheet" href="style.css">
     <style>
         :root { --primary: #5856d6; --bg: #f2f2f7; }
         body { background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding-bottom: 50px; }
         .container { padding: 15px; max-width: 600px; margin: auto; }
-        
         .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .comp-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .timer { font-size: 12px; color: #ff3b30; font-weight: bold; background: #fff2f2; padding: 5px 10px; border-radius: 10px; border: 1px solid #ffcccc; }
-        
-        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eef0f7; }
-        .q-text { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: #1c1c1e; display: block; }
-        
-        .option-btn { 
-            width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; 
-            background: white; cursor: pointer; text-align: right; font-family: inherit; transition: 0.2s;
-            font-size: 14px; color: #3a3a3c;
-        }
-        .option-btn:active { transform: scale(0.98); }
-        .option-btn:disabled { cursor: not-allowed; opacity: 0.8; color: #8e8e93; }
-        
-        .correct-choice { background: #34c759 !important; color: white !important; border-color: #34c759 !important; }
-        .wrong-choice { background: #ff3b30 !important; color: white !important; border-color: #ff3b30 !important; }
-        .answered-msg { font-size: 11px; color: var(--primary); margin-top: 10px; display: block; text-align: center; font-weight: bold; }
+        .timer-box { font-size: 12px; color: #ff3b30; font-weight: bold; background: #fff2f2; padding: 8px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
+        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; }
+        .correct { background: #34c759 !important; color: white; }
+        .wrong { background: #ff3b30 !important; color: white; }
+        .next-q-timer { background: #eef1ff; color: var(--primary); padding: 10px; border-radius: 10px; font-size: 13px; text-align: center; border: 1px dashed var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px; cursor:pointer;">➡️</button>
-    <b>المسابقات العائلية</b>
+    <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+    <b>المسابقات النشطة</b>
     <div style="width:24px;"></div>
 </div>
 
@@ -49,157 +37,87 @@
 
     let userData = null;
 
-    // 1. التحقق من المستخدم وجلب بياناته
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, async user => {
         if (user) {
-            const userRef = doc(db, "Users", user.uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-                userData = userSnap.data();
-                loadCompetitions();
-            } else {
-                alert("يرجى إكمال بيانات ملفك الشخصي أولاً");
-                location.href = "profile.html";
-            }
-        } else {
-            location.href = "login.html";
-        }
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            if (snap.exists()) { userData = snap.data(); loadComps(); }
+            else location.href = "profile.html";
+        } else location.href = "login.html";
     });
 
-    // 2. دالة العداد التنازلي
-    function startCountdown(endTimeStr, elementId) {
-        const countDownDate = new Date(endTimeStr).getTime();
-        const x = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = countDownDate - now;
-            const element = document.getElementById(elementId);
-            if (!element) { clearInterval(x); return; }
-
-            if (distance < 0) {
-                clearInterval(x);
-                element.innerHTML = "انتهت المسابقة";
-                return;
-            }
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            element.innerHTML = `⏳ متبقي: ${days}ي ${hours}س ${minutes}د`;
-        }, 1000);
-    }
-
-    // 3. جلب المسابقات المفعلة
-    function loadCompetitions() {
+    function loadComps() {
         const q = query(collection(db, "Competitions"), where("visible", "==", true));
-        onSnapshot(q, (snap) => {
+        onSnapshot(q, snap => {
             const feed = document.getElementById('compsFeed');
-            feed.innerHTML = snap.empty ? '<p style="text-align:center; color:gray; margin-top:50px;">لا توجد مسابقات حالياً</p>' : "";
-
-            snap.forEach(async (d) => {
+            feed.innerHTML = "";
+            snap.forEach(d => {
                 const c = d.data();
-                const timerId = `timer-${d.id}`;
                 const card = document.createElement('div');
                 card.className = "comp-card";
-                card.innerHTML = `
-                    <div class="comp-header">
-                        <b style="font-size:18px;">${c.title}</b>
-                        <span id="${timerId}" class="timer">⏳ جاري الحساب...</span>
-                    </div>
-                    <div id="qs-container-${d.id}"></div>
-                `;
+                card.innerHTML = `<h3>${c.title}</h3><div id="qs-${d.id}"></div>`;
                 feed.appendChild(card);
-                startCountdown(c.endDate, timerId);
-                loadQuestionsForUser(d.id, c.title);
+                loadQsForUser(d.id, c.title);
             });
         });
     }
 
-    // 4. جلب الأسئلة وفحص هل تمت الإجابة عليها
-    async function loadQuestionsForUser(compId, compTitle) {
+    async function loadQsForUser(compId, compTitle) {
         const qSnap = await getDocs(query(collection(db, `Competitions/${compId}/Questions`), where("active", "==", true)));
-        const container = document.getElementById(`qs-container-${compId}`);
+        const cont = document.getElementById(`qs-${compId}`);
+        const now = new Date();
 
-        qSnap.forEach(async (qDoc) => {
+        qSnap.forEach(async qDoc => {
             const q = qDoc.data();
-            const qId = qDoc.id;
+            const showAt = new Date(q.showAt);
 
-            // فحص الإجابة السابقة من مجموعة Answers
-            const ansQuery = query(collection(db, "Answers"), 
-                where("userId", "==", auth.currentUser.uid), 
-                where("questionId", "==", qId));
-            const ansSnap = await getDocs(ansQuery);
-            const isAnswered = !ansSnap.empty;
+            // إذا لم يحن وقت السؤال بعد
+            if (showAt > now) {
+                const timerDiv = document.createElement('div');
+                timerDiv.className = "next-q-timer";
+                cont.appendChild(timerDiv);
+                
+                const interval = setInterval(() => {
+                    const diff = new Date(q.showAt) - new Date();
+                    if (diff <= 0) { clearInterval(interval); location.reload(); }
+                    const mins = Math.floor((diff % 3600000) / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    timerDiv.innerHTML = `🔒 سؤال قادم خلال: ${mins}د و ${secs}ث`;
+                }, 1000);
+                return;
+            }
+
+            // عرض السؤال إذا حان وقته
+            const ansQ = query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id));
+            const ansSnap = await getDocs(ansQ);
+            const isAns = !ansSnap.empty;
 
             const qBox = document.createElement('div');
             qBox.className = "q-box";
-            let optionsHtml = "";
-
+            let optsHtml = "";
             q.options.forEach(opt => {
-                let extraClass = "";
-                if (isAnswered) {
+                let cls = "";
+                if(isAns) {
                     const myAns = ansSnap.docs[0].data().selectedOption;
-                    if (opt === q.correctOption) extraClass = "correct-choice";
-                    else if (opt === myAns) extraClass = "wrong-choice";
+                    if(opt === q.correctOption) cls = "correct";
+                    else if(opt === myAns) cls = "wrong";
                 }
-
-                optionsHtml += `
-                    <button class="option-btn ${extraClass}" 
-                        ${isAnswered ? 'disabled' : ''} 
-                        onclick="submitAnswer('${compId}', '${compTitle}', '${qId}', '${q.text.replace(/'/g, "\\'")}', '${opt.replace(/'/g, "\\'")}', '${q.correctOption.replace(/'/g, "\\'")}', this)">
-                        ${opt}
-                    </button>`;
+                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${compId}','${compTitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}',this)">${opt}</button>`;
             });
 
-            qBox.innerHTML = `
-                <span class="q-text">${q.text}</span>
-                ${optionsHtml}
-                ${isAnswered ? '<span class="answered-msg">تم إرسال إجابتك مسبقاً ✨</span>' : ''}
-            `;
-            container.appendChild(qBox);
+            qBox.innerHTML = `<b>${q.text}</b>${optsHtml}`;
+            cont.appendChild(qBox);
         });
     }
 
-    // 5. دالة إرسال الإجابة (المحدثة والمصححة)
-    window.submitAnswer = async (compId, compTitle, qId, qText, selected, correct, btn) => {
-        if (!userData) return alert("خطأ في جلب بيانات العضو");
-        
-        if (!confirm("هل أنت متأكد؟ لا يمكنك تغيير الإجابة لاحقاً.")) return;
-
-        const isCorrect = (selected.trim() === correct.trim());
-        const parent = btn.parentElement;
-        const allBtns = parent.querySelectorAll('button');
-        
-        // تعطيل الأزرار فوراً
-        allBtns.forEach(b => b.disabled = true);
-
-        try {
-            await addDoc(collection(db, "Answers"), {
-                userId: auth.currentUser.uid,
-                userName: userData.fullName || "مشارك",
-                userPhone: userData.phone || "--",
-                userEmail: auth.currentUser.email || "--",
-                compId: compId,
-                compTitle: compTitle,
-                questionId: qId,
-                questionText: qText,
-                selectedOption: selected,
-                isCorrect: isCorrect,
-                timestamp: serverTimestamp()
-            });
-
-            btn.classList.add(isCorrect ? 'correct-choice' : 'wrong-choice');
-            alert(isCorrect ? "إجابة صحيحة! بطل ✅" : "إجابة خاطئة، حظاً أوفر ❌");
-            
-            // إضافة رسالة "تمت الإجابة"
-            const msg = document.createElement('span');
-            msg.className = "answered-msg";
-            msg.innerText = "تم إرسال إجابتك مسبقاً ✨";
-            parent.appendChild(msg);
-
-        } catch (e) {
-            console.error("Error saving answer: ", e);
-            alert("فشل الإرسال، حاول مرة أخرى");
-            allBtns.forEach(b => b.disabled = false);
-        }
+    window.sendAns = async (cid, ctitle, qid, qtxt, sel, corr, btn) => {
+        if(!confirm("تأكيد الإجابة؟")) return;
+        const isCorr = sel.trim() === corr.trim();
+        await addDoc(collection(db, "Answers"), {
+            userId: auth.currentUser.uid, userName: userData.fullName, userPhone: userData.phone,
+            compId: cid, compTitle: ctitle, questionId: qid, questionText: qtxt,
+            selectedOption: sel, isCorrect: isCorr, timestamp: serverTimestamp()
+        });
+        location.reload();
     };
 </script>
 </body>
