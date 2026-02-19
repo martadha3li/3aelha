@@ -70,7 +70,24 @@
             userUID = user.uid;
             const s = await getDoc(doc(db, "Users", user.uid));
             userData = s.data();
-            
+            // يوضع داخل auth.onAuthStateChanged بعد جلب بيانات userData
+const settingsSnap = await getDoc(doc(db, "Settings", "GlobalSettings"));
+const settings = settingsSnap.data();
+
+// 1. فحص طلب تحديث بيانات الإناث
+if(userData.gender === 'female' && settings.requireFemaleUpdate > (userData.lastUpdate || 0)) {
+    showUpdateModal('femaleUpdate');
+}
+
+// 2. فحص طلب تاريخ الميلاد
+if(settings.requireDOBUpdate > (userData.lastDOBUpdate || 0)) {
+    showUpdateModal('dobUpdate');
+}
+
+// 3. فحص إعدادات الدردشة (للإخفاء والظهور)
+if(!settings.publicChatEnabled) {
+    document.querySelector('a[href="chat.html"]').style.display = 'none';
+}
             if (userData.role === 'admin' || userData.role === 'editor') document.getElementById('addNewsBtn').style.display = 'block';
             if (userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
             
@@ -197,3 +214,4 @@
 </script>
 </body>
 </html>
+
