@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الأعضاء | لوحة التحكم</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .users-wrapper { padding: 15px; overflow-x: auto; }
+        .search-box { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; font-family: inherit; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; font-size: 13px; box-shadow: var(--shadow); }
+        th { background: var(--primary); color: white; padding: 12px; text-align: center; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; white-space: nowrap; }
+        tr:last-child td { border: none; }
+
+        .btn-action { padding: 5px 8px; border: none; border-radius: 6px; cursor: pointer; margin: 2px; font-size: 12px; color: white; }
+        .btn-edit { background: #34c759; }
+        .btn-ban { background: #ff3b30; }
+        .btn-delete { background: #1c1c1e; }
+        
+        .role-badge { padding: 2px 6px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+        .admin-role { background: #ffcc00; color: #000; }
+        .user-role { background: #eef6ff; color: var(--primary); }
+    </style>
+</head>
+<body style="background: #f8f9fa;">
+
+    <div class="top-bar">
+        <button onclick="location.href='admin_requests.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+        <b>جدول إدارة الأعضاء</b>
+        <div style="width:20px;"></div>
+    </div>
+
+    <div class="users-wrapper">
+        <input type="text" id="userSearch" class="search-box" placeholder="ابحث عن عضو بالاسم أو رقم الجوال..." oninput="searchTable()">
+        
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>الجنس</th>
+                    <th>الجوال</th>
+                    <th>الصلاحية</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="usersBody">
+                </tbody>
+        </table>
+    </div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const usersBody = document.getElementById('usersBody');
+
+    // تحميل الأعضاء بشكل حي
+    onSnapshot(collection(db, "Users"), (snap) => {
+        usersBody.innerHTML = "";
+        snap.forEach(d => {
+            const u = d.data();
+            const id = d.id;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold;">${u.fullName}</td>
+                <td>${u.gender === 'male' ? 'ذكر' : 'أنثى'}</td>
+                <td>${u.phone || '--'}</td>
+                <td><span class="role-badge ${u.role === 'admin' ? 'admin-role' : 'user-role'}">${u.role || 'عضو'}</span></td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="editUser('${id}', '${u.fullName}')">✏️</button>
+                    <button class="btn-action btn-ban" onclick="toggleBan('${id}', ${u.isBanned})">${u.isBanned ? '✅ فك' : '🚫 منع'}</button>
+                    <button class="btn-action btn-delete" onclick="deleteUser('${id}')">🗑️</button>
+                </td>
+            `;
+            usersBody.appendChild(tr);
+        });
+    });
+
+    // 1. وظيفة البحث
+    window.searchTable = () => {
+        const input = document.getElementById('userSearch').value.toLowerCase();
+        const rows = usersBody.getElementsByTagName('tr');
+        for (let row of rows) {
+            row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+        }
+    };
+
+    // 2. وظيفة تعديل الصلاحية أو الاسم (بشكل مبسط)
+    window.editUser = async (id, oldName) => {
+        const newName = prompt("تعديل اسم العضو:", oldName);
+        const newRole = prompt("تعديل الصلاحية (admin / editor / member):");
+        if (newName || newRole) {
+            await updateDoc(doc(db, "Users", id), { 
+                fullName: newName || oldName,
+                role: newRole || "member"
+            });
+            alert("تم التحديث");
+        }
+    };
+
+    // 3. وظيفة منع العضو من الدخول
+    window.toggleBan = async (id, currentStatus) => {
+        const nextStatus = !currentStatus;
+        if(confirm(nextStatus ? "هل تريد منع هذا العضو من دخول المنصة؟" : "هل تريد فك الحظر عن العضو؟")) {
+            await updateDoc(doc(db, "Users", id), { isBanned: nextStatus });
+        }
+    };
+
+    // 4. وظيفة حذف العضو نهائياً
+    window.deleteUser = async (id) => {
+        if(confirm("تحذير! سيتم حذف العضو نهائياً من قاعدة البيانات. استمرار؟")) {
+            await deleteDoc(doc(db, "Users", id));
+        }
+    };
+
+</script>
+</body>
+</html>
