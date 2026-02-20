@@ -7,20 +7,32 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
+        /* تحسينات لضمان ظهور الأدوات */
+        .admin-tools { 
+            display: flex !important; /* التأكد من عدم الاختفاء */
+            gap: 15px; 
+            padding: 12px; 
+            background: #fdfdfd; 
+            border-top: 1px dashed #eee; 
+            justify-content: center;
+        }
+        .adm-btn { 
+            border: 1px solid #ddd; 
+            padding: 6px 12px; 
+            border-radius: 10px; 
+            font-size: 13px; 
+            cursor: pointer; 
+            background: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
         .sidebar { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); z-index: 3000; transition: 0.3s; padding: 20px; }
         .sidebar.active { right: 0; }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 2500; }
-        .sidebar-overlay.active { display: block; }
-        .cat-link { display: block; padding: 12px; margin-bottom: 8px; background: #f8f9fa; border-radius: 12px; text-decoration: none; color: #333; font-weight: 600; }
-        .active-cat { background: var(--primary) !important; color: white !important; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 2000; }
-        .nav-item { text-decoration: none; display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 11px; }
-        .nav-item.active { color: var(--primary); }
-        .news-card { background: white; margin: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
-        .admin-tools { display: flex; gap: 10px; padding: 10px; background: #f9f9f9; border-top: 1px solid #eee; justify-content: center; }
-        .adm-btn { border: 1px solid #ddd; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; background: white; }
-        .news-disabled { opacity: 0.5; filter: grayscale(1); }
-        .interaction-row { display: flex; gap: 20px; padding: 10px 15px; border-top: 1px solid #f5f5f5; }
+        .news-card { background: white; margin: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .news-disabled { border: 2px solid #ff3b30; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -28,149 +40,117 @@
     <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <h2 style="color:var(--primary);">📁 التصنيفات</h2>
-        <a href="#" class="cat-link active-cat" id="cat-all" onclick="filterByCategory('الكل', this)">✨ الكل</a>
         <div id="sideCats"></div>
     </div>
 
     <div class="top-bar">
-        <span style="font-size:24px; cursor:pointer;" onclick="toggleSidebar()">☰</span>
-        <b style="color:var(--primary);">منصة العائلة</b>
-        <div style="display:flex; gap:10px;">
-            <span id="adminBtn" style="display:none; cursor:pointer;" onclick="location.href='admin.html'">⚙️</span>
-            <span onclick="handleLogout()" style="cursor:pointer;">🚪</span>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:24px; cursor:pointer;" onclick="toggleSidebar()">☰</span>
+            <b style="color:var(--primary); font-size:18px;">منصة العائلة</b>
+        </div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="adminBtn" style="display:none; cursor:pointer; font-size:22px;" onclick="location.href='admin.html'">⚙️</span>
+            <span onclick="handleLogout()" style="cursor:pointer; font-size:22px;">🚪</span>
         </div>
     </div>
 
     <div id="newsFeed">
-        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل الأخبار...</p>
+        <p style="text-align:center; margin-top:50px; color:gray;">جاري تحميل الأخبار والمستجدات...</p>
     </div>
 
     <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none;">+</button>
 
-    <nav class="bottom-nav">
-        <a href="news.html" class="nav-item active">🏠<span>الرئيسية</span></a>
-        <a href="chat.html" class="nav-item">💬<span>الدردشة</span></a>
-        <a href="competitions.html" class="nav-item">🏆<span>المسابقات</span></a>
-        <a href="profile.html" class="nav-item">👤<span>حسابي</span></a>
-    </nav>
-
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, query, onSnapshot, doc, getDoc, where, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, onSnapshot, doc, getDoc, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData, currentCat = "الكل";
+    let userUID, userData;
 
-    // OneSignal - تهيئة بسيطة ومنفصلة
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15" });
-    });
-
-    // جلب البيانات الأساسية
+    // 1. مراقبة حالة تسجيل الدخول
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
-            try {
-                const s = await getDoc(doc(db, "Users", user.uid));
-                if (s.exists()) {
-                    userData = s.data();
-                    if (userData.role === 'admin' || userData.role === 'editor') document.getElementById('addNewsBtn').style.display = 'block';
-                    if (userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
+            // جلب بيانات المستخدم فوراً لتحديد الصلاحيات
+            const userSnap = await getDoc(doc(db, "Users", user.uid));
+            userData = userSnap.data();
+
+            if (userData) {
+                // إظهار الترس وزر الإضافة بناءً على الرتبة
+                if (userData.role === 'admin') {
+                    document.getElementById('adminBtn').style.display = 'block';
+                    document.getElementById('addNewsBtn').style.display = 'block';
+                } else if (userData.role === 'editor') {
+                    document.getElementById('addNewsBtn').style.display = 'block';
                 }
-                loadSidebar();
-                loadFeed();
-            } catch (err) {
-                console.error(err);
-                // حتى لو فشل جلب بيانات المستخدم (مثل الـ role)، نحاول تحميل الأخبار كعضو عادي
-                loadFeed();
             }
-        } else { window.location.replace("login.html"); }
+            
+            loadFeed(); // تحميل الأخبار بعد التأكد من الصلاحيات
+        } else {
+            window.location.replace("login.html");
+        }
     });
 
+    // 2. دالة تحميل الأخبار
     function loadFeed() {
         const feed = document.getElementById('newsFeed');
-        let qry = collection(db, "News");
-        if (currentCat !== "الكل") {
-            qry = query(collection(db, "News"), where("category", "==", currentCat));
-        }
+        const q = query(collection(db, "News"));
 
-        onSnapshot(qry, snap => {
+        onSnapshot(q, (snap) => {
             feed.innerHTML = "";
-            if (snap.empty) {
-                feed.innerHTML = "<p style='text-align:center; padding:20px;'>لا توجد أخبار حالياً.</p>";
-                return;
-            }
-
             let docs = [];
-            snap.forEach(d => docs.push({id: d.id, ...d.data()}));
+            snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+            
+            // ترتيب حسب التاريخ
             docs.sort((a, b) => (b.publishDate || 0) - (a.publishDate || 0));
 
             docs.forEach(n => {
-                const isManager = userData && (userData.role === 'admin' || userData.role === 'editor' || userUID === n.authorId);
-                if (!n.visible && !isManager) return;
+                // هل المستخدم مدير أو محرر أو صاحب الخبر؟
+                const canManage = userData && (userData.role === 'admin' || userData.role === 'editor' || userUID === n.authorId);
+                
+                // إذا كان الخبر مخفياً والمستخدم ليس مديراً، لا نعرضه
+                if (!n.visible && !canManage) return;
 
-                const hasLiked = n.likedBy?.includes(userUID);
                 const card = document.createElement('div');
                 card.className = `news-card ${!n.visible ? 'news-disabled' : ''}`;
                 card.innerHTML = `
                     <div style="padding:15px;">
-                        <h3 style="margin:0;">${n.title}</h3>
-                        <p style="color:#444; font-size:14px;">${n.body || n.content || ""}</p>
+                        <h3 style="margin:0 0 10px 0;">${n.title}</h3>
+                        <div style="font-size:14px; color:#444;">${n.body || n.content || ""}</div>
                     </div>
                     ${n.img ? `<img src="${n.img}" style="width:100%; display:block;">` : ''}
-                    <div class="interaction-row">
-                        <span onclick="toggleLike('${n.id}', ${hasLiked})">${hasLiked ? '❤️' : '🤍'} ${n.likedBy?.length || 0}</span>
-                        <span onclick="toggleComments('${n.id}')">💬 تعليقات</span>
-                    </div>
-                    ${isManager ? `
+                    
+                    ${canManage ? `
                     <div class="admin-tools">
-                        <button class="adm-btn" onclick="toggleVisibility('${n.id}', ${n.visible})">${n.visible ? '🔒 تعطيل' : '🔓 تفعيل'}</button>
-                        <button class="adm-btn" onclick="location.href='add_news.html?edit=${n.id}'">✏️ تعديل</button>
-                        <button class="adm-btn" style="color:red;" onclick="deleteNews('${n.id}')">🗑️ حذف</button>
+                        <button class="adm-btn" onclick="window.toggleVisibility('${n.id}', ${n.visible})">
+                            ${n.visible ? '🔒 تعطيل' : '🔓 تفعيل'}
+                        </button>
+                        <button class="adm-btn" style="color:blue;" onclick="location.href='add_news.html?edit=${n.id}'">
+                            ✏️ تعديل
+                        </button>
+                        <button class="adm-btn" style="color:red;" onclick="window.deleteNews('${n.id}')">
+                            🗑️ حذف
+                        </button>
                     </div>` : ''}
-                    <div id="tray-${n.id}" style="display:none; padding:10px; background:#fefefe; border-top:1px solid #eee;">
-                        <div id="list-${n.id}"></div>
-                        <input type="text" id="inp-${n.id}" placeholder="اكتب تعليق..." style="width:70%; padding:5px; border-radius:5px; border:1px solid #ddd;">
-                        <button onclick="sendComment('${n.id}')" style="padding:5px 10px;">نشر</button>
-                    </div>
                 `;
                 feed.appendChild(card);
             });
         });
     }
 
-    // الدوال المساعدة
-    window.toggleVisibility = async (id, status) => { await updateDoc(doc(db, "News", id), { visible: !status }); };
-    window.deleteNews = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
-    window.toggleLike = async (id, liked) => { await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) }); };
-    window.toggleComments = (id) => { 
-        const t = document.getElementById(`tray-${id}`);
-        t.style.display = t.style.display === 'none' ? 'block' : 'none';
+    // 3. جعل الدوال متاحة عالمياً للأزرار
+    window.toggleVisibility = async (id, currentStatus) => {
+        try {
+            await updateDoc(doc(db, "News", id), { visible: !currentStatus });
+        } catch (e) { alert("خطأ في الصلاحيات!"); }
     };
-    window.sendComment = async (id) => {
-        const inp = document.getElementById(`inp-${id}`);
-        if(!inp.value.trim()) return;
-        await addDoc(collection(db, `News/${id}/Comments`), { text: inp.value, userName: userData.fullName || "عضو", userId: userUID, timestamp: serverTimestamp() });
-        inp.value = "";
+
+    window.deleteNews = async (id) => {
+        if (confirm("هل أنت متأكد من الحذف النهائي؟")) {
+            await deleteDoc(doc(db, "News", id));
+        }
     };
-    function loadSidebar() {
-        onSnapshot(collection(db, "Categories"), snap => {
-            const cont = document.getElementById('sideCats');
-            cont.innerHTML = "";
-            snap.forEach(c => {
-                const n = c.data().name;
-                const a = document.createElement('a');
-                a.className="cat-link"; a.innerText = n;
-                a.onclick = () => filterByCategory(n, a);
-                cont.appendChild(a);
-            });
-        });
-    }
-    window.toggleSidebar = () => {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    };
-    window.handleLogout = () => { auth.signOut().then(()=>location.reload()); };
+
+    window.handleLogout = () => { auth.signOut().then(() => location.reload()); };
 </script>
 </body>
 </html>
