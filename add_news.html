@@ -208,5 +208,38 @@
         }
     };
 </script>
+    async function sendFamilyPush(title, message, targetUserId = null) {
+    const APP_ID = "a96c2d21-5d88-40fb-8c60-4c0911e9be15";
+    const API_KEY = "os_v2_app_vfwc2ik5rbapxddajqerd2n6cvtafaovwwiuf2nkps4g2bz22qnrja5xrna73qgctjxpea6lenhvmrk3hlrsepe7zarj7anqawvd7wy";
+
+    let body = {
+        app_id: APP_ID,
+        headings: { "ar": title },
+        contents: { "ar": message },
+        url: "https://your-site-url.com/news.html" // غير الرابط لرابط موقعك
+    };
+
+    if (targetUserId) {
+        // إرسال لشخص محدد (للدردشة)
+        body.include_subscription_ids = [targetUserId];
+    } else {
+        // إرسال للكل (للأخبار والمسابقات)
+        body.included_segments = ["All"];
+    }
+
+    try {
+        await fetch("https://onesignal.com/api/v1/notifications", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": `Basic ${API_KEY}`
+            },
+            body: JSON.stringify(body)
+        });
+        console.log("تم إرسال الإشعار بنجاح");
+    } catch (error) {
+        console.error("خطأ في إرسال الإشعار:", error);
+    }
+}
 </body>
 </html>
