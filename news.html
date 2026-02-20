@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
+    });
+
+    // حفظ معرف المستخدم في Firestore لربطه بالدردشة
+    OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
+        const subscriptionId = event.current.id;
+        if (subscriptionId && auth.currentUser) {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const { db } = await import("./config.js");
+            await updateDoc(doc(db, "Users", auth.currentUser.uid), {
+                onesignalId: subscriptionId
+            });
+        }
+    });
+  });
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة العائلة | التايم لاين</title>
@@ -228,3 +249,4 @@
 </script>
 </body>
 </html>
+
