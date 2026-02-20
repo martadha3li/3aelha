@@ -1,271 +1,272 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة العائلة | التايم لاين</title>
-    <style>
-        :root {
-            --ios-blue: #007AFF;
-            --ios-red: #FF3B30;
-            --ios-bg: #F2F2F7;
-            --card-bg: #FFFFFF;
-            --text-main: #1c1c1e;
-            --text-sec: #8E8E93;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>منصة العائلة | التايم لاين</title>
 
-        body {
-            background-color: var(--ios-bg);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding-top: 70px;
-            padding-bottom: 90px;
-            -webkit-tap-highlight-color: transparent;
-        }
+<style>
+:root {
+    --ios-blue:#007AFF;
+    --ios-red:#FF3B30;
+    --ios-bg:#F2F2F7;
+    --card-bg:#FFFFFF;
+    --text-main:#1c1c1e;
+    --text-sec:#8E8E93;
+}
 
-        /* الهيدر العلوي بنمط زجاجي */
-        .header {
-            position: fixed; top: 0; width: 100%; height: 65px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box;
-            border-bottom: 0.5px solid #C6C6C8; z-index: 5000;
-        }
+body{
+    background-color:var(--ios-bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    margin:0;
+    padding-top:70px;
+    padding-bottom:90px;
+}
 
-        .header h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
-        .header-btns { display: flex; gap: 18px; align-items: center; }
+.header{
+    position:fixed;top:0;width:100%;height:65px;
+    background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(20px);
+    display:flex;justify-content:space-between;align-items:center;
+    padding:0 20px;
+    border-bottom:.5px solid #C6C6C8;
+    z-index:5000;
+}
 
-        /* أدوات الإدارة - مخفية برمجياً */
-        #adminTools { display: none; align-items: center; gap: 18px; }
-        .icon-btn { font-size: 26px; cursor: pointer; color: var(--ios-blue); display: flex; align-items: center; }
-        .logout-btn { color: var(--ios-red); font-size: 24px; cursor: pointer; }
+.header h1{font-size:22px;font-weight:800;margin:0;}
+.header-btns{display:flex;gap:18px;align-items:center;}
 
-        /* كرت الخبر المطور */
-        .post-card {
-            background: var(--card-bg);
-            margin: 15px; border-radius: 18px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow: hidden; position: relative;
-            border: 0.5px solid #E5E5EA;
-        }
+#adminTools{display:none;align-items:center;gap:18px;}
+.icon-btn{font-size:26px;cursor:pointer;color:var(--ios-blue);}
+.logout-btn{color:var(--ios-red);font-size:24px;cursor:pointer;}
 
-        /* حالة الخبر المعطل */
-        .post-card.disabled { opacity: 0.55; filter: grayscale(0.8); }
-        .post-card.disabled::after { 
-            content: "مخفي عن الأعضاء"; position: absolute; top: 10px; right: 10px; 
-            background: rgba(255,59,48,0.9); color: white; padding: 4px 10px; 
-            border-radius: 8px; font-size: 10px; font-weight: bold;
-        }
+.post-card{
+    background:var(--card-bg);
+    margin:15px;
+    border-radius:18px;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+    overflow:hidden;
+    position:relative;
+    border:.5px solid #E5E5EA;
+}
 
-        .post-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-        .author-info { display: flex; align-items: center; gap: 12px; }
-        .author-info .avatar { width: 38px; height: 38px; background: #E5E5EA; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--ios-blue); }
-        .author-info b { font-size: 15px; display: block; }
-        .author-info span { font-size: 11px; color: var(--text-sec); }
+.post-card.disabled{opacity:.55;filter:grayscale(.8);}
+.post-header{padding:12px 15px;display:flex;justify-content:space-between;align-items:center;}
 
-        .post-image { width: 100%; height: auto; max-height: 350px; object-fit: cover; display: block; }
+.author-info{display:flex;align-items:center;gap:12px;}
+.avatar{
+    width:38px;height:38px;background:#E5E5EA;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:bold;color:var(--ios-blue);
+}
 
-        .post-content { padding: 15px; }
-        .post-content h2 { margin: 0 0 6px 0; font-size: 19px; font-weight: 700; line-height: 1.3; }
-        .post-content p { margin: 0; font-size: 15px; color: #3a3a3c; line-height: 1.5; display: none; margin-top: 10px; }
+.post-image{width:100%;max-height:350px;object-fit:cover;}
 
-        /* شريط التفاعل السفلي */
-        .post-actions {
-            display: flex; justify-content: space-around;
-            padding: 12px 0; border-top: 0.5px solid #E5E5EA;
-            background: #FAFAFA;
-        }
-        .action-item {
-            display: flex; align-items: center; gap: 6px;
-            color: var(--text-sec); font-size: 14px; font-weight: 600; cursor: pointer;
-        }
-        .action-item.active { color: var(--ios-red); }
+.post-content{padding:15px;}
+.post-content h2{margin:0 0 6px 0;font-size:19px;font-weight:700;}
+.post-content p{margin:0;font-size:15px;color:#3a3a3c;display:none;margin-top:10px;}
 
-        /* قائمة التحرير المنسدلة */
-        .edit-dots { font-size: 24px; color: var(--text-sec); cursor: pointer; padding: 0 5px; }
-        .dropdown {
-            position: absolute; left: 15px; top: 50px;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            border-radius: 14px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            display: none; flex-direction: column; z-index: 1000;
-            border: 0.5px solid #ddd; min-width: 160px; overflow: hidden;
-        }
-        .dropdown button {
-            padding: 14px; border: none; background: none;
-            text-align: right; font-size: 14px; font-weight: 500;
-            border-bottom: 0.5px solid #eee; cursor: pointer; width: 100%;
-        }
-        .dropdown button:last-child { border-bottom: none; color: var(--ios-red); }
+.post-actions{
+    display:flex;justify-content:space-around;
+    padding:12px 0;border-top:.5px solid #E5E5EA;
+    background:#FAFAFA;
+}
 
-        /* شريط التنقل السفلي الثابت */
-        .bottom-bar {
-            position: fixed; bottom: 0; width: 100%; height: 75px;
-            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 0.5px solid #C6C6C8; z-index: 5000;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-item { font-size: 26px; color: #8E8E93; text-decoration: none; transition: 0.2s; }
-        .nav-item.active { color: var(--ios-blue); }
+.action-item{display:flex;align-items:center;gap:6px;color:var(--text-sec);font-size:14px;cursor:pointer;}
+.action-item.active{color:var(--ios-red);}
 
-    </style>
+.dropdown{
+    position:absolute;left:15px;top:50px;
+    background:#fff;border-radius:14px;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+    display:none;flex-direction:column;z-index:1000;
+    min-width:160px;
+}
+.dropdown button{
+    padding:14px;border:none;background:none;text-align:right;cursor:pointer;
+}
+.dropdown button:last-child{color:var(--ios-red);}
+</style>
 </head>
+
 <body>
 
-    <header class="header">
-        <h1>منصة العائلة</h1>
-        <div class="header-btns">
-            <div id="adminTools">
-                <div class="icon-btn" onclick="location.href='add_news.html'" title="إضافة خبر">⊕</div>
-                <div class="icon-btn" onclick="location.href='admin.html'" title="لوحة التحكم">⚙️</div>
-            </div>
-            <div class="logout-btn" onclick="handleLogout()">🚪</div>
-        </div>
-    </header>
+<header class="header">
+<h1>منصة العائلة</h1>
+<div class="header-btns">
+<div id="adminTools">
+<div class="icon-btn" onclick="location.href='add_news.html'">⊕</div>
+<div class="icon-btn" onclick="location.href='admin.html'">⚙️</div>
+</div>
+<div class="logout-btn" onclick="handleLogout()">🚪</div>
+</div>
+</header>
 
-    <div id="newsFeed"></div>
+<div id="newsFeed"></div>
 
-    <nav class="bottom-bar">
-        <a href="news.html" class="nav-item active">🏠</a>
-        <a href="chat.html" class="nav-item">💬</a>
-        <a href="competitions.html" class="nav-item">🏆</a>
-        <a href="profile.html" class="nav-item">👤</a>
-    </nav>
+<nav class="bottom-bar">
+<a href="news.html" class="nav-item active">🏠</a>
+<a href="chat.html" class="nav-item">💬</a>
+<a href="competitions.html" class="nav-item">🏆</a>
+<a href="profile.html" class="nav-item">👤</a>
+</nav>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData;
+import { auth, db } from './config.js';
+import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // دالة إظهار أدوات المدير (Force Show)
-    function enableAdminUI() {
-        const tools = document.getElementById('adminTools');
-        if (tools) {
-            tools.style.display = 'flex';
-            console.log("Admin UI Enabled ✅");
-        }
-    }
+let userUID, userData;
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            userUID = user.uid;
-            try {
-                const userSnap = await getDoc(doc(db, "Users", userUID));
-                if (userSnap.exists()) {
-                    userData = userSnap.data();
-                    const role = String(userData.role || '').toLowerCase().trim();
-                    
-                    // التحقق من الرتبة (تأكد أن في قاعدة بياناتك الحقل اسمه role)
-                    if (role === 'admin' || role === 'editor' || role === 'مدير' || role === 'محرر') {
-                        enableAdminUI();
-                    }
-                }
-            } catch (e) { console.error("Error fetching role:", e); }
-            loadPosts();
-        } else { window.location.href = "login.html"; }
-    });
+function enableAdminUI(){
+    document.getElementById('adminTools').style.display='flex';
+}
 
-    function loadPosts() {
-        const feed = document.getElementById('newsFeed');
-        onSnapshot(collection(db, "News"), (snap) => {
-            feed.innerHTML = "";
-            let posts = [];
-            snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
-            posts.sort((a,b) => (b.publishDate || 0) - (a.publishDate || 0));
+auth.onAuthStateChanged(async(user)=>{
+if(user){
+userUID=user.uid;
 
-            posts.forEach(post => {
-                const role = (userData?.role || '').toLowerCase();
-                const isManager = (role === 'admin' || role === 'editor' || role === 'مدير' || userUID === post.authorId);
-                
-                if (!post.visible && !isManager) return;
+const userSnap=await getDoc(doc(db,"Users",userUID));
+if(userSnap.exists()){
+userData=userSnap.data();
 
-                const hasLiked = post.likedBy?.includes(userUID);
-                const card = document.createElement('div');
-                card.className = `post-card ${!post.visible ? 'disabled' : ''}`;
-                card.innerHTML = `
-                    <div class="post-header">
-                        <div class="author-info">
-                            <div class="avatar">${post.authorName?.charAt(0) || 'U'}</div>
-                            <div>
-                                <b>${post.authorName || 'عضو العائلة'}</b>
-                                <span>${post.publishDate ? new Date(post.publishDate).toLocaleDateString('ar-EG') : ''}</span>
-                            </div>
-                        </div>
-                        ${isManager ? `<div class="edit-dots" onclick="event.stopPropagation(); toggleMenu('${post.id}')">⋮</div>` : ''}
-                        <div id="menu-${post.id}" class="dropdown">
-                            <button onclick="doAction('${post.id}', 'toggleVis', ${post.visible})">${post.visible ? '🔒 إخفاء الخبر' : '🔓 تفعيل الخبر'}</button>
-                            <button onclick="location.href='add_news.html?edit=${post.id}'">✏️ تعديل البيانات</button>
-                            <button onclick="doAction('${post.id}', 'delete')">🗑️ حذف الخبر</button>
-                        </div>
-                    </div>
+const role=(userData.role||userData.Role||userData.userRole||'')
+.toString().toLowerCase().trim();
 
-                    <img class="post-image" src="${post.img || 'https://via.placeholder.com/500x300'}" onerror="this.src='https://via.placeholder.com/500x300'" onclick="zoomImg(this.src)">
+if(
+role.includes('admin')||
+role.includes('editor')||
+role.includes('مدير')||
+role.includes('محرر')
+){
+enableAdminUI();
+}
+}
 
-                    <div class="post-content" onclick="toggleText('${post.id}')">
-                        <h2>${post.title}</h2>
-                        <p id="text-${post.id}">${post.body || post.content || 'لا يوجد تفاصيل إضافية.'}</p>
-                    </div>
+loadPosts();
+}else{
+window.location.href="login.html";
+}
+});
 
-                    <div class="post-actions">
-                        <div class="action-item ${hasLiked ? 'active' : ''}" onclick="doLike('${post.id}', ${hasLiked})">
-                            ${hasLiked ? '❤️' : '🤍'} <span>${post.likedBy?.length || 0}</span>
-                        </div>
-                        <div class="action-item" onclick="toggleText('${post.id}')">
-                            💬 <span>تعليق</span>
-                        </div>
-                        <div class="action-item">
-                            👁️ <span>${post.viewedBy?.length || 0}</span>
-                        </div>
-                    </div>
-                `;
-                feed.appendChild(card);
-            });
-        });
-    }
+function loadPosts(){
+const feed=document.getElementById('newsFeed');
 
-    // --- الوظائف التفاعلية ---
-    window.toggleText = (id) => {
-        const p = document.getElementById(`text-${id}`);
-        const isOpening = p.style.display !== 'block';
-        p.style.display = isOpening ? 'block' : 'none';
-        if (isOpening) updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
-    };
+onSnapshot(collection(db,"News"),(snap)=>{
+feed.innerHTML="";
+let posts=[];
+snap.forEach(d=>posts.push({id:d.id,...d.data()}));
 
-    window.toggleMenu = (id) => {
-        const m = document.getElementById(`menu-${id}`);
-        const isOpen = m.style.display === 'flex';
-        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-        m.style.display = isOpen ? 'none' : 'flex';
-        
-        if (!isOpen) {
-            setTimeout(() => {
-                window.onclick = () => { m.style.display = 'none'; window.onclick = null; };
-            }, 100);
-        }
-    };
+posts.sort((a,b)=>(b.publishDate||0)-(a.publishDate||0));
 
-    window.doLike = async (id, liked) => {
-        await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
-    };
+posts.forEach(post=>{
 
-    window.doAction = async (id, type, current) => {
-        if (type === 'delete' && confirm('سيتم حذف الخبر نهائياً، هل أنت متأكد؟')) await deleteDoc(doc(db, "News", id));
-        if (type === 'toggleVis') await updateDoc(doc(db, "News", id), { visible: !current });
-    };
+const hasLiked=post.likedBy?.includes(userUID);
 
-    window.handleLogout = () => { if(confirm("هل تريد تسجيل الخروج؟")) auth.signOut().then(()=>location.reload()); };
+const card=document.createElement('div');
+card.className='post-card';
 
-    window.zoomImg = (src) => {
-        const v = document.createElement('div');
-        v.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:10px;";
-        v.innerHTML = `<img src="${src}" style="max-width:100%; max-height:80%; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.5);">`;
-        v.onclick = () => v.remove();
-        document.body.appendChild(v);
-    };
+card.innerHTML=`
+
+<div class="post-header">
+<div class="author-info">
+<div class="avatar">${post.authorName?.charAt(0)||'U'}</div>
+<div>
+<b>${post.authorName||'عضو العائلة'}</b>
+<span>${post.publishDate?new Date(post.publishDate).toLocaleDateString('ar-EG'):''}</span>
+</div>
+</div>
+</div>
+
+<img class="post-image" src="${post.img||'https://via.placeholder.com/500x300'}">
+
+<div class="post-content" onclick="toggleText('${post.id}')">
+<h2>${post.title}</h2>
+<p id="text-${post.id}">${post.body||post.content||''}</p>
+</div>
+
+<div class="post-actions">
+<div class="action-item ${hasLiked?'active':''}" onclick="doLike('${post.id}',${hasLiked})">
+${hasLiked?'❤️':'🤍'} <span>${post.likedBy?.length||0}</span>
+</div>
+
+<div class="action-item" onclick="toggleComments('${post.id}')">
+💬 <span>${post.comments?.length||0}</span>
+</div>
+
+<div class="action-item">
+👁️ <span>${post.viewedBy?.length||0}</span>
+</div>
+</div>
+
+<div id="comments-${post.id}" style="display:none;padding:10px;border-top:1px solid #eee;">
+<div id="commentsList-${post.id}" style="margin-bottom:8px;"></div>
+<input type="text" placeholder="اكتب تعليقك..."
+style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;"
+onkeydown="if(event.key==='Enter'){addComment('${post.id}',this.value);this.value='';}">
+</div>
+
+`;
+
+feed.appendChild(card);
+});
+});
+}
+
+window.toggleText=(id)=>{
+const p=document.getElementById(`text-${id}`);
+p.style.display=p.style.display==='block'?'none':'block';
+};
+
+window.toggleComments=async(id)=>{
+const box=document.getElementById(`comments-${id}`);
+const isOpen=box.style.display==='block';
+box.style.display=isOpen?'none':'block';
+if(!isOpen) loadComments(id);
+};
+
+window.loadComments=async(id)=>{
+const list=document.getElementById(`commentsList-${id}`);
+list.innerHTML="";
+
+const snap=await getDoc(doc(db,"News",id));
+const data=snap.data();
+const comments=data.comments||[];
+
+comments.forEach(c=>{
+const div=document.createElement("div");
+div.style="font-size:13px;margin-bottom:5px;background:#f2f2f7;padding:6px;border-radius:8px;";
+div.innerHTML=`<b>${c.name}:</b> ${c.text}`;
+list.appendChild(div);
+});
+};
+
+window.addComment=async(id,text)=>{
+if(!text.trim())return;
+
+await updateDoc(doc(db,"News",id),{
+comments:arrayUnion({
+name:userData?.name||"عضو",
+text:text,
+date:Date.now()
+})
+});
+
+loadComments(id);
+};
+
+window.doLike=async(id,liked)=>{
+await updateDoc(doc(db,"News",id),{
+likedBy:liked?arrayRemove(userUID):arrayUnion(userUID)
+});
+};
+
+window.handleLogout=()=>{
+if(confirm("هل تريد تسجيل الخروج؟"))
+auth.signOut().then(()=>location.reload());
+};
 
 </script>
+
 </body>
 </html>
