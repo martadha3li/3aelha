@@ -207,8 +207,8 @@
             loader.style.display = 'none';
         }
     };
-</script>
-    async function sendFamilyPush(title, message, targetUserId = null) {
+
+async function sendFamilyPush(title, message, targetUserId = null) {
     const APP_ID = "a96c2d21-5d88-40fb-8c60-4c0911e9be15";
     const API_KEY = "os_v2_app_vfwc2ik5rbapxddajqerd2n6cvtafaovwwiuf2nkps4g2bz22qnrja5xrna73qgctjxpea6lenhvmrk3hlrsepe7zarj7anqawvd7wy";
 
@@ -241,5 +241,8 @@
         console.error("خطأ في إرسال الإشعار:", error);
     }
 }
+    
+</script>
+  
 </body>
 </html>
