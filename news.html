@@ -67,7 +67,6 @@
         <a href="chat.html" class="nav-link">💬</a>
         <a href="competitions.html" class="nav-link">🏆</a>
         <a href="profile.html" class="nav-link">👤</a>
-        <a href="admin.html" id="navAdminLink" class="nav-link">⚙️</a>
     </nav>
 
 <script type="module">
@@ -88,6 +87,8 @@
                     if (role === 'admin' || role === 'editor' || role === 'مدير') {
                         document.getElementById('addNewsBtn').style.display = 'flex';
                         document.getElementById('navAdminLink').style.display = 'flex'; // إظهار الترس في الشريط السفلي
+                          <a href="admin.html" id="navAdminLink" class="nav-link">⚙️</a>
+
                     }
                 }
             } catch (e) { console.error(e); }
@@ -224,3 +225,4 @@
 </script>
 </body>
 </html>
+
