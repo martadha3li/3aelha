@@ -10,6 +10,10 @@
         :root { --primary: #5856d6; --bg: #f2f2f7; }
         body { background-color: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 90px; }
         
+        /* الهيدر العلوي */
+        .top-bar { position: sticky; top: 0; background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        .top-bar b { color: var(--primary); font-size: 18px; }
+
         /* كرت الخبر */
         .news-card { 
             background: white; margin: 12px 15px 0; border-radius: 15px; 
@@ -20,122 +24,155 @@
         .news-img-box img { width: 100%; height: 100%; object-fit: cover; }
         
         .news-info { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
-        .news-info h3 { margin: 0; font-size: 15px; color: #1c1c1e; line-height: 1.3; font-weight: 700; }
+        .news-info h3 { margin: 0; font-size: 15px; color: #1c1c1e; line-height: 1.3; font-weight: 700; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         .news-meta { font-size: 11px; color: #8e8e93; }
 
         /* شريط التفاعل */
         .interaction-row { display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #666; padding-top: 5px; }
         .stat-item { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
-        /* أدوات التحرير - واضحة ومميزة */
+        /* أدوات التحرير (للمدير والمحرر) */
         .admin-footer { 
             background: #fff; margin: 0 15px 12px; padding: 10px 15px; 
             border-radius: 0 0 15px 15px; display: flex; gap: 12px; 
             justify-content: flex-end; border-top: 1px solid #f2f2f7;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
         }
-        .adm-btn { border: 1px solid #eee; background: #f9f9f9; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .adm-btn { border: 1px solid #eee; background: #f9f9f9; padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; font-weight: 600; color: #444; }
 
-        /* النوافذ المنسدلة */
+        /* المنسدلات */
         .expandable-panel { 
             background: #fff; margin: 0 25px; border-radius: 0 0 12px 12px; 
             display: none; border: 1px solid #eee; border-top: none;
-            padding: 15px; animation: slideDown 0.3s ease-out; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            padding: 15px; animation: slideDown 0.3s ease-out;
         }
         @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* نافذة تكبير الصورة (Lightbox) */
-        .lightbox {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-            display: none; justify-content: center; align-items: center;
-            z-index: 5000; cursor: zoom-out;
-        }
-        .lightbox img { max-width: 95%; max-height: 85%; border-radius: 10px; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
-        .close-lightbox { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; }
+        /* نافذة تكبير الصورة */
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 5000; }
+        .lightbox img { max-width: 90%; max-height: 80%; border-radius: 10px; }
 
-        /* الملاحة والبار */
-        .top-bar { position: sticky; top: 0; background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 1px 5px rgba(0,0,0,0.05); }
+        /* الزر العائم */
+        .floating-btn { 
+            position: fixed; bottom: 85px; left: 20px; width: 55px; height: 55px; 
+            border-radius: 50%; background: var(--primary); color: white; border: none; 
+            font-size: 28px; z-index: 1100; box-shadow: 0 4px 12px rgba(88,86,214,0.3);
+            display: none; align-items: center; justify-content: center; cursor: pointer;
+        }
+
+        /* ناف بار سفلي */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 65px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-link { text-decoration: none; font-size: 22px; filter: grayscale(1); }
+        .nav-link.active { filter: grayscale(0); }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <b style="color:var(--primary); font-size:18px;">منصة العائلة</b>
-        <div style="display:flex; gap:18px;">
+        <b style="color:var(--primary);">منصة العائلة</b>
+        <div style="display:flex; gap:18px; align-items: center;">
             <span id="adminBtn" style="display:none; cursor:pointer; font-size:22px;" onclick="location.href='admin.html'">⚙️</span>
             <span onclick="handleLogout()" style="cursor:pointer; font-size:22px;">🚪</span>
         </div>
     </div>
 
     <div id="newsFeed">
-        <p style="text-align:center; padding:50px; color:gray;">جاري تحميل الأخبار...</p>
+        <p style="text-align:center; padding:50px; color:gray;">جاري تحميل المستجدات...</p>
     </div>
 
-    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
-        <span class="close-lightbox">&times;</span>
+    <div id="lightbox" class="lightbox" onclick="this.style.display='none'">
         <img id="lightboxImg" src="">
     </div>
 
-    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'" style="display:none; position:fixed; bottom:85px; left:20px; width:55px; height:55px; border-radius:50%; background:var(--primary); color:white; border:none; font-size:28px; z-index:1100; box-shadow: 0 4px 12px rgba(88,86,214,0.3);">+</button>
+    <button id="addNewsBtn" class="floating-btn" onclick="location.href='add_news.html'">+</button>
 
     <nav class="bottom-nav">
-        <a href="news.html" style="text-decoration:none; font-size:22px;">🏠</a>
-        <a href="chat.html" style="text-decoration:none; font-size:22px;">💬</a>
-        <a href="competitions.html" style="text-decoration:none; font-size:22px;">🏆</a>
-        <a href="profile.html" style="text-decoration:none; font-size:22px;">👤</a>
+        <a href="news.html" class="nav-link active">🏠</a>
+        <a href="chat.html" class="nav-link">💬</a>
+        <a href="competitions.html" class="nav-link">🏆</a>
+        <a href="profile.html" class="nav-link">👤</a>
     </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, query, onSnapshot, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    // استدعاء ملف الإشعارات المنفصل
     import { initOneSignal } from './onesignal-handler.js';
 
     let userUID, userData;
 
+    // 1. مراقبة حالة تسجيل الدخول وصلاحيات المستخدم
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
+            
+            // محاولة جلب بيانات المستخدم لتحديد الرتبة
+            try {
+                const userSnap = await getDoc(doc(db, "Users", user.uid));
+                if (userSnap.exists()) {
+                    userData = userSnap.data();
+                    console.log("تم تحميل بيانات المستخدم: ", userData.role);
+
+                    // تفعيل أدوات المدير بناءً على الرتبة
+                    if (userData.role === 'admin' || userData.role === 'editor') {
+                        document.getElementById('addNewsBtn').style.display = 'flex';
+                        if (userData.role === 'admin') {
+                            document.getElementById('adminBtn').style.display = 'block';
+                        }
+                    }
+                }
+            } catch (err) { console.error("خطأ في جلب الرتبة:", err); }
+
+            // تشغيل الإشعارات وتحميل الأخبار
             initOneSignal(userUID, db, updateDoc, doc);
-            const s = await getDoc(doc(db, "Users", user.uid));
-            userData = s.data();
-            if (userData?.role === 'admin' || userData?.role === 'editor') {
-                document.getElementById('addNewsBtn').style.display = 'block';
-                if(userData.role === 'admin') document.getElementById('adminBtn').style.display = 'block';
-            }
             loadFeed();
-        } else { window.location.replace("login.html"); }
+        } else {
+            window.location.replace("login.html");
+        }
     });
 
+    // 2. تحميل تغذية الأخبار
     function loadFeed() {
         const feed = document.getElementById('newsFeed');
         onSnapshot(collection(db, "News"), (snap) => {
             feed.innerHTML = "";
             let docs = [];
             snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+            
+            // ترتيب من الأحدث للأقدم
             docs.sort((a, b) => (b.publishDate || 0) - (a.publishDate || 0));
 
+            if (docs.length === 0) {
+                feed.innerHTML = "<p style='text-align:center; padding:50px; color:gray;'>لا توجد أخبار حالياً.</p>";
+                return;
+            }
+
             docs.forEach(n => {
-                const canManage = userData && (userData.role === 'admin' || userData.role === 'editor' || userUID === n.authorId);
-                if (!n.visible && !canManage) return;
+                // هل المستخدم الحالي لديه صلاحية إدارة هذا الخبر؟
+                const isManager = userData && (userData.role === 'admin' || userData.role === 'editor' || userUID === n.authorId);
+                
+                // إذا كان الخبر مخفياً، يظهر فقط للمدراء
+                if (!n.visible && !isManager) return;
 
                 const hasLiked = n.likedBy?.includes(userUID);
                 const date = n.publishDate ? new Date(n.publishDate).toLocaleDateString('ar-EG') : "";
 
                 const itemWrap = document.createElement('div');
+                itemWrap.className = "news-item-wrapper";
                 itemWrap.innerHTML = `
                     <div class="news-card">
-                        <div class="news-img-box" onclick="zoomImg('${n.img}')">
+                        <div class="news-img-box" onclick="window.zoomImg('${n.img}')">
                             <img src="${n.img || 'https://via.placeholder.com/100'}">
                         </div>
-                        <div class="news-info" onclick="togglePanel('body-${n.id}')">
+                        <div class="news-info" onclick="window.togglePanel('body-${n.id}')">
                             <h3>${n.title}</h3>
                             <div class="news-meta">👤 ${n.authorName || 'المحرر'} | 📅 ${date}</div>
                             <div class="interaction-row">
                                 <div class="stat-item" onclick="event.stopPropagation(); window.doLike('${n.id}', ${hasLiked})">
                                     ${hasLiked ? '❤️' : '🤍'} <span>${n.likedBy?.length || 0}</span>
                                 </div>
-                                <div class="stat-item" onclick="event.stopPropagation(); togglePanel('comm-${n.id}', true, '${n.id}')">
+                                <div class="stat-item" onclick="event.stopPropagation(); window.togglePanel('comm-${n.id}', true, '${n.id}')">
                                     💬 <span id="cnt-${n.id}">0</span>
                                 </div>
                             </div>
@@ -143,18 +180,18 @@
                     </div>
                     
                     <div id="body-${n.id}" class="expandable-panel">
-                        <p style="font-size:14px; line-height:1.6; color:#333; margin:0;">${n.body || n.content}</p>
+                        <p style="font-size:14px; line-height:1.6; color:#333; margin:0;">${n.body || n.content || 'لا يوجد نص لهذا الخبر'}</p>
                     </div>
 
                     <div id="comm-${n.id}" class="expandable-panel">
-                        <div id="list-${n.id}" style="max-height:150px; overflow-y:auto; margin-bottom:10px; font-size:12px;">جاري التحميل...</div>
+                        <div id="list-${n.id}" style="max-height:150px; overflow-y:auto; margin-bottom:10px; font-size:12px;">جاري تحميل التعليقات...</div>
                         <div style="display:flex; gap:5px;">
-                            <input type="text" id="inp-${n.id}" placeholder="تعليق..." style="flex:1; padding:8px; border-radius:10px; border:1px solid #ddd; outline:none;">
-                            <button onclick="window.doComment('${n.id}')" style="background:var(--primary); color:white; border:none; border-radius:10px; padding:0 12px;">نشر</button>
+                            <input type="text" id="inp-${n.id}" placeholder="اكتب تعليقك..." style="flex:1; padding:8px; border-radius:10px; border:1px solid #ddd; outline:none;">
+                            <button onclick="window.doComment('${n.id}')" style="background:var(--primary); color:white; border:none; border-radius:10px; padding:0 12px; cursor:pointer;">نشر</button>
                         </div>
                     </div>
 
-                    ${canManage ? `
+                    ${isManager ? `
                     <div class="admin-footer">
                         <button class="adm-btn" onclick="window.doVis('${n.id}', ${n.visible})">${n.visible ? '🔒 تعطيل' : '🔓 تفعيل'}</button>
                         <button class="adm-btn" style="color:blue" onclick="location.href='add_news.html?edit=${n.id}'">✏️ تعديل</button>
@@ -167,21 +204,20 @@
         });
     }
 
-    // تكبير الصورة
+    // --- الدوال العالمية المساعدة ---
+
     window.zoomImg = (src) => {
-        if(!src || src === 'undefined') return;
+        if(!src) return;
         document.getElementById('lightboxImg').src = src;
         document.getElementById('lightbox').style.display = 'flex';
     };
-    window.closeLightbox = () => document.getElementById('lightbox').style.display = 'none';
 
-    // التبديل بين الألواح
     window.togglePanel = (panelId, isComm = false, newsId = null) => {
         const target = document.getElementById(panelId);
         const isOpen = target.style.display === 'block';
         
-        // إغلاق أي لوح مفتوح لنفس الخبر قبل فتح الجديد
-        const parent = target.parentElement;
+        // إغلاق أي لوح آخر في نفس الخبر
+        const parent = target.closest('.news-item-wrapper');
         parent.querySelectorAll('.expandable-panel').forEach(p => p.style.display = 'none');
 
         if (!isOpen) {
@@ -194,10 +230,10 @@
         onSnapshot(collection(db, `News/${newsId}/Comments`), (snap) => {
             const list = document.getElementById(`list-${newsId}`);
             if(!list) return;
-            list.innerHTML = snap.empty ? "لا توجد تعليقات بعد." : "";
+            list.innerHTML = snap.empty ? "لا توجد تعليقات." : "";
             snap.forEach(c => {
                 const d = c.data();
-                list.innerHTML += `<div style="padding:4px 0; border-bottom:1px solid #f9f9f9;"><b>${d.userName}:</b> ${d.text}</div>`;
+                list.innerHTML += `<div style="padding:5px 0; border-bottom:1px solid #f2f2f7;"><b>${d.userName}:</b> ${d.text}</div>`;
             });
         });
     }
@@ -206,7 +242,7 @@
         const inp = document.getElementById(`inp-${id}`);
         if(!inp.value.trim()) return;
         await addDoc(collection(db, `News/${id}/Comments`), {
-            text: inp.value, userName: userData.fullName, userId: userUID, timestamp: serverTimestamp()
+            text: inp.value, userName: userData.fullName || "عضو", userId: userUID, timestamp: serverTimestamp()
         });
         inp.value = "";
     };
@@ -221,9 +257,20 @@
         await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
     };
 
-    window.doVis = async (id, s) => await updateDoc(doc(db, "News", id), { visible: !s });
-    window.doDel = async (id) => { if(confirm("حذف الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id)); };
-    window.handleLogout = () => { if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload()); };
+    window.doVis = async (id, s) => {
+        await updateDoc(doc(db, "News", id), { visible: !s });
+    };
+
+    window.doDel = async (id) => {
+        if(confirm("هل أنت متأكد من حذف هذا الخبر نهائياً؟")) {
+            await deleteDoc(doc(db, "News", id));
+        }
+    };
+
+    window.handleLogout = () => {
+        if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload());
+    };
+
 </script>
 </body>
 </html>
