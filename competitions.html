@@ -1,332 +1,202 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
-    });
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
+    });
 
-    // حفظ معرف المستخدم في Firestore لربطه بالدردشة
-    OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
-        const subscriptionId = event.current.id;
-        if (subscriptionId && auth.currentUser) {
-            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const { db } = await import("./config.js");
-            await updateDoc(doc(db, "Users", auth.currentUser.uid), {
-                onesignalId: subscriptionId
-            });
-        }
-    });
-  });
+    // حفظ معرف المستخدم في Firestore لربطه بالدردشة
+    OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
+        const subscriptionId = event.current.id;
+        if (subscriptionId && auth.currentUser) {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const { db } = await import("./config.js");
+            await updateDoc(doc(db, "Users", auth.currentUser.uid), {
+                onesignalId: subscriptionId
+            });
+        }
+    });
+  });
 </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المسابقات | العداد المتقدم</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; --accent: #ff9500; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 50px; }
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        
-        /* بطاقة المسابقة */
-        .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
-        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        
-        /* عداد نهاية المسابقة */
-        .comp-end-timer { font-size: 11px; background: #fff5e6; color: var(--accent); padding: 5px 10px; border-radius: 8px; font-weight: bold; border: 1px solid #ffe0b2; }
-        
-        /* عداد السؤال القادم */
-        .next-q-timer { background: #eef1ff; color: var(--primary); padding: 15px; border-radius: 15px; text-align: center; border: 1px dashed var(--primary); margin: 15px 0; }
-        .timer-grid { display: flex; justify-content: center; gap: 10px; margin-top: 5px; }
-        .timer-unit { background: white; padding: 5px 8px; border-radius: 6px; min-width: 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .timer-label { font-size: 9px; display: block; color: #8e8e93; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المسابقات | العداد المتقدم</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root { --primary: #5856d6; --bg: #f2f2f7; --accent: #ff9500; }
+        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-bottom: 50px; }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        
+        /* بطاقة المسابقة */
+        .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
+        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        
+        /* عداد نهاية المسابقة */
+        .comp-end-timer { font-size: 11px; background: #fff5e6; color: var(--accent); padding: 5px 10px; border-radius: 8px; font-weight: bold; border: 1px solid #ffe0b2; }
+        
+        /* عداد السؤال القادم */
+        .next-q-timer { background: #eef1ff; color: var(--primary); padding: 15px; border-radius: 15px; text-align: center; border: 1px dashed var(--primary); margin: 15px 0; }
+        .timer-grid { display: flex; justify-content: center; gap: 10px; margin-top: 5px; }
+        .timer-unit { background: white; padding: 5px 8px; border-radius: 6px; min-width: 35px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .timer-label { font-size: 9px; display: block; color: #8e8e93; }
 
-        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
-        .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; font-size: 14px; transition: 0.2s; }
-        .correct { background: #34c759 !important; color: white; border-color: #34c759; }
-        .wrong { background: #ff3b30 !important; color: white; border-color: #ff3b30; }
-
-/* تصميم واجهة القرعة */
-#drawOverlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-    z-index: 10000; display: none; flex-direction: column;
-    align-items: center; justify-content: center; color: white;
-}
-.slot-machine {
-    font-size: 30px; font-weight: bold; color: var(--ios-gold);
-    height: 100px; overflow: hidden; text-align: center;
-    border: 2px solid var(--ios-gold); padding: 20px;
-    border-radius: 15px; width: 80%; margin: 20px 0;
-}
-.winner-item {
-    background: var(--ios-green); color: white;
-    padding: 10px 20px; border-radius: 10px; margin: 5px;
-    animation: pop 0.5s ease-out;
-}
-@keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-        
-    </style>
+        .q-box { background: #f8f8fb; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+        .option-btn { width: 100%; padding: 14px; margin-top: 8px; border-radius: 12px; border: 1px solid #ddd; background: white; cursor: pointer; text-align: right; font-size: 14px; transition: 0.2s; }
+        .correct { background: #34c759 !important; color: white; border-color: #34c759; }
+        .wrong { background: #ff3b30 !important; color: white; border-color: #ff3b30; }
+    </style>
 </head>
-    <div id="adminDrawTool" style="display:none; padding:15px; background:white; margin:15px; border-radius:15px; border:1px solid #ddd;">
-    <h4 style="margin:0 0 10px 0;">🎰 سحب القرعة الإلكترونية</h4>
-    <select id="drawCompSelect" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px;"></select>
-    <input type="number" id="winnerCount" placeholder="عدد الفائزين" value="1" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ccc;">
-    <button onclick="prepareDraw()" style="width:100%; background:var(--ios-gold); color:black; border:none; padding:12px; border-radius:10px; font-weight:bold;">بدء السحب المباشر</button>
-</div>
-
-<div id="drawOverlay">
-    <h2 id="drawStatus">جاري فحص الإجابات الصحيحة...</h2>
-    <div id="slotBox" class="slot-machine">---</div>
-    <div id="winnersList" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
-    <button id="closeDrawBtn" onclick="document.getElementById('drawOverlay').style.display='none'" style="display:none; margin-top:20px; padding:10px 30px; border-radius:10px; border:none; background:white; color:black;">إغلاق</button>
-</div>
 <body>
 
 <div class="top-bar">
-    <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b>المسابقات النشطة</b>
-    <div style="width:24px;"></div>
+    <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
+    <b>المسابقات النشطة</b>
+    <div style="width:24px;"></div>
 </div>
 
 <div class="container" id="compsFeed">
-    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات والعدادات...</p>
+    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات والعدادات...</p>
 </div>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let userData = null;
+    let userData = null;
 
-    onAuthStateChanged(auth, async user => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            userData = snap.data();
-            loadComps();
-        } else location.href = "login.html";
-    });
+    onAuthStateChanged(auth, async user => {
+        if (user) {
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            userData = snap.data();
+            loadComps();
+        } else location.href = "login.html";
+    });
 
-    function loadComps() {
-        onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
-            const feed = document.getElementById('compsFeed');
-            feed.innerHTML = "";
-            snap.forEach(d => {
-                const c = d.data();
-                const card = document.createElement('div');
-                card.className = "comp-card";
-                card.innerHTML = `
-                    <div class="comp-header">
-                        <h3 style="margin:0;">${c.title}</h3>
-                        <div id="end-timer-${d.id}" class="comp-end-timer">جاري الحساب...</div>
-                    </div>
-                    <div id="qs-${d.id}"></div>
-                `;
-                feed.appendChild(card);
-                
-                // تشغيل عداد نهاية المسابقة
-                startCountdown(c.endDate, `end-timer-${d.id}`, "انتهت المسابقة");
-                loadQuestions(d.id, c.title);
-            });
-        });
-    }
+    function loadComps() {
+        onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
+            const feed = document.getElementById('compsFeed');
+            feed.innerHTML = "";
+            snap.forEach(d => {
+                const c = d.data();
+                const card = document.createElement('div');
+                card.className = "comp-card";
+                card.innerHTML = `
+                    <div class="comp-header">
+                        <h3 style="margin:0;">${c.title}</h3>
+                        <div id="end-timer-${d.id}" class="comp-end-timer">جاري الحساب...</div>
+                    </div>
+                    <div id="qs-${d.id}"></div>
+                `;
+                feed.appendChild(card);
+                
+                // تشغيل عداد نهاية المسابقة
+                startCountdown(c.endDate, `end-timer-${d.id}`, "انتهت المسابقة");
+                loadQuestions(d.id, c.title);
+            });
+        });
+    }
 
-    async function loadQuestions(cid, ctitle) {
-        const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
-        const cont = document.getElementById(`qs-${cid}`);
-        const now = new Date();
-        let upcoming = [];
+    async function loadQuestions(cid, ctitle) {
+        const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
+        const cont = document.getElementById(`qs-${cid}`);
+        const now = new Date();
+        let upcoming = [];
 
-        for (const qDoc of qSnap.docs) {
-            const q = qDoc.data();
-            const showAt = new Date(q.showAt);
+        for (const qDoc of qSnap.docs) {
+            const q = qDoc.data();
+            const showAt = new Date(q.showAt);
 
-            if (showAt > now) {
-                upcoming.push({ time: showAt });
-                continue;
-            }
+            if (showAt > now) {
+                upcoming.push({ time: showAt });
+                continue;
+            }
 
-            const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
-            const isAns = !ansSnap.empty;
+            const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
+            const isAns = !ansSnap.empty;
 
-            const qBox = document.createElement('div');
-            qBox.className = "q-box";
-            let optsHtml = "";
-            q.options.forEach(opt => {
-                let cls = isAns ? (opt === q.correctOption ? "correct" : (opt === ansSnap.docs[0].data().selectedOption ? "wrong" : "")) : "";
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
-            });
-            qBox.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${q.text}</b> <span style="color:var(--primary); font-size:12px;">💎 ${q.points} ن</span></div>${optsHtml}`;
-            cont.appendChild(qBox);
-        }
+            const qBox = document.createElement('div');
+            qBox.className = "q-box";
+            let optsHtml = "";
+            q.options.forEach(opt => {
+                let cls = isAns ? (opt === q.correctOption ? "correct" : (opt === ansSnap.docs[0].data().selectedOption ? "wrong" : "")) : "";
+                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
+            });
+            qBox.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${q.text}</b> <span style="color:var(--primary); font-size:12px;">💎 ${q.points} ن</span></div>${optsHtml}`;
+            cont.appendChild(qBox);
+        }
 
-        // عداد السؤال القادم (أيام، ساعات، دقائق، ثواني)
-        if (upcoming.length > 0) {
-            upcoming.sort((a,b) => a.time - b.time);
-            const nextT = upcoming[0].time;
-            const timerDiv = document.createElement('div');
-            timerDiv.className = "next-q-timer";
-            cont.appendChild(timerDiv);
-            
-            setInterval(() => {
-                const diff = nextT - new Date();
-                if(diff <= 0) location.reload();
-                
-                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((diff % (1000 * 60)) / 1000);
+        // عداد السؤال القادم (أيام، ساعات، دقائق، ثواني)
+        if (upcoming.length > 0) {
+            upcoming.sort((a,b) => a.time - b.time);
+            const nextT = upcoming[0].time;
+            const timerDiv = document.createElement('div');
+            timerDiv.className = "next-q-timer";
+            cont.appendChild(timerDiv);
+            
+            setInterval(() => {
+                const diff = nextT - new Date();
+                if(diff <= 0) location.reload();
+                
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                timerDiv.innerHTML = `
-                    <span style="font-size:13px;">🔒 السؤال القادم يفتح خلال:</span>
-                    <div class="timer-grid">
-                        <div class="timer-unit"><b>${d}</b><span class="timer-label">يوم</span></div>
-                        <div class="timer-unit"><b>${h}</b><span class="timer-label">ساعة</span></div>
-                        <div class="timer-unit"><b>${m}</b><span class="timer-label">دقيقة</span></div>
-                        <div class="timer-unit"><b>${s}</b><span class="timer-label">ثانية</span></div>
-                    </div>
-                `;
-            }, 1000);
-        }
-    }
+                timerDiv.innerHTML = `
+                    <span style="font-size:13px;">🔒 السؤال القادم يفتح خلال:</span>
+                    <div class="timer-grid">
+                        <div class="timer-unit"><b>${d}</b><span class="timer-label">يوم</span></div>
+                        <div class="timer-unit"><b>${h}</b><span class="timer-label">ساعة</span></div>
+                        <div class="timer-unit"><b>${m}</b><span class="timer-label">دقيقة</span></div>
+                        <div class="timer-unit"><b>${s}</b><span class="timer-label">ثانية</span></div>
+                    </div>
+                `;
+            }, 1000);
+        }
+    }
 
-    // دالة العداد العامة
-    function startCountdown(dateStr, elementId, finishMsg) {
-        const target = new Date(dateStr).getTime();
-        const el = document.getElementById(elementId);
-        
-        const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const diff = target - now;
-            
-            if (diff < 0) {
-                clearInterval(timer);
-                el.innerHTML = finishMsg;
-                return;
-            }
-            
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            
-            el.innerHTML = `⏳ ينتهي خلال: ${days}ي و ${hours}س و ${mins}د`;
-        }, 1000);
-    }
+    // دالة العداد العامة
+    function startCountdown(dateStr, elementId, finishMsg) {
+        const target = new Date(dateStr).getTime();
+        const el = document.getElementById(elementId);
+        
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = target - now;
+            
+            if (diff < 0) {
+                clearInterval(timer);
+                el.innerHTML = finishMsg;
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            el.innerHTML = `⏳ ينتهي خلال: ${days}ي و ${hours}س و ${mins}د`;
+        }, 1000);
+    }
 
-    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
-        if(!confirm("تأكيد الإجابة؟")) return;
-        const isC = sel.trim() === corr.trim();
-        await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid,
-            userName: userData.fullName || "غير معروف",
-            userPhone: userData.phone || "غير مسجل",
-            userEmail: auth.currentUser.email || "غير مسجل",
-            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
-            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
-            timestamp: serverTimestamp()
-        });
-        location.reload();
-    };
-
-// استيراد الدوال اللازمة
-import { getDocs, query, collection, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// تعبئة قائمة المسابقات للمدير
-async function populateCompList() {
-    const q = query(collection(db, "Competitions"));
-    const snap = await getDocs(q);
-    const select = document.getElementById('drawCompSelect');
-    select.innerHTML = '<option value="">اختر المسابقة...</option>';
-    snap.forEach(doc => {
-        select.innerHTML += `<option value="${doc.id}">${doc.data().title}</option>`;
-    });
-}
-
-// تعديل جزء الـ Auth ليشمل تشغيل دالة التعبئة
-// (أضف هذا داخل auth.onAuthStateChanged)
-if (userData.role === 'admin' || userData.role === 'مدير') {
-    document.getElementById('adminDrawTool').style.display = 'block';
-    populateCompList();
-}
-
-window.prepareDraw = async () => {
-    const compId = document.getElementById('drawCompSelect').value;
-    const count = parseInt(document.getElementById('winnerCount').value);
-    if (!compId) return alert("الرجاء اختيار مسابقة");
-
-    document.getElementById('drawOverlay').style.display = 'flex';
-    document.getElementById('winnersList').innerHTML = "";
-    document.getElementById('drawStatus').innerText = "جاري تصفية الإجابات الصحيحة...";
-    
-    // 1. جلب الإجابات الصحيحة فقط لهذه المسابقة
-    const q = query(collection(db, "Answers"), 
-                where("compId", "==", compId), 
-                where("isCorrect", "==", true));
-    
-    const snap = await getDocs(q);
-    let candidates = [];
-    snap.forEach(doc => {
-        const data = doc.data();
-        // منع تكرار نفس الشخص إذا أجاب على عدة أسئلة صح في نفس المسابقة
-        if (!candidates.find(c => c.userId === data.userId)) {
-            candidates.push({ name: data.userName, userId: data.userId });
-        }
-    });
-
-    if (candidates.length === 0) {
-        alert("لا يوجد متسابقين بإجابات صحيحة!");
-        document.getElementById('drawOverlay').style.display = 'none';
-        return;
-    }
-
-    startAnimation(candidates, count);
-};
-
-function startAnimation(list, winnerCount) {
-    const slotBox = document.getElementById('slotBox');
-    let winners = [];
-    let tempCandidates = [...list];
-
-    // خوارزمية الاختيار العشوائي
-    for (let i = 0; i < winnerCount; i++) {
-        if (tempCandidates.length === 0) break;
-        const randomIndex = Math.floor(Math.random() * tempCandidates.length);
-        winners.push(tempCandidates.splice(randomIndex, 1)[0]);
-    }
-
-    // تأثير حركة الأسماء (لإضفاء المصداقية)
-    let counter = 0;
-    const interval = setInterval(() => {
-        slotBox.innerText = list[Math.floor(Math.random() * list.length)].name;
-        counter++;
-        if (counter > 30) { // بعد 30 لفة توقف واظهر الفائزين
-            clearInterval(interval);
-            showWinners(winners);
-        }
-    }, 100);
-}
-
-function showWinners(winners) {
-    document.getElementById('drawStatus').innerText = "🎉 مبروك للفائزين!";
-    const slotBox = document.getElementById('slotBox');
-    slotBox.innerText = "انتهى السحب";
-    
-    const listDiv = document.getElementById('winnersList');
-    winners.forEach((w, index) => {
-        setTimeout(() => {
-            const div = document.createElement('div');
-            div.className = 'winner-item';
-            div.innerHTML = `🏆 الفائز ${index + 1}: ${w.name}`;
-            listDiv.appendChild(div);
-        }, index * 800); // ظهور تدريجي للفائزين
-    });
-
-    document.getElementById('closeDrawBtn').style.display = 'block';
-}
-    
+    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
+        if(!confirm("تأكيد الإجابة؟")) return;
+        const isC = sel.trim() === corr.trim();
+        await addDoc(collection(db, "Answers"), {
+            userId: auth.currentUser.uid,
+            userName: userData.fullName || "غير معروف",
+            userPhone: userData.phone || "غير مسجل",
+            userEmail: auth.currentUser.email || "غير مسجل",
+            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
+            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
+            timestamp: serverTimestamp()
+        });
+        location.reload();
+    };
 </script>
 </body>
 </html>
