@@ -5,6 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة السحب الذكي | القرعة الكبرى</title>
     <style>
+        /* تنسيق الشريط السفلي */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 0.5px solid rgba(0,0,0,0.1);
+    padding-bottom: env(safe-area-inset-bottom); /* لدعم هواتف الآيفون الحديثة */
+    z-index: 10000;
+}
+
+.nav-item {
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #8E8E93;
+    transition: 0.3s;
+    flex: 1;
+}
+
+.nav-item.active {
+    color: var(--primary); /* اللون الأزرق للمكان النشط */
+}
+
+.nav-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.nav-label {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* تأثير عند الضغط */
+.nav-item:active {
+    transform: scale(0.9);
+}
         :root { --primary: #007AFF; --gold: #FF9500; --bg: #F2F2F7; --card: #FFFFFF; }
         body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; direction: rtl; }
         .container { max-width: 800px; margin: auto; }
