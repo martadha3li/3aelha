@@ -31,7 +31,6 @@
             margin: 0; padding-top: 70px; padding-bottom: 90px;
         }
 
-        /* الهيدر العلوي */
         .top-bar {
             position: fixed; top: 0; width: 100%; height: 65px;
             background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
@@ -43,7 +42,6 @@
 
         .container { padding: 15px; max-width: 600px; margin: auto; }
 
-        /* بطاقة المسابقة */
         .comp-card { 
             background: var(--card-bg); border-radius: 22px; 
             padding: 20px; margin-bottom: 25px; 
@@ -54,14 +52,31 @@
         .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
         .comp-header h3 { margin: 0; font-size: 19px; color: #1c1c1e; }
         
-        /* عداد نهاية المسابقة */
         .comp-end-timer { 
             font-size: 11px; background: #FFF9F2; color: var(--ios-orange); 
             padding: 6px 12px; border-radius: 10px; font-weight: bold; 
             border: 0.5px solid #FFE0B2; 
         }
 
-        /* عداد السؤال القادم */
+        /* تنسيق السؤال المجاب عليه */
+        .q-box.answered { opacity: 0.6; filter: grayscale(0.3); }
+        .answered-label { 
+            font-size: 11px; color: var(--ios-green); font-weight: bold; 
+            display: block; margin-top: 10px; text-align: center;
+        }
+
+        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; position: relative; }
+        
+        .option-btn { 
+            width: 100%; padding: 15px; margin-top: 10px; 
+            border-radius: 14px; border: 1px solid #E5E5EA; 
+            background: white; cursor: pointer; text-align: right; 
+            font-size: 15px; font-weight: 500; transition: 0.3s; 
+        }
+        
+        .option-btn.correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
+        .option-btn.wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
+
         .next-q-timer { 
             background: #F0F4FF; color: var(--ios-blue); 
             padding: 20px; border-radius: 18px; text-align: center; 
@@ -72,21 +87,6 @@
         .timer-unit b { font-size: 16px; display: block; }
         .timer-label { font-size: 9px; color: #8e8e93; font-weight: bold; }
 
-        /* صندوق السؤال */
-        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; }
-        .option-btn { 
-            width: 100%; padding: 15px; margin-top: 10px; 
-            border-radius: 14px; border: 1px solid #E5E5EA; 
-            background: white; cursor: pointer; text-align: right; 
-            font-size: 15px; font-weight: 500; transition: 0.3s; 
-        }
-        .option-btn:active { transform: scale(0.98); }
-        
-        /* حالات الإجابة */
-        .correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
-        .wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
-
-        /* شريط التنقل السفلي */
         .bottom-bar {
             position: fixed; bottom: 0; width: 100%; height: 75px;
             background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
@@ -128,27 +128,21 @@
             const snap = await getDoc(doc(db, "Users", user.uid));
             userData = snap.data();
             
-            // تحديث OneSignal ID في الخلفية
-            OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
-                const subId = event.current.id;
-                if (subId) await updateDoc(doc(db, "Users", user.uid), { onesignalId: subId });
-            });
-
-            // إظهار زر الإضافة للمدير
             if (userData.role === 'admin' || userData.role === 'مدير') {
                 document.getElementById('adminTools').style.display = 'block';
             }
-
             loadComps();
         } else location.href = "login.html";
     });
 
     function loadComps() {
-        onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
+        // جلب المسابقات المتاحة فقط
+        onSnapshot(collection(db, "Competitions"), snap => {
             const feed = document.getElementById('compsFeed');
             feed.innerHTML = "";
             snap.forEach(d => {
                 const c = d.data();
+                // يمكن إضافة شرط visible هنا إذا أردت
                 const card = document.createElement('div');
                 card.className = "comp-card";
                 card.innerHTML = `
@@ -166,7 +160,7 @@
     }
 
     async function loadQuestions(cid, ctitle) {
-        const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
+        const qSnap = await getDocs(collection(db, `Competitions/${cid}/Questions`));
         const cont = document.getElementById(`qs-${cid}`);
         const now = new Date();
         let upcoming = [];
@@ -175,30 +169,49 @@
             const q = qDoc.data();
             const showAt = new Date(q.showAt);
 
+            // إذا لم يحن موعد السؤال
             if (showAt > now) {
                 upcoming.push({ time: showAt });
                 continue;
             }
 
-            const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
+            // التحقق من إجابة المستخدم مسبقاً
+            const ansSnap = await getDocs(query(collection(db, "Answers"), 
+                where("userId", "==", auth.currentUser.uid), 
+                where("questionId", "==", qDoc.id)));
+            
             const isAns = !ansSnap.empty;
 
             const qBox = document.createElement('div');
-            qBox.className = "q-box";
+            qBox.className = `q-box ${isAns ? 'answered' : ''}`;
+            
             let optsHtml = "";
             q.options.forEach(opt => {
                 let cls = "";
                 if (isAns) {
                     const userAns = ansSnap.docs[0].data().selectedOption;
-                    if (opt === q.correctOption) cls = "correct";
-                    else if (opt === userAns) cls = "wrong";
+                    if (opt === q.correctOption) cls = "correct"; // الإجابة الصحيحة دائماً خضراء بعد الحل
+                    else if (opt === userAns) cls = "wrong"; // إجابة المستخدم إذا كانت خطأ تظهر حمراء
                 }
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
+                optsHtml += `
+                    <button class="option-btn ${cls}" ${isAns ? 'disabled' : ''} 
+                        onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">
+                        ${opt}
+                    </button>`;
             });
-            qBox.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${q.text}</b> <span style="color:var(--ios-blue); font-size:12px; font-weight:bold;">💎 ${q.points} ن</span></div>${optsHtml}`;
+
+            qBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <b>${q.text}</b> 
+                    <span style="color:var(--ios-blue); font-size:12px; font-weight:bold;">💎 ${q.points} ن</span>
+                </div>
+                ${optsHtml}
+                ${isAns ? '<span class="answered-label">✓ تمت الإجابة بنجاح</span>' : ''}
+            `;
             cont.appendChild(qBox);
         }
 
+        // عرض عداد السؤال القادم إذا وجد
         if (upcoming.length > 0) {
             upcoming.sort((a,b) => a.time - b.time);
             const nextT = upcoming[0].time;
@@ -206,9 +219,9 @@
             timerDiv.className = "next-q-timer";
             cont.appendChild(timerDiv);
             
-            setInterval(() => {
+            const timerInt = setInterval(() => {
                 const diff = nextT - new Date();
-                if(diff <= 0) location.reload();
+                if(diff <= 0) { clearInterval(timerInt); location.reload(); }
                 const d = Math.floor(diff / (86400000));
                 const h = Math.floor((diff % 86400000) / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
@@ -243,16 +256,31 @@
 
     window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
         if(!confirm("تأكيد الإجابة النهائية؟")) return;
+        
+        // منع الضغط المتكرر
+        btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = true);
+        
         const isC = sel.trim() === corr.trim();
-        await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid,
-            userName: userData.fullName || userData.name || "عضو",
-            userPhone: userData.phone || "غير مسجل",
-            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
-            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
-            timestamp: serverTimestamp()
-        });
-        location.reload();
+        try {
+            await addDoc(collection(db, "Answers"), {
+                userId: auth.currentUser.uid,
+                userName: userData.fullName || userData.name || "عضو",
+                userPhone: userData.phone || "غير مسجل",
+                compId: cid, 
+                compTitle: ct, 
+                questionId: qid, 
+                questionText: qt,
+                selectedOption: sel, 
+                isCorrect: isC, 
+                pointsAwarded: isC ? pts : 0,
+                timestamp: serverTimestamp()
+            });
+            // إعادة تحميل بسيطة لتحديث الحالة الباهتة
+            location.reload();
+        } catch (e) {
+            alert("حدث خطأ أثناء إرسال الإجابة، حاول مجدداً.");
+            btn.parentElement.querySelectorAll('button').forEach(b => b.disabled = false);
+        }
     };
 </script>
 </body>
