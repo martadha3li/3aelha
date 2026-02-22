@@ -1,0 +1,21 @@
+{
+  "short_name": "مسابقاتي",
+  "name": "تطبيق إدارة المسابقات الذكي",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/index.html",
+  "background_color": "#f2f2f7",
+  "display": "standalone",
+  "theme_color": "#5856d6",
+  "description": "منصة إدارة المشاركين وسحب القرعة الإلكترونية"
+}
