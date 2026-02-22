@@ -1,251 +1,447 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التحكم الاحترافي | إدارة المسابقات والقرعة</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        :root { --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; --gold: #FF9500; --card: #FFFFFF; }
-        body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; direction: rtl; color: #1c1c1e; }
-        .container { max-width: 900px; margin: auto; }
-        
-        .card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.05); position: relative; }
-        h1 { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 30px; }
-        h2 { font-size: 18px; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الإدارة الاحترافية | إدارة المسابقات</title>
 
-        .input-group { margin-bottom: 15px; }
-        input, select, textarea { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #E5E5EA; background: #F9F9FB; font-size: 15px; box-sizing: border-box; outline: none; }
+<style>
+:root{
+--primary:#007AFF;
+--success:#34C759;
+--danger:#FF3B30;
+--gold:#FF9500;
+--bg:#F2F2F7;
+--card:#ffffff;
+}
 
-        .btn { padding: 12px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
-        .btn-main { background: var(--primary); color: white; width: 100%; }
-        .btn-draw { background: linear-gradient(135deg, #FF9500, #FFCC00); color: white; }
-        .btn-ghost { background: #F2F2F7; color: #1c1c1e; }
-        
-        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .menu-dots { cursor: pointer; padding: 5px 10px; font-size: 22px; font-weight: bold; }
-        .dropdown-menu { display: none; position: absolute; left: 20px; top: 50px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 100; min-width: 160px; border: 1px solid #EEE; }
-        .dropdown-menu div { padding: 12px; font-size: 13px; text-align: right; border-bottom: 1px solid #F2F2F7; cursor: pointer; }
-        .dropdown-menu div:hover { background: #F2F2F7; }
+body{
+margin:0;
+padding:20px;
+background:var(--bg);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+direction:rtl;
+color:#1c1c1e;
+}
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-body { background: white; width: 95%; max-width: 550px; border-radius: 28px; padding: 30px; max-height: 90vh; overflow-y: auto; }
+.container{max-width:1100px;margin:auto;}
 
-        /* قسم الفائزين المخصص */
-        .winners-section { margin-top: 20px; padding-top: 15px; border-top: 2px dashed var(--gold); }
-        .winner-tag { background: #FFF9F2; border: 1px solid #FFE0B2; border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+h1{
+text-align:center;
+font-size:28px;
+font-weight:800;
+margin-bottom:35px;
+}
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: right; font-size: 11px; color: #8E8E93; padding: 8px; background: #F9F9FB; }
-        td { padding: 10px; border-bottom: 1px solid #F2F2F7; font-size: 13px; }
-        .badge-win { background: var(--gold); color: white; padding: 2px 8px; border-radius: 6px; font-size: 10px; }
-    </style>
+/* ====== GRID ====== */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:20px;
+margin-bottom:30px;
+}
+
+/* ====== CARD ====== */
+.card{
+background:var(--card);
+border-radius:22px;
+padding:22px;
+box-shadow:0 15px 35px rgba(0,0,0,0.05);
+border:1px solid rgba(0,0,0,0.04);
+transition:.3s;
+}
+.card:hover{
+transform:translateY(-4px);
+box-shadow:0 20px 45px rgba(0,0,0,0.08);
+}
+
+.card h2{
+margin:0 0 18px 0;
+font-size:18px;
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+/* ====== INPUTS ====== */
+input,select,textarea{
+width:100%;
+padding:13px;
+border-radius:14px;
+border:1px solid #E5E5EA;
+background:#F9F9FB;
+font-size:14px;
+margin-bottom:12px;
+outline:none;
+transition:.2s;
+}
+input:focus,textarea:focus{
+border-color:var(--primary);
+background:#fff;
+}
+
+/* ====== BUTTONS ====== */
+.btn{
+padding:12px;
+border:none;
+border-radius:14px;
+cursor:pointer;
+font-weight:600;
+transition:.2s;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:6px;
+}
+.btn-main{background:var(--primary);color:#fff;}
+.btn-draw{background:linear-gradient(135deg,#FF9500,#FFCC00);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-ghost{background:#F2F2F7;}
+.btn:active{transform:scale(.96);}
+
+/* ====== COMPETITION CARDS ====== */
+.comp-card{
+margin-bottom:20px;
+}
+
+.comp-header{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+}
+
+.menu-dots{
+font-size:22px;
+cursor:pointer;
+padding:5px 10px;
+}
+
+.dropdown{
+display:none;
+position:absolute;
+background:#fff;
+border-radius:14px;
+box-shadow:0 10px 25px rgba(0,0,0,.15);
+overflow:hidden;
+z-index:999;
+}
+.dropdown div{
+padding:12px 18px;
+font-size:13px;
+cursor:pointer;
+border-bottom:1px solid #eee;
+}
+.dropdown div:hover{background:#F2F2F7;}
+.dropdown div:last-child{border:none;color:var(--danger);}
+
+/* ====== TABLE ====== */
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:12px;
+}
+th{
+font-size:12px;
+background:#F9F9FB;
+padding:10px;
+color:#8E8E93;
+}
+td{
+padding:12px;
+border-bottom:1px solid #F2F2F7;
+font-size:14px;
+}
+
+/* ====== MODAL ====== */
+.modal{
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.6);
+backdrop-filter:blur(10px);
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+.modal-body{
+background:#fff;
+width:95%;
+max-width:600px;
+border-radius:28px;
+padding:28px;
+max-height:90vh;
+overflow:auto;
+}
+
+/* ====== OPTIONS ====== */
+.option-box{
+display:flex;
+align-items:center;
+gap:10px;
+background:#F2F2F7;
+padding:10px;
+border-radius:12px;
+margin-bottom:10px;
+}
+.option-box input[type="checkbox"]{
+width:22px;
+height:22px;
+accent-color:var(--success);
+}
+
+/* ====== WINNER ANIMATION ====== */
+.winner-row{
+animation:fadeUp .6s forwards;
+opacity:0;
+transform:translateY(20px);
+}
+@keyframes fadeUp{
+to{opacity:1;transform:translateY(0);}
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h1>لوحة الإدارة الذكية ⚙️</h1>
 
-    <div class="card">
-        <h2>🆕 مسابقة جديدة</h2>
-        <input type="text" id="compTitle" placeholder="عنوان المسابقة..." class="input-group">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="input-group">
-            <input type="datetime-local" id="compEndDate">
-            <button class="btn btn-ghost" onclick="publishNow()">عرض الآن ⚡</button>
-        </div>
-        <button class="btn btn-main" onclick="createNewCompetition()">حفظ ونشر المسابقة</button>
-    </div>
+<h1>لوحة إدارة المسابقات الذكية ⚙️</h1>
 
-    <div class="card" style="border: 2px solid var(--gold);">
-        <h2>🎲 سحب القرعة الكبرى</h2>
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 15px;">
-            <select id="drawCompSelect"><option value="">اختر المسابقة...</option></select>
-            <input type="number" id="winnersCount" value="1">
-        </div>
-        <button class="btn btn-draw" style="width: 100%;" onclick="runAdvancedDraw()">ابدأ السحب الحماسي 🔥</button>
-    </div>
+<!-- ====== TOP GRID ====== -->
+<div class="grid">
 
-    <div id="resultsSections"></div>
+<!-- إضافة مسابقة -->
+<div class="card">
+<h2>🆕 إضافة مسابقة</h2>
+<input type="text" id="compTitle" placeholder="اسم المسابقة">
+<label style="font-size:12px;color:#8E8E93">موعد العرض (اختياري)</label>
+<input type="datetime-local" id="compEndDate">
+<button class="btn btn-ghost" onclick="publishNow()">⚡ عرض الآن</button>
+<br>
+<button class="btn btn-main" onclick="createNewCompetition()">حفظ المسابقة</button>
 </div>
 
-<div id="qModal" class="modal"><div class="modal-body" id="qModalContent"></div></div>
+<!-- القرعة -->
+<div class="card" style="border:2px solid var(--gold);background:#FFFDF8">
+<h2>🎲 القرعة الحماسية</h2>
+<select id="drawCompSelect"><option value="">اختر المسابقة</option></select>
+<input type="number" id="winnersCount" value="1" min="1">
+<button class="btn btn-draw" onclick="runAdvancedDraw()">🔥 ابدأ السحب</button>
+</div>
+
+</div>
+
+<!-- عرض المسابقات -->
+<div id="resultsSections"></div>
+
+</div>
+
+<!-- مودال إدارة الأسئلة -->
+<div id="qModal" class="modal">
+<div class="modal-body">
+<h3>❓ إدارة الأسئلة</h3>
+<input type="hidden" id="activeCid">
+
+<textarea id="qText" placeholder="نص السؤال"></textarea>
+<input type="text" id="qImage" placeholder="رابط صورة السؤال (اختياري)">
+<input type="number" id="qPoints" value="10" placeholder="نقاط السؤال">
+
+<div id="optionsList"></div>
+<button class="btn btn-ghost" onclick="addOptionField()">+ إضافة خيار</button>
+<br><br>
+<button class="btn btn-main" onclick="saveQuestion()">حفظ السؤال</button>
+<br><br>
+<button class="btn btn-ghost" onclick="closeModal('qModal')">إغلاق</button>
+
+<div id="currentQs" style="margin-top:20px;border-top:1px solid #eee;padding-top:15px;"></div>
+</div>
+</div>
+
+<!-- مودال القرعة -->
 <div id="drawModal" class="modal">
-    <div class="modal-body" style="text-align: center;">
-        <h2 id="drawStatus" style="color: var(--gold);">جاري السحب...</h2>
-        <div id="winnersTableContainer"></div>
-        <button class="btn btn-main" style="margin-top:20px;" onclick="closeModal('drawModal')">إغلاق</button>
-    </div>
+<div class="modal-body" style="text-align:center">
+<h2 id="drawStatus" style="color:var(--gold)">جاري السحب...</h2>
+<div id="winnersTableContainer"></div>
+<button class="btn btn-main" onclick="closeModal('drawModal')">تم</button>
 </div>
-<div id="userModal" class="modal"><div class="modal-body" id="userInfoContent"></div></div>
+</div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { collection, addDoc, onSnapshot, getDocs, query, where, doc, getDoc, deleteDoc, updateDoc, serverTimestamp, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from './config.js';
+import { collection, addDoc, onSnapshot, getDocs, query, where, doc, getDoc, deleteDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    window.publishNow = () => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('compEndDate').value = now.toISOString().slice(0,16);
-    };
+/* ====== نشر الآن ====== */
+window.publishNow=()=>{
+const now=new Date();
+now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+compEndDate.value=now.toISOString().slice(0,16);
+};
 
-    window.createNewCompetition = async () => {
-        const title = document.getElementById('compTitle').value;
-        const endDate = document.getElementById('compEndDate').value;
-        if(!title) return alert("العنوان مطلوب");
-        await addDoc(collection(db, "Competitions"), { title, endDate, createdAt: serverTimestamp() });
-        document.getElementById('compTitle').value = "";
-    };
+/* ====== إنشاء مسابقة ====== */
+window.createNewCompetition=async()=>{
+const title=compTitle.value;
+const endDate=compEndDate.value;
+if(!title)return alert("أدخل اسم المسابقة");
+await addDoc(collection(db,"Competitions"),{title,endDate,createdAt:serverTimestamp()});
+compTitle.value="";
+alert("تمت الإضافة");
+};
 
-    // مراقبة المسابقات وعرضها
-    onSnapshot(query(collection(db, "Competitions"), orderBy("createdAt", "desc")), (snap) => {
-        const container = document.getElementById('resultsSections');
-        const drawSelect = document.getElementById('drawCompSelect');
-        container.innerHTML = "";
-        drawSelect.innerHTML = '<option value="">اختر المسابقة...</option>';
+/* ====== عرض المسابقات ====== */
+onSnapshot(query(collection(db,"Competitions"),orderBy("createdAt","desc")),(snap)=>{
+resultsSections.innerHTML="";
+drawCompSelect.innerHTML='<option value="">اختر المسابقة</option>';
 
-        snap.forEach(d => {
-            const comp = d.data();
-            const cid = d.id;
-            drawSelect.innerHTML += `<option value="${cid}">${comp.title}</option>`;
+snap.forEach(d=>{
+const comp=d.data();
+const cid=d.id;
 
-            const card = document.createElement('div');
-            card.className = "card";
-            card.innerHTML = `
-                <div class="comp-header">
-                    <div><h3>🏆 ${comp.title}</h3><small>ينتهي: ${comp.endDate || '---'}</small></div>
-                    <div class="menu-dots" onclick="toggleMenu('${cid}')">⋮</div>
-                    <div id="menu-${cid}" class="dropdown-menu">
-                        <div onclick="openQManager('${cid}')">❓ إدارة الأسئلة</div>
-                        <div onclick="deleteComp('${cid}')">🗑️ حذف المسابقة</div>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <h4 style="margin:5px 0; font-size:12px;">👥 المشاركون الجدد:</h4>
-                    <table id="table-${cid}"><tbody><tr><td colspan="3">جاري التحميل...</td></tr></tbody></table>
-                </div>
-                <div id="winners-area-${cid}" class="winners-section" style="display:none;">
-                    <h4 style="color:var(--gold); margin:0 0 10px 0;">🎉 فائزو القرعة:</h4>
-                    <table id="winners-table-${cid}">
-                        <thead><tr><th>الفائز</th><th>الجوال</th><th>بيانات المحرم</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            `;
-            container.appendChild(card);
-            loadData(cid);
-        });
-    });
+drawCompSelect.innerHTML+=`<option value="${cid}">${comp.title}</option>`;
 
-    // جلب المشاركين + الفائزين
-    async function loadData(cid) {
-        // المشاركون
-        const ansSnap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid)));
-        const tbody = document.querySelector(`#table-${cid} tbody`);
-        tbody.innerHTML = ansSnap.empty ? "<tr><td colspan='3'>لا توجد مشاركات</td></tr>" : "";
-        ansSnap.forEach(d => {
-            const a = d.data();
-            tbody.innerHTML += `<tr><td onclick="showUser('${a.userId}')" style="color:var(--primary); cursor:pointer">${a.userName}</td><td>${a.userPhone}</td><td>${a.isCorrect?'✅':'❌'}</td></tr>`;
-        });
+resultsSections.innerHTML+=`
+<div class="card comp-card">
+<div class="comp-header">
+<div>
+<h3>${comp.title}</h3>
+<small style="color:#8E8E93">موعد العرض: ${comp.endDate||"غير محدد"}</small>
+</div>
+<div style="position:relative">
+<span class="menu-dots" onclick="toggleMenu('${cid}')">⋮</span>
+<div id="menu-${cid}" class="dropdown">
+<div onclick="openQManager('${cid}')">❓ إضافة سؤال</div>
+<div onclick="editComp('${cid}')">✏️ تعديل الاسم</div>
+<div onclick="deleteComp('${cid}')">🗑️ حذف</div>
+</div>
+</div>
+</div>
 
-        // الفائزون المحفوظون
-        const winDoc = await getDoc(doc(db, "Winners", cid));
-        if(winDoc.exists()) {
-            document.getElementById(`winners-area-${cid}`).style.display = 'block';
-            const winTable = document.querySelector(`#winners-table-${cid} tbody`);
-            winTable.innerHTML = "";
-            winDoc.data().list.forEach(w => {
-                winTable.innerHTML += `
-                    <tr style="background:#FFFDF9">
-                        <td style="font-weight:bold">${w.name}</td>
-                        <td>${w.phone}</td>
-                        <td style="font-size:11px; color:#666;">${w.guardian || '---'}<br>${w.gPhone || ''}</td>
-                    </tr>`;
-            });
-        }
-    }
+<table id="table-${cid}">
+<thead><tr><th>الاسم</th><th>الجوال</th><th>الحالة</th><th>النقاط</th></tr></thead>
+<tbody><tr><td colspan="4">جاري التحميل...</td></tr></tbody>
+</table>
 
-    // تشغيل القرعة وحفظ النتائج
-    window.runAdvancedDraw = async () => {
-        const cid = document.getElementById('drawCompSelect').value;
-        const count = parseInt(document.getElementById('winnersCount').value);
-        if(!cid) return alert("اختر مسابقة");
+</div>
+`;
 
-        document.getElementById('drawModal').style.display = 'flex';
-        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid), where("isCorrect", "==", true)));
-        let candidates = [];
-        
-        // جلب بيانات المستخدمين بالكامل للقرعة
-        for(const d of snap.docs) {
-            const user = (await getDoc(doc(db, "Users", d.data().userId))).data();
-            candidates.push({
-                uid: d.data().userId,
-                name: d.data().userName,
-                phone: d.data().userPhone,
-                guardian: user?.femaleGuardianName || '',
-                gPhone: user?.femaleGuardianPhone || ''
-            });
-        }
-        
-        candidates = [...new Map(candidates.map(item => [item.uid, item])).values()];
-        if(candidates.length === 0) return document.getElementById('drawStatus').innerText = "لا يوجد مؤهلين";
+loadAnswers(cid);
+});
+});
 
-        let winners = [];
-        for(let i=0; i<Math.min(count, candidates.length); i++) {
-            winners.push(candidates.splice(Math.floor(Math.random()*candidates.length), 1)[0]);
-        }
+/* ====== إدارة الأسئلة ====== */
+let optionsCount=0;
+window.openQManager=(cid)=>{
+activeCid.value=cid;
+optionsList.innerHTML="";
+optionsCount=0;
+addOptionField();addOptionField();
+loadExistingQs(cid);
+qModal.style.display="flex";
+};
 
-        // حفظ الفائزين في الداتابيز ليظهروا في الجدول الدائم
-        await setDoc(doc(db, "Winners", cid), { list: winners, drawnAt: serverTimestamp() });
-        
-        document.getElementById('drawStatus').innerText = "🎉 نتائج القرعة";
-        document.getElementById('winnersTableContainer').innerHTML = `
-            <table><thead><tr><th>الاسم</th><th>الجوال</th></tr></thead>
-            <tbody>${winners.map(w => `<tr><td>${w.name}</td><td>${w.phone}</td></tr>`).join('')}</tbody></table>
-        `;
-        loadData(cid); // تحديث الجداول في الصفحة
-    };
+window.addOptionField=()=>{
+optionsList.innerHTML+=`
+<div class="option-box">
+<input type="checkbox" class="opt-check">
+<input type="text" class="opt-text" placeholder="الخيار ${++optionsCount}">
+</div>
+`;
+};
 
-    window.showUser = async (uid) => {
-        const u = (await getDoc(doc(db, "Users", uid))).data();
-        document.getElementById('userInfoContent').innerHTML = `
-            <h3>📇 بطاقة التواصل</h3>
-            <p><b>الاسم:</b> ${u.fullName}</p><p><b>الجوال:</b> ${u.phone}</p>
-            <div style="background:#F9F9FB; padding:10px; border-radius:10px; margin-top:10px;">
-                <p style="color:var(--gold); margin:0;"><b>بيانات المحرم (للإناث):</b></p>
-                <p>الاسم: ${u.femaleGuardianName || '---'}</p>
-                <p>الجوال: ${u.femaleGuardianPhone || '---'}</p>
-            </div>
-            <button class="btn btn-main" style="margin-top:15px" onclick="closeModal('userModal')">إغلاق</button>`;
-        document.getElementById('userModal').style.display = 'flex';
-    };
+window.saveQuestion=async()=>{
+const cid=activeCid.value;
+const text=qText.value;
+const img=qImage.value;
+const pts=parseInt(qPoints.value);
 
-    window.toggleMenu = (id) => {
-        const m = document.getElementById(`menu-${id}`);
-        m.style.display = m.style.display === 'block' ? 'none' : 'block';
-    };
+let options=[];
+let correctIdx=-1;
 
-    window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-    window.deleteComp = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "Competitions", id)); };
+document.querySelectorAll(".option-box").forEach((el,i)=>{
+const txt=el.querySelector(".opt-text").value;
+if(txt){
+options.push(txt);
+if(el.querySelector(".opt-check").checked)correctIdx=i;
+}
+});
 
-    // إدارة الأسئلة (مبسط)
-    window.openQManager = (cid) => {
-        document.getElementById('qModalContent').innerHTML = `
-            <h3>❓ إضافة سؤال</h3>
-            <input type="text" id="qT" placeholder="نص السؤال" class="input-group">
-            <input type="text" id="qI" placeholder="رابط الصورة (اختياري)" class="input-group">
-            <div id="opts"><input type="text" class="o" placeholder="خيار 1" class="input-group"><input type="text" class="o" placeholder="خيار 2"></div>
-            <p style="font-size:12px;">* أول خيار هو الصحيح دائماً في هذا النموذج المبسط</p>
-            <button class="btn btn-main" onclick="saveQ('${cid}')">حفظ</button>
-            <button class="btn btn-ghost" onclick="closeModal('qModal')">إلغاء</button>`;
-        document.getElementById('qModal').style.display = 'flex';
-    };
+if(!text||correctIdx===-1)return alert("حدد الإجابة الصحيحة");
 
-    window.saveQ = async (cid) => {
-        const text = document.getElementById('qT').value;
-        const options = Array.from(document.querySelectorAll('.o')).map(i => i.value);
-        await addDoc(collection(db, "Questions"), { compId: cid, text, options, correctAnswer: 0, createdAt: serverTimestamp() });
-        alert("تم"); closeModal('qModal');
-    };
+await addDoc(collection(db,"Questions"),{
+compId:cid,text,image:img,points:pts,
+options,correctAnswer:correctIdx,
+createdAt:serverTimestamp()
+});
+alert("تم الحفظ");
+openQManager(cid);
+};
+
+/* ====== القرعة ====== */
+window.runAdvancedDraw=async()=>{
+const cid=drawCompSelect.value;
+const count=parseInt(winnersCount.value);
+if(!cid)return alert("اختر المسابقة");
+
+drawModal.style.display="flex";
+drawStatus.innerText="جاري السحب...";
+
+const snap=await getDocs(query(collection(db,"Answers"),where("compId","==",cid),where("isCorrect","==",true)));
+
+let candidates=snap.docs.map(d=>({
+uid:d.data().userId,
+name:d.data().userName,
+phone:d.data().userPhone
+}));
+
+candidates=[...new Map(candidates.map(i=>[i.uid,i])).values()];
+
+if(!candidates.length){
+drawStatus.innerText="لا يوجد مرشحين";
+return;
+}
+
+setTimeout(()=>{
+let winners=[];
+for(let i=0;i<Math.min(count,candidates.length);i++){
+const r=Math.floor(Math.random()*candidates.length);
+winners.push(candidates.splice(r,1)[0]);
+}
+
+drawStatus.innerText="🎉 الفائزون 🎉";
+let html=`<table><thead><tr><th>#</th><th>الاسم</th><th>الجوال</th></tr></thead><tbody>`;
+winners.forEach((w,i)=>{
+html+=`<tr class="winner-row" style="animation-delay:${i*.4}s">
+<td>${i+1}</td><td>${w.name}</td><td>${w.phone}</td>
+</tr>`;
+});
+html+="</tbody></table>";
+winnersTableContainer.innerHTML=html;
+
+},2000);
+};
+
+/* ====== وظائف مساعدة ====== */
+window.toggleMenu=(id)=>{
+const m=document.getElementById("menu-"+id);
+m.style.display=m.style.display==="block"?"none":"block";
+};
+window.closeModal=(id)=>document.getElementById(id).style.display="none";
+window.deleteComp=async(id)=>{if(confirm("حذف المسابقة؟"))await deleteDoc(doc(db,"Competitions",id));};
+async function loadAnswers(cid){
+const snap=await getDocs(query(collection(db,"Answers"),where("compId","==",cid)));
+const tbody=document.querySelector(`#table-${cid} tbody`);
+tbody.innerHTML=snap.empty?"<tr><td colspan='4'>لا توجد مشاركات</td></tr>":"";
+snap.forEach(d=>{
+const a=d.data();
+tbody.innerHTML+=`<tr>
+<td>${a.userName}</td>
+<td>${a.userPhone}</td>
+<td>${a.isCorrect?'✅':'❌'}</td>
+<td>${a.pointsAwarded||0}</td>
+</tr>`;
+});
+}
 </script>
+
 </body>
 </html>
