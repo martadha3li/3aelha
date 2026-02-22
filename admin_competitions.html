@@ -139,12 +139,25 @@
         closeQModal(); alert("تم الحفظ ✅");
     };
 
-    window.createNewCompetition = async () => {
-        const t = document.getElementById('compTitle').value;
-        const e = document.getElementById('compEndDate').value;
-        if(t && e) await addDoc(collection(db, "Competitions"), { title: t, endDate: e, visible: true, createdAt: serverTimestamp() });
-        alert("تم النشر ✅");
-    };
+   window.createNewCompetition = async () => {
+    const t = document.getElementById('compTitle').value;
+    const e = document.getElementById('compEndDate').value;
+    
+    if(!t || !e) return alert("يرجى إكمال البيانات");
+
+    try {
+        await addDoc(collection(db, "Competitions"), { 
+            title: t, 
+            endDate: e, 
+            visible: true, // هذا الحقل ضروري جداً لظهورها في صفحة المستخدم
+            createdAt: serverTimestamp() 
+        });
+        alert("تم النشر بنجاح ✅");
+        document.getElementById('compTitle').value = "";
+    } catch (err) {
+        alert("خطأ في النشر: " + err.message);
+    }
+};
 
     onSnapshot(query(collection(db, "Answers"), orderBy("timestamp", "desc")), snap => {
         const body = document.getElementById('resultsBody');
