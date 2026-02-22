@@ -3,78 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة النتائج والقرعة الذكية</title>
+    <title>لوحة التحكم | إدارة المسابقات والنتائج</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #007AFF; --success: #34C759; --bg: #F2F2F7; --gold: #FF9500; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; direction: rtl; }
-        .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { color: var(--primary); font-size: 18px; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        :root { --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --bg: #F2F2F7; --gold: #FF9500; --card: #FFFFFF; }
+        body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 20px; direction: rtl; padding-bottom: 50px; }
         
-        /* تنسيق الجداول */
+        .container { max-width: 900px; margin: auto; }
+        .card { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA; }
+        
+        h1 { font-size: 24px; color: #1c1c1e; text-align: center; margin-bottom: 30px; }
+        h2 { font-size: 18px; color: var(--primary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+
+        /* النموذج (Form) */
+        .form-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #DDD; box-sizing: border-box; font-size: 14px; background: #FAFAFA; }
+        
+        /* الأزرار */
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn:active { transform: scale(0.97); }
+        .btn-main { background: var(--primary); color: white; width: 100%; padding: 14px; font-size: 16px; }
+        .btn-draw { background: var(--gold); color: white; }
+        .btn-excel { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; padding: 5px 10px; }
+
+        /* الجداول */
         .table-wrapper { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { background: #F8F8FB; padding: 12px; text-align: right; font-size: 13px; color: #8E8E93; }
-        td { padding: 12px; border-bottom: 1px solid #F2F2F7; font-size: 14px; }
-
-        /* زر القرعة والتصدير */
-        .action-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-left: 10px; }
-        .btn-excel { background: var(--success); }
-        .btn-draw { background: var(--gold); }
-
-        /* النافذة المنسدلة (Modal) لبيانات العضو */
-        .user-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-body { background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px; position: relative; animation: slideIn 0.3s; }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .info-label { font-weight: bold; color: #8E8E93; }
+        th { background: #F8F8FB; padding: 12px; text-align: right; font-size: 12px; color: #8E8E93; border-bottom: 1px solid #EEE; }
+        td { padding: 12px; border-bottom: 1px solid #F2F2F7; font-size: 13px; }
 
         .clickable-name { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: bold; }
+
+        /* النافذة المنسدلة (Modal) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-body { background: white; width: 90%; max-width: 450px; border-radius: 22px; padding: 25px; position: relative; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
+        .info-label { font-weight: bold; color: #8E8E93; }
+
+        /* إدارة الأسئلة */
+        .q-list { margin-top: 10px; padding: 10px; background: #F9F9F9; border-radius: 12px; border: 1px solid #EEE; }
+        .q-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #DDD; }
     </style>
 </head>
 <body>
 
-    <h1>إدارة النتائج والقرعة 🏆</h1>
+<div class="container">
+    <h1>لوحة إدارة المسابقات 🏆</h1>
 
-    <div id="resultsSections"></div>
-
-    <div id="userModal" class="user-modal">
-        <div class="modal-body">
-            <h3 style="margin-top:0;">📋 بيانات التواصل</h3>
-            <div id="modalInfo"></div>
-            <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:12px; border:none; border-radius:10px; background:#EEE;">إغلاق</button>
+    <div class="card">
+        <h2>🆕 إنشاء مسابقة جديدة</h2>
+        <div class="form-group">
+            <input type="text" id="compTitle" placeholder="عنوان المسابقة (مثلاً: مسابقة رمضان)">
         </div>
+        <div class="form-group">
+            <label style="font-size: 12px; color: #8E8E93;">تاريخ ووقت الإنتهاء:</label>
+            <input type="datetime-local" id="compEndDate">
+        </div>
+        <button class="btn btn-main" onclick="createNewCompetition()">نشر المسابقة للجميع ✅</button>
     </div>
+
+    <div id="resultsSections">
+        <p style="text-align:center; color:gray;">جاري تحميل المسابقات والبيانات...</p>
+    </div>
+</div>
+
+<div id="userModal" class="modal">
+    <div class="modal-body">
+        <h3 style="margin-top:0; color:var(--primary);">📋 تفاصيل الفائز والتواصل</h3>
+        <div id="modalInfo"></div>
+        <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:12px; border:none; border-radius:12px; background:#F2F2F7; font-weight:bold; cursor:pointer;">إغلاق</button>
+    </div>
+</div>
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, onSnapshot, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, onSnapshot, getDocs, query, where, doc, getDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // جلب المسابقات أولاً
-    onSnapshot(collection(db, "Competitions"), async (snap) => {
+    // 1. إنشاء مسابقة
+    window.createNewCompetition = async () => {
+        const title = document.getElementById('compTitle').value;
+        const endDate = document.getElementById('compEndDate').value;
+        if (!title || !endDate) return alert("أكمل البيانات أولاً");
+
+        await addDoc(collection(db, "Competitions"), {
+            title, endDate, visible: true, createdAt: serverTimestamp()
+        });
+        alert("تم إنشاء المسابقة بنجاح!");
+        document.getElementById('compTitle').value = "";
+    };
+
+    // 2. تحميل المسابقات والنتائج (فرز تلقائي)
+    onSnapshot(query(collection(db, "Competitions"), orderBy("createdAt", "desc")), async (snap) => {
         const container = document.getElementById('resultsSections');
         container.innerHTML = "";
 
-        for (const compDoc of snap.docs) {
-            const comp = compDoc.data();
-            const compId = compDoc.id;
+        if(snap.empty) container.innerHTML = "<p style='text-align:center;'>لا توجد مسابقات منشأة حالياً.</p>";
 
-            // إنشاء قسم لكل مسابقة
+        snap.forEach(async (compDoc) => {
+            const comp = compDoc.data();
+            const cid = compDoc.id;
+
             const section = document.createElement('div');
             section.className = "card";
             section.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>مسابقة: ${comp.title}</h2>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #EEE; padding-bottom:10px;">
                     <div>
-                        <button class="action-btn btn-draw" onclick="runDraw('${compId}', '${comp.title}')">🎲 سحب قرعة</button>
-                        <button class="action-btn btn-excel" onclick="exportExcel('${compId}', '${comp.title}')">📊 تصدير Excel</button>
+                        <h2 style="margin:0;">🏆 ${comp.title}</h2>
+                        <small style="color:gray;">تنتهي في: ${comp.endDate.replace('T', ' ')}</small>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-draw" onclick="runDraw('${cid}', '${comp.title}')">🎲 قرعة</button>
+                        <button class="btn btn-excel" onclick="exportExcel('${cid}', '${comp.title}')">📊 Excel</button>
+                        <button class="btn btn-danger" onclick="deleteComp('${cid}')">🗑️</button>
                     </div>
                 </div>
+
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th>#</th>
                                 <th>المشارك</th>
                                 <th>الجوال</th>
                                 <th>الحالة</th>
@@ -82,95 +130,112 @@
                                 <th>النقاط</th>
                             </tr>
                         </thead>
-                        <tbody id="table-${compId}"></tbody>
+                        <tbody id="table-${cid}">
+                            <tr><td colspan="5" style="text-align:center; color:#CCC;">جاري تحميل المشاركات...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             `;
             container.appendChild(section);
-
-            // جلب نتائج هذه المسابقة
-            fetchAnswers(compId);
-        }
+            fetchAnswers(cid);
+        });
     });
 
-    async function fetchAnswers(compId) {
-        const q = query(collection(db, "Answers"), where("compId", "==", compId));
+    // 3. جلب الإجابات لكل مسابقة بشكل مستقل
+    async function fetchAnswers(cid) {
+        const q = query(collection(db, "Answers"), where("compId", "==", cid), orderBy("timestamp", "desc"));
         const snap = await getDocs(q);
-        const tbody = document.getElementById(`table-${compId}`);
-        
-        // جلب أرقام الأسئلة لترقيمها
-        const questionsSnap = await getDocs(collection(db, `Questions`)); // أو حسب هيكلية تخزين الأسئلة لديك
-        
-        let index = 1;
+        const tbody = document.getElementById(`table-${cid}`);
+        tbody.innerHTML = "";
+
+        if(snap.empty) {
+            tbody.innerHTML = "<tr><td colspan="5" style="text-align:center; color:gray;">لا توجد مشاركات لهذه المسابقة بعد.</td></tr>";
+            return;
+        }
+
         snap.forEach(d => {
             const a = d.data();
             tbody.innerHTML += `
                 <tr>
-                    <td>${index++}</td>
                     <td class="clickable-name" onclick="showUserInfo('${a.userId}')">${a.userName}</td>
                     <td>${a.userPhone}</td>
-                    <td>${a.isCorrect ? '✅ صح' : '❌ خطأ'}</td>
-                    <td style="font-size:11px; max-width:150px; overflow:hidden;">${a.questionText}</td>
-                    <td style="font-weight:bold; color:var(--success)">${a.pointsAwarded}</td>
+                    <td style="color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">
+                        ${a.isCorrect ? '✅ صح' : '❌ خطأ'}
+                    </td>
+                    <td style="font-size:11px; color:#666;">${a.questionText.substring(0,20)}...</td>
+                    <td>${a.pointsAwarded}ن</td>
                 </tr>
             `;
         });
     }
 
-    // وظيفة إظهار معلومات العضو
+    // 4. عرض تفاصيل العضو (النافذة المنسدلة)
     window.showUserInfo = async (uid) => {
         const userDoc = await getDoc(doc(db, "Users", uid));
-        if (!userDoc.exists()) return alert("بيانات العضو غير متوفرة");
+        if (!userDoc.exists()) return alert("تعذر العثور على بيانات العضو الأصلية");
         
         const u = userDoc.data();
         const infoDiv = document.getElementById('modalInfo');
         
         infoDiv.innerHTML = `
-            <div class="info-row"><span class="info-label">الاسم:</span> <span>${u.fullName || u.name}</span></div>
-            <div class="info-row"><span class="info-label">الجوال:</span> <span>${u.phone}</span></div>
-            <div class="info-row"><span class="info-label">الإيميل:</span> <span>${u.email || 'غير مسجل'}</span></div>
-            <hr>
-            <div class="info-row"><span class="info-label">معرف الأنثى:</span> <span>${u.femaleGuardianName || 'لا يوجد'}</span></div>
-            <div class="info-row"><span class="info-label">جوال المعرف:</span> <span>${u.femaleGuardianPhone || 'لا يوجد'}</span></div>
+            <div class="info-row"><span class="info-label">الاسم بالكامل:</span> <span>${u.fullName || u.name}</span></div>
+            <div class="info-row"><span class="info-label">رقم الجوال:</span> <span>${u.phone}</span></div>
+            <div class="info-row"><span class="info-label">البريد الإلكتروني:</span> <span>${u.email || 'غير مسجل'}</span></div>
+            <div style="margin-top:15px; background:#FFF9F2; padding:10px; border-radius:10px; border:1px solid #FFE0B2;">
+                <div style="font-weight:bold; color:var(--gold); margin-bottom:5px;">بيانات الولي (للإناث):</div>
+                <div class="info-row"><span class="info-label">اسم المعرّف:</span> <span>${u.femaleGuardianName || '---'}</span></div>
+                <div class="info-row"><span class="info-label">جوال المعرّف:</span> <span>${u.femaleGuardianPhone || '---'}</span></div>
+            </div>
         `;
         document.getElementById('userModal').style.display = 'flex';
     };
 
     window.closeModal = () => document.getElementById('userModal').style.display = 'none';
 
-    // وظيفة القرعة
-    window.runDraw = async (compId, title) => {
-        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", compId), where("isCorrect", "==", true)));
+    // 5. وظيفة القرعة (فقط من الإجابات الصحيحة)
+    window.runDraw = async (cid, title) => {
+        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid), where("isCorrect", "==", true)));
         const winners = snap.docs.map(d => ({id: d.data().userId, name: d.data().userName}));
         
-        if (winners.length === 0) return alert("لا يوجد إجابات صحيحة للسحب عليها!");
+        if (winners.length === 0) return alert("لا توجد إجابات صحيحة للسحب عليها في هذه المسابقة!");
         
-        const luckyOne = winners[Math.floor(Math.random() * winners.length)];
-        alert(`🎉 الفائز في ${title} هو: ${luckyOne.name}`);
-        showUserInfo(luckyOne.id);
+        alert("جاري السحب العشوائي...");
+        setTimeout(() => {
+            const lucky = winners[Math.floor(Math.random() * winners.length)];
+            alert(`🎉 الفائز هو: ${lucky.name}`);
+            showUserInfo(lucky.id);
+        }, 1000);
     };
 
-    // وظيفة تصدير الاكسل
-    window.exportExcel = async (compId, title) => {
-        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", compId)));
+    // 6. تصدير البيانات إلى Excel
+    window.exportExcel = async (cid, title) => {
+        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid)));
         const data = snap.docs.map(d => {
             const a = d.data();
             return {
+                "المسابقة": a.compTitle,
                 "اسم المشارك": a.userName,
                 "رقم الجوال": a.userPhone,
-                "البريد الإلكتروني": a.userEmail || "---",
-                "نص السؤال": a.questionText,
                 "النتيجة": a.isCorrect ? "صحيحة" : "خاطئة",
-                "النقاط": a.pointsAwarded
+                "النقاط المستحقة": a.pointsAwarded,
+                "نص السؤال": a.questionText,
+                "التوقيت": a.timestamp?.toDate().toLocaleString('ar-EG')
             };
         });
 
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "النتائج");
-        XLSX.writeFile(workbook, `نتائج_مسابقة_${title}.xlsx`);
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "النتائج");
+        XLSX.writeFile(wb, `نتائج_${title}.xlsx`);
     };
 
+    // 7. حذف المسابقة
+    window.deleteComp = async (id) => {
+        if(confirm("هل أنت متأكد من حذف هذه المسابقة وكل نتائجها؟")) {
+            await deleteDoc(doc(db, "Competitions", id));
+            alert("تم الحذف.");
+        }
+    };
 </script>
 </body>
 </html>
