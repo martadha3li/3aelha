@@ -3,54 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة المسابقات المتطور</title>
+    <title>إدارة المسابقات المتكاملة</title>
     <style>
         :root { --primary: #5856d6; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; --text: #1c1c1e; --gold: #ff9500; }
-        body { background-color: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 0; direction: rtl; }
-        .container { padding: 12px; }
-        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .card-title { font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        .form-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+        body { background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; color: var(--text); line-height: 1.5; }
+        .top-bar { background: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+        .container { padding: 12px; max-width: 100%; box-sizing: border-box; }
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .card-title { font-size: 16px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: var(--primary); }
+        .form-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; background: #fafafa; margin-bottom: 10px; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .btn-danger { background: var(--danger); }
+        .table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 13px; }
+        th { background: #f8f8fb; padding: 12px; text-align: right; color: #8e8e93; border-bottom: 1px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f2f2f7; }
+        .badge { padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; color: white; border: none; cursor: pointer; }
+        .bg-primary { background: var(--primary); } .bg-danger { background: var(--danger); } .bg-success { background: var(--success); } .bg-gold { background: var(--gold); }
         .comp-item { border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #fff; }
-        .q-list { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; display: none; }
-        .q-item { background: #f9f9f9; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; color: white; border: none; cursor: pointer; margin-left: 2px; }
-        .bg-edit { background: #007aff; } .bg-delete { background: var(--danger); } .bg-add { background: var(--success); }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; }
-        .opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .q-list { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; display: none; border-top: 1px solid #eee; }
+        .q-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 20px; border-radius: 25px 25px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .opt-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
+<div class="top-bar">
+    <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:20px;">➡️</button>
+    <b>إدارة المسابقات والنتائج</b>
+    <div style="width:20px;"></div>
+</div>
+
 <div class="container">
+
     <div class="card" style="border: 2px solid var(--gold);">
-        <div class="card-title">⚙️ إدارة النتائج والقرعة</div>
+        <div class="card-title" style="color: var(--gold);">🎰 لوحة التحكم والمسح</div>
         <select id="drawCompSelect" class="form-input"></select>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button onclick="startDrawProcess()" class="btn-main" style="background: var(--gold);">قرعة 🎲</button>
-            <button onclick="clearCompetitionResults()" class="btn-main" style="background: var(--danger);">مسح المحدد 🗑️</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="startDrawProcess()" class="btn-main" style="background: var(--gold);">سحب قرعة 🎲</button>
+            <button onclick="clearCompetitionResults()" class="btn-main btn-danger" style="font-size: 12px;">مسح نتائج المحدد 🗑️</button>
         </div>
-        <button onclick="clearAllAnswersGlobal()" class="btn-main" style="margin-top:8px; background: #333;">🔥 مسح شامل للنتائج</button>
+        <button onclick="clearAllAnswersGlobal()" class="btn-main btn-danger" style="margin-top: 10px; border: 2px solid #fff;">🔥 مسح كافة النتائج (شامل)</button>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🆕 مسابقة جديدة</div>
+        <input type="text" id="compTitle" placeholder="عنوان المسابقة..." class="form-input">
+        <input type="datetime-local" id="compEndDate" class="form-input">
+        <button onclick="createNewCompetition()" class="btn-main">نشر المسابقة</button>
     </div>
 
     <div class="card">
         <div class="card-title">📋 المسابقات والأسئلة</div>
         <div id="compsList">جاري التحميل...</div>
     </div>
+
+    <div class="card">
+        <div class="card-title">📊 آخر النتائج والمشاركين</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>المشارك</th><th>المسابقة</th><th>الحالة</th><th>التوقيت</th></tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div id="qModal" class="modal">
     <div class="modal-content">
-        <h3 id="modalTitle">إضافة سؤال</h3>
+        <h3 id="modalTitle" style="color:var(--primary);">إضافة سؤال</h3>
         <input type="hidden" id="activeCompId">
-        <input type="hidden" id="activeQId"> <input type="text" id="qText" placeholder="نص السؤال..." class="form-input">
-        <div class="opt-row"><input type="radio" name="correctCheck" value="0" id="r0"> <input type="text" id="opt0" placeholder="الخيار 1" class="form-input"></div>
+        <input type="hidden" id="activeQId">
+        <input type="text" id="qText" placeholder="نص السؤال..." class="form-input">
+        <div class="opt-row"><input type="radio" name="correctCheck" value="0" checked id="r0"> <input type="text" id="opt0" placeholder="الخيار 1" class="form-input"></div>
         <div class="opt-row"><input type="radio" name="correctCheck" value="1" id="r1"> <input type="text" id="opt1" placeholder="الخيار 2" class="form-input"></div>
         <div class="opt-row"><input type="radio" name="correctCheck" value="2" id="r2"> <input type="text" id="opt2" placeholder="الخيار 3" class="form-input"></div>
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="closeQModal()" style="flex:1; border:none; border-radius:10px;">إلغاء</button>
+            <button onclick="closeQModal()" style="flex:1; padding:15px; border-radius:12px; border:none;">إلغاء</button>
             <button onclick="saveQuestion()" class="btn-main" style="flex:2;">حفظ ✅</button>
         </div>
     </div>
@@ -58,65 +92,96 @@
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDocs, query, where, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, query, orderBy, getDocs, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // جلب المسابقات والأسئلة
-    onSnapshot(collection(db, "Competitions"), async (snap) => {
+    // 1. عرض المسابقات والأسئلة
+    onSnapshot(collection(db, "Competitions"), (snap) => {
         const list = document.getElementById('compsList');
         const select = document.getElementById('drawCompSelect');
         list.innerHTML = "";
         select.innerHTML = `<option value="">-- اختر مسابقة --</option>`;
 
-        for (const d of snap.docs) {
+        snap.forEach(async (d) => {
             const c = d.data();
             const compId = d.id;
             select.innerHTML += `<option value="${compId}">${c.title}</option>`;
 
-            // جلب أسئلة هذه المسابقة
-            const qSnap = await getDocs(query(collection(db, "Questions"), where("compId", "==", compId)));
-            let questionsHtml = "";
-            qSnap.forEach(qDoc => {
-                const q = qDoc.data();
-                questionsHtml += `
-                    <div class="q-item">
-                        <span>❓ ${q.text}</span>
-                        <div>
-                            <button class="badge bg-edit" onclick="openEditQ('${compId}', '${qDoc.id}', ${JSON.stringify(q).replace(/"/g, '&quot;')})">✏️</button>
-                            <button class="badge bg-delete" onclick="deleteItem('Questions', '${qDoc.id}')">🗑️</button>
-                        </div>
-                    </div>`;
-            });
-
-            list.innerHTML += `
-                <div class="comp-item">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b>🏆 ${c.title}</b>
-                        <div>
-                            <button class="badge bg-add" onclick="openAddQ('${compId}')">➕ سؤال</button>
-                            <button class="badge bg-edit" onclick="toggleQLst('${compId}')">👁️ أسئلة</button>
-                            <button class="badge bg-delete" onclick="deleteItem('Competitions','${compId}')">🗑️</button>
-                        </div>
+            // بناء عنصر المسابقة
+            const compDiv = document.createElement('div');
+            compDiv.className = 'comp-item';
+            compDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b>🏆 ${c.title}</b>
+                    <div>
+                        <button class="badge bg-success" onclick="openAddQ('${compId}')">➕ سؤال</button>
+                        <button class="badge bg-primary" onclick="toggleQLst('${compId}')">👁️ عرض</button>
+                        <button class="badge bg-danger" onclick="deleteItem('Competitions','${compId}')">🗑️</button>
                     </div>
-                    <div id="qlst-${compId}" class="q-list">${questionsHtml || '<small>لا توجد أسئلة بعد</small>'}</div>
-                </div>`;
-        }
+                </div>
+                <div id="qlst-${compId}" class="q-list">جاري تحميل الأسئلة...</div>
+            `;
+            list.appendChild(compDiv);
+        });
     });
 
-    window.toggleQLst = (id) => {
-        const el = document.getElementById(`qlst-${id}`);
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    // 2. جلب الأسئلة عند النقر على "عرض"
+    window.toggleQLst = async (compId) => {
+        const el = document.getElementById(`qlst-${compId}`);
+        if (el.style.display === 'block') {
+            el.style.display = 'none';
+            return;
+        }
+
+        el.style.display = 'block';
+        const qSnap = await getDocs(query(collection(db, "Questions"), where("compId", "==", compId)));
+        
+        if(qSnap.empty) {
+            el.innerHTML = '<small>لا توجد أسئلة بعد</small>';
+            return;
+        }
+
+        el.innerHTML = "";
+        qSnap.forEach(qDoc => {
+            const q = qDoc.data();
+            const qItem = document.createElement('div');
+            qItem.className = 'q-item';
+            qItem.innerHTML = `
+                <span>❓ ${q.text}</span>
+                <div>
+                    <button class="badge bg-primary" onclick="openEditQ('${compId}', '${qDoc.id}', ${JSON.stringify(q).replace(/"/g, '&quot;')})">✏️</button>
+                    <button class="badge bg-danger" onclick="deleteItem('Questions', '${qDoc.id}')">🗑️</button>
+                </div>
+            `;
+            el.appendChild(qItem);
+        });
     };
 
-    // فتح إضافة سؤال
+    // 3. عرض النتائج والمشاركين (الجدول المفقود)
+    onSnapshot(query(collection(db, "Answers"), orderBy("timestamp", "desc")), snap => {
+        const body = document.getElementById('resultsBody');
+        body.innerHTML = "";
+        snap.forEach(d => {
+            const a = d.data();
+            const date = a.timestamp ? new Date(a.timestamp.seconds * 1000).toLocaleTimeString('ar-SA') : "...";
+            body.innerHTML += `
+                <tr>
+                    <td>${a.userName}</td>
+                    <td>${a.compTitle}</td>
+                    <td>${a.isCorrect ? '✅ صح' : '❌ خطأ'}</td>
+                    <td>${date}</td>
+                </tr>`;
+        });
+    });
+
+    // 4. إدارة الأسئلة (إضافة وتعديل)
     window.openAddQ = (compId) => {
-        document.getElementById('modalTitle').innerText = "إضافة سؤال جديد";
+        document.getElementById('modalTitle').innerText = "إضافة سؤال";
         document.getElementById('activeCompId').value = compId;
         document.getElementById('activeQId').value = "";
         document.getElementById('qText').value = "";
         document.getElementById('qModal').style.display = 'flex';
     };
 
-    // فتح تعديل سؤال
     window.openEditQ = (compId, qId, qData) => {
         document.getElementById('modalTitle').innerText = "تعديل السؤال";
         document.getElementById('activeCompId').value = compId;
@@ -131,50 +196,54 @@
 
     window.closeQModal = () => document.getElementById('qModal').style.display = 'none';
 
-    // حفظ (إضافة أو تعديل)
     window.saveQuestion = async () => {
         const compId = document.getElementById('activeCompId').value;
         const qId = document.getElementById('activeQId').value;
         const text = document.getElementById('qText').value;
         const options = [document.getElementById('opt0').value, document.getElementById('opt1').value, document.getElementById('opt2').value];
-        const correct = parseInt(document.querySelector('input[name="correctCheck"]:checked')?.value);
+        const correct = parseInt(document.querySelector('input[name="correctCheck"]:checked').value);
 
-        if(!text || options.includes("") || isNaN(correct)) return alert("أكمل البيانات");
-
-        const qData = { compId, text, options, correctAnswer: correct, updatedAt: serverTimestamp() };
+        if(!text || options.includes("")) return alert("أكمل البيانات");
 
         if(qId) {
-            await updateDoc(doc(db, "Questions", qId), qData);
+            await updateDoc(doc(db, "Questions", qId), { text, options, correctAnswer: correct });
             alert("تم التعديل ✅");
         } else {
-            qData.createdAt = serverTimestamp();
-            await addDoc(collection(db, "Questions"), qData);
+            await addDoc(collection(db, "Questions"), { compId, text, options, correctAnswer: correct, createdAt: serverTimestamp() });
             alert("تمت الإضافة ✅");
         }
         closeQModal();
     };
 
-    window.deleteItem = async (col, id) => { if(confirm("هل أنت متأكد من الحذف؟")) await deleteDoc(doc(db, col, id)); };
-
-    // دوال المسح (كما هي في السابق)
+    // 5. وظائف المسح الشامل والخاص
     window.clearAllAnswersGlobal = async () => {
-        if(!confirm("مسح كافة النتائج؟")) return;
+        if(!confirm("⚠️ هل أنت متأكد من مسح كافة الإجابات نهائياً؟")) return;
         const snap = await getDocs(collection(db, "Answers"));
         const batch = writeBatch(db);
         snap.forEach(d => batch.delete(doc(db, "Answers", d.id)));
         await batch.commit();
-        alert("تم التصفير بنجاح");
+        alert("تم مسح كافة النتائج ✅");
     };
 
     window.clearCompetitionResults = async () => {
         const id = document.getElementById('drawCompSelect').value;
         if(!id) return alert("اختر مسابقة");
+        if(!confirm("مسح نتائج هذه المسابقة فقط؟")) return;
         const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", id)));
         const batch = writeBatch(db);
         snap.forEach(d => batch.delete(doc(db, "Answers", d.id)));
         await batch.commit();
-        alert("تم مسح نتائج المسابقة");
+        alert("تم مسح نتائج المسابقة ✅");
     };
+
+    window.createNewCompetition = async () => {
+        const t = document.getElementById('compTitle').value;
+        const e = document.getElementById('compEndDate').value;
+        if(t && e) { await addDoc(collection(db, "Competitions"), { title: t, endDate: e }); alert("تم النشر"); }
+    };
+
+    window.deleteItem = async (col, id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, col, id)); };
+
 </script>
 </body>
 </html>
