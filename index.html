@@ -85,6 +85,50 @@
                 });
             }, 2500); // 2500 ميلي ثانية تعني ثانيتين ونصف
         };
+
+let deferredPrompt;
+const installBanner = document.getElementById('installBanner');
+const btnInstall = document.getElementById('btnInstall');
+
+// 1. تسجيل الـ Service Worker (مهم لعمل الـ PWA)
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+        console.log('Service Worker Registered');
+    });
+}
+
+// 2. الإمساك بحدث التثبيت
+window.addEventListener('beforeinstallprompt', (e) => {
+    // منع المتصفح من إظهار النافذة التلقائية
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // التحقق إذا كان المستخدم قد سجل دخوله أول مرة من هذا الجهاز
+    const hasSeenPrompt = localStorage.getItem('installPrompted');
+    
+    if (!hasSeenPrompt) {
+        // إظهار البانر المخصص لدينا
+        installBanner.style.display = 'flex';
+    }
+});
+
+// 3. عند الضغط على زر التثبيت
+btnInstall.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt(); // إظهار نافذة المتصفح الأصلية
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+            installBanner.style.display = 'none';
+        }
+        deferredPrompt = null;
+        
+        // حفظ في الذاكرة أننا عرضنا الطلب للمستخدم لكي لا يزعجه مرة أخرى
+        localStorage.setItem('installPrompted', 'true');
+    }
+});
+        
     </script>
     <div id="installBanner" style="display:none; position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 9999; display: flex; align-items: center; gap: 15px; border: 2px solid #5856d6;">
     <img src="logo.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 10px;">
@@ -97,4 +141,5 @@
 </div>
 </body>
 </html>
+
 
