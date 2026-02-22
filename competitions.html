@@ -3,39 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>المسابقات للعائلة</title>
+    <title>المسابقات | منصة العائلة</title>
+    
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
+        });
+      });
+    </script>
+
     <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; --accent: #ff9500; --ios-green: #34c759; --ios-red: #ff3b30; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding-top: 65px; }
-        .top-bar { position: fixed; top: 0; width: 100%; height: 60px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 15px; border-bottom: 0.5px solid #C6C6C8; z-index: 1000; }
+        :root { 
+            --ios-blue: #007AFF; 
+            --ios-bg: #F2F2F7; 
+            --ios-orange: #FF9500; 
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --card-bg: #FFFFFF;
+        }
+
+        body { 
+            background: var(--ios-bg); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding-top: 70px; padding-bottom: 90px;
+        }
+
+        /* الهيدر العلوي */
+        .top-bar {
+            position: fixed; top: 0; width: 100%; height: 65px;
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; box-sizing: border-box;
+            border-bottom: .5px solid #C6C6C8; z-index: 5000;
+        }
+        .top-bar b { font-size: 20px; font-weight: 800; }
+
         .container { padding: 15px; max-width: 600px; margin: auto; }
-        .comp-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .q-box { background: #f8f8fb; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1px solid #eee; }
-        .option-btn { width: 100%; padding: 14px; margin-top: 10px; border-radius: 12px; border: 1px solid #ddd; background: white; text-align: right; cursor: pointer; }
+
+        /* بطاقة المسابقة */
+        .comp-card { 
+            background: var(--card-bg); border-radius: 22px; 
+            padding: 20px; margin-bottom: 25px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            border: 0.5px solid #E5E5EA;
+        }
+        
+        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .comp-header h3 { margin: 0; font-size: 19px; color: #1c1c1e; }
+        
+        /* عداد نهاية المسابقة */
+        .comp-end-timer { 
+            font-size: 11px; background: #FFF9F2; color: var(--ios-orange); 
+            padding: 6px 12px; border-radius: 10px; font-weight: bold; 
+            border: 0.5px solid #FFE0B2; 
+        }
+
+        /* عداد السؤال القادم */
+        .next-q-timer { 
+            background: #F0F4FF; color: var(--ios-blue); 
+            padding: 20px; border-radius: 18px; text-align: center; 
+            border: 1px dashed var(--ios-blue); margin: 20px 0; 
+        }
+        .timer-grid { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+        .timer-unit { background: white; padding: 8px; border-radius: 10px; min-width: 45px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .timer-unit b { font-size: 16px; display: block; }
+        .timer-label { font-size: 9px; color: #8e8e93; font-weight: bold; }
+
+        /* صندوق السؤال */
+        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; }
+        .option-btn { 
+            width: 100%; padding: 15px; margin-top: 10px; 
+            border-radius: 14px; border: 1px solid #E5E5EA; 
+            background: white; cursor: pointer; text-align: right; 
+            font-size: 15px; font-weight: 500; transition: 0.3s; 
+        }
+        .option-btn:active { transform: scale(0.98); }
+        
+        /* حالات الإجابة */
         .correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
         .wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
+
+        /* شريط التنقل السفلي */
+        .bottom-bar {
+            position: fixed; bottom: 0; width: 100%; height: 75px;
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-top: 0.5px solid #C6C6C8; z-index: 5000;
+        }
+        .nav-item { font-size: 26px; color: #8E8E93; text-decoration: none; }
+        .nav-item.active { color: var(--ios-blue); }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <button onclick="location.href='news.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b style="margin-right:10px;">المسابقات النشطة</b>
+    <div style="width:24px;" onclick="history.back()">🔙</div>
+    <b>المسابقات</b>
+    <div id="adminTools" style="display:none;" onclick="location.href='add_competition.html'">⊕</div>
 </div>
 
-<div class="container" id="compsFeed">جاري تحميل المسابقات...</div>
+<div class="container" id="compsFeed">
+    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات...</p>
+</div>
+
+<nav class="bottom-bar">
+    <a href="news.html" class="nav-item">🏠</a>
+    <a href="chat.html" class="nav-item">💬</a>
+    <a href="competitions.html" class="nav-item active">🏆</a>
+    <a href="profile.html" class="nav-item">👤</a>
+</nav>
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let uData = null;
+    let userData = null;
 
     onAuthStateChanged(auth, async user => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
-            uData = snap.data();
+            userData = snap.data();
+            
+            // تحديث OneSignal ID في الخلفية
+            OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
+                const subId = event.current.id;
+                if (subId) await updateDoc(doc(db, "Users", user.uid), { onesignalId: subId });
+            });
+
+            // إظهار زر الإضافة للمدير
+            if (userData.role === 'admin' || userData.role === 'مدير') {
+                document.getElementById('adminTools').style.display = 'block';
+            }
+
             loadComps();
         } else location.href = "login.html";
     });
@@ -44,53 +147,107 @@
         onSnapshot(query(collection(db, "Competitions"), where("visible", "==", true)), snap => {
             const feed = document.getElementById('compsFeed');
             feed.innerHTML = "";
-            snap.forEach(async d => {
+            snap.forEach(d => {
                 const c = d.data();
                 const card = document.createElement('div');
                 card.className = "comp-card";
-                card.innerHTML = `<h3>${c.title}</h3><div id="qs-${d.id}">جاري جلب الأسئلة...</div>`;
+                card.innerHTML = `
+                    <div class="comp-header">
+                        <h3>${c.title}</h3>
+                        <div id="end-timer-${d.id}" class="comp-end-timer">جاري الحساب...</div>
+                    </div>
+                    <div id="qs-${d.id}"></div>
+                `;
                 feed.appendChild(card);
+                startCountdown(c.endDate, `end-timer-${d.id}`, "انتهت المسابقة");
                 loadQuestions(d.id, c.title);
             });
         });
     }
 
-    async function loadQuestions(cid, ct) {
-        const qSnap = await getDocs(query(collection(db, "Questions"), where("compId", "==", cid)));
+    async function loadQuestions(cid, ctitle) {
+        const qSnap = await getDocs(query(collection(db, `Competitions/${cid}/Questions`), where("active", "==", true)));
         const cont = document.getElementById(`qs-${cid}`);
-        cont.innerHTML = "";
+        const now = new Date();
+        let upcoming = [];
 
         for (const qDoc of qSnap.docs) {
             const q = qDoc.data();
+            const showAt = new Date(q.showAt);
+
+            if (showAt > now) {
+                upcoming.push({ time: showAt });
+                continue;
+            }
+
             const ansSnap = await getDocs(query(collection(db, "Answers"), where("userId", "==", auth.currentUser.uid), where("questionId", "==", qDoc.id)));
             const isAns = !ansSnap.empty;
 
             const qBox = document.createElement('div');
             qBox.className = "q-box";
             let optsHtml = "";
-            
-            q.options.forEach((opt, idx) => {
+            q.options.forEach(opt => {
                 let cls = "";
-                if(isAns) {
-                    const mySel = ansSnap.docs[0].data().selectedOption;
-                    const correctText = q.options[q.correctAnswer];
-                    if(opt === correctText) cls = "correct";
-                    else if(opt === mySel) cls = "wrong";
+                if (isAns) {
+                    const userAns = ansSnap.docs[0].data().selectedOption;
+                    if (opt === q.correctOption) cls = "correct";
+                    else if (opt === userAns) cls = "wrong";
                 }
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="submitAns('${cid}','${ct}','${qDoc.id}','${q.text}','${opt}',${q.correctAnswer},${q.points})">${opt}</button>`;
+                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
             });
-
-            qBox.innerHTML = `<b>${q.text}</b> <span style="color:var(--primary); float:left;">💎 ${q.points}ن</span>${optsHtml}`;
+            qBox.innerHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>${q.text}</b> <span style="color:var(--ios-blue); font-size:12px; font-weight:bold;">💎 ${q.points} ن</span></div>${optsHtml}`;
             cont.appendChild(qBox);
+        }
+
+        if (upcoming.length > 0) {
+            upcoming.sort((a,b) => a.time - b.time);
+            const nextT = upcoming[0].time;
+            const timerDiv = document.createElement('div');
+            timerDiv.className = "next-q-timer";
+            cont.appendChild(timerDiv);
+            
+            setInterval(() => {
+                const diff = nextT - new Date();
+                if(diff <= 0) location.reload();
+                const d = Math.floor(diff / (86400000));
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+
+                timerDiv.innerHTML = `
+                    <span style="font-size:13px; font-weight:600;">🔒 السؤال القادم يفتح خلال:</span>
+                    <div class="timer-grid">
+                        <div class="timer-unit"><b>${d}</b><span class="timer-label">يوم</span></div>
+                        <div class="timer-unit"><b>${h}</b><span class="timer-label">ساعة</span></div>
+                        <div class="timer-unit"><b>${m}</b><span class="timer-label">دقيقة</span></div>
+                        <div class="timer-unit"><b>${s}</b><span class="timer-label">ثانية</span></div>
+                    </div>
+                `;
+            }, 1000);
         }
     }
 
-    window.submitAns = async (cid, ct, qid, qt, sel, corrIdx, pts) => {
-        if(!confirm("تأكيد الإجابة؟")) return;
-        const qDoc = await getDoc(doc(db, "Questions", qid));
-        const isC = sel === qDoc.data().options[corrIdx];
+    function startCountdown(dateStr, elementId, finishMsg) {
+        const target = new Date(dateStr).getTime();
+        const el = document.getElementById(elementId);
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = target - now;
+            if (diff < 0) { clearInterval(timer); el.innerHTML = finishMsg; return; }
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+            el.innerHTML = `⏳ ينتهي خلال: ${days}ي و ${hours}س و ${mins}د`;
+        }, 1000);
+    }
+
+    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
+        if(!confirm("تأكيد الإجابة النهائية؟")) return;
+        const isC = sel.trim() === corr.trim();
         await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid, userName: uData.fullName || "عضو",
+            userId: auth.currentUser.uid,
+            userName: userData.fullName || userData.name || "عضو",
+            userPhone: userData.phone || "غير مسجل",
             compId: cid, compTitle: ct, questionId: qid, questionText: qt,
             selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
             timestamp: serverTimestamp()
