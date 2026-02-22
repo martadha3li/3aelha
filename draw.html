@@ -1,82 +1,168 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>🎲 صفحة القرعة</title>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<style>
-body{font-family:Arial;background:#F2F2F7;padding:20px;direction:rtl}
-.card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
-select,input{width:100%;padding:10px;margin-bottom:10px}
-button{padding:10px;border:none;border-radius:12px;background:#FF9500;color:#fff;cursor:pointer}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:8px;border-bottom:1px solid #eee}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة السحب الذكي | القرعة الكبرى</title>
+    <style>
+        :root { --primary: #007AFF; --gold: #FF9500; --bg: #F2F2F7; --card: #FFFFFF; }
+        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 800px; margin: auto; }
+        
+        .draw-card { background: linear-gradient(145deg, #ffffff, #f0f0f0); border-radius: 25px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 2px solid var(--gold); margin-bottom: 30px; }
+        h1 { color: #1c1c1e; font-size: 28px; margin-bottom: 10px; }
+        
+        select, input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 15px; border: 1px solid #DDD; font-size: 16px; outline: none; }
+        
+        .btn-draw { background: linear-gradient(135deg, var(--gold), #FFCC00); color: white; border: none; padding: 18px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(255,149,0,0.4); }
+        .btn-draw:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,149,0,0.5); }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal-body { background: white; width: 90%; max-width: 500px; border-radius: 30px; padding: 30px; text-align: center; }
+
+        .winner-item { background: #FFF9F2; border: 1px solid #FFE0B2; padding: 15px; border-radius: 15px; margin-top: 10px; animation: pop 0.5s ease-out; }
+        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .history-card { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; color: #8E8E93; font-size: 12px; padding: 10px; }
+        td { padding: 12px; border-bottom: 1px solid #F2F2F7; font-size: 14px; }
+        .win-badge { background: var(--gold); color: white; padding: 2px 8px; border-radius: 5px; font-size: 10px; }
+    </style>
 </head>
 <body>
 
-<h2>🎲 نظام القرعة</h2>
+<div class="container">
+    <div style="margin-bottom: 20px;">
+        <a href="admin_competition.html" style="text-decoration: none; color: var(--primary); font-weight: bold;">← العودة للإدارة</a>
+    </div>
 
-<div class="card">
-<select id="drawCompSelect"></select>
-<select id="drawMode">
-<option value="random">عشوائي</option>
-<option value="points">أعلى نقاط</option>
-</select>
-<input type="number" id="count" value="1">
-<button onclick="runDraw()">بدء السحب</button>
+    <div class="draw-card">
+        <h1>🎲 نظام القرعة الحماسية</h1>
+        <p>اختر المسابقة لبدء سحب الأسماء من الإجابات الصحيحة</p>
+        
+        <select id="compSelect">
+            <option value="">جاري تحميل المسابقات...</option>
+        </select>
+        
+        <input type="number" id="winnersCount" placeholder="عدد الفائزين المطلوب" value="1" min="1">
+        
+        <button class="btn-draw" onclick="startLottery()">بدء السحب الآن 🔥</button>
+    </div>
+
+    <div id="historyArea">
+        </div>
 </div>
 
-<div id="results"></div>
+<div id="lotteryModal" class="modal">
+    <div class="modal-body">
+        <div id="animArea" style="font-size: 60px;">🎰</div>
+        <h2 id="statusText">جاري خلط الأسماء...</h2>
+        <div id="winnersResult"></div>
+        <button onclick="closeModal()" class="btn-draw" style="margin-top:20px; background: #EEE; color: #000; box-shadow: none;">إغلاق</button>
+    </div>
+</div>
 
 <script type="module">
-import { db } from './config.js';
-import { collection, onSnapshot, getDocs, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db } from './config.js';
+    import { collection, onSnapshot, getDocs, query, where, doc, getDoc, setDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-onSnapshot(collection(db,"Competitions"),snap=>{
-drawCompSelect.innerHTML="";
-snap.forEach(d=>{
-drawCompSelect.innerHTML+=`<option value="${d.id}">${d.data().title}</option>`;
-});
-});
+    const compSelect = document.getElementById('compSelect');
+    const historyArea = document.getElementById('historyArea');
 
-window.runDraw=async()=>{
-const cid=drawCompSelect.value;
-const mode=drawMode.value;
-const count=parseInt(count.value);
+    // 1. تحميل المسابقات في القائمة
+    onSnapshot(query(collection(db, "Competitions"), orderBy("createdAt", "desc")), (snap) => {
+        compSelect.innerHTML = '<option value="">-- اختر المسابقة للسحب --</option>';
+        snap.forEach(d => {
+            compSelect.innerHTML += `<option value="${d.id}">${d.data().title}</option>`;
+        });
+    });
 
-const snap=await getDocs(query(collection(db,"Answers"),where("compId","==",cid),where("isCorrect","==",true)));
+    // 2. عرض سجل الفائزين التاريخي
+    onSnapshot(collection(db, "Winners"), (snap) => {
+        historyArea.innerHTML = '<h2 style="font-size: 18px;">📋 سجل الفائزين السابقين</h2>';
+        snap.forEach(async (d) => {
+            const compData = (await getDoc(doc(db, "Competitions", d.id))).data();
+            const winners = d.data().list;
+            
+            const card = document.createElement('div');
+            card.className = "history-card";
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:10px;">
+                    <b style="color:var(--gold)">🏆 ${compData?.title || 'مسابقة محذوفة'}</b>
+                    <small style="color:gray;">تم السحب في: ${d.data().drawnAt?.toDate().toLocaleDateString('ar-SA') || '---'}</small>
+                </div>
+                <table>
+                    <thead><tr><th>الفائز</th><th>الجوال</th><th>بيانات المحرم</th></tr></thead>
+                    <tbody>
+                        ${winners.map(w => `
+                            <tr>
+                                <td><b>${w.name}</b></td>
+                                <td>${w.phone}</td>
+                                <td style="font-size:11px; color:#555;">${w.guardian || '---'} | ${w.gPhone || ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            historyArea.appendChild(card);
+        });
+    });
 
-let arr=snap.docs.map(d=>({
-name:d.data().userName,
-phone:d.data().userPhone,
-points:d.data().pointsAwarded||0
-}));
+    // 3. وظيفة السحب الحماسي
+    window.startLottery = async () => {
+        const cid = compSelect.value;
+        const count = parseInt(document.getElementById('winnersCount').value);
+        if(!cid) return alert("اختر مسابقة");
 
-arr=[...new Map(arr.map(i=>[i.name,i])).values()];
+        document.getElementById('lotteryModal').style.display = 'flex';
+        document.getElementById('statusText').innerText = "جاري البحث عن العباقرة...";
+        document.getElementById('winnersResult').innerHTML = "";
 
-if(mode==="points") arr.sort((a,b)=>b.points-a.points);
-else arr.sort(()=>0.5-Math.random());
+        // جلب الإجابات الصحيحة
+        const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid), where("isCorrect", "==", true)));
+        let candidates = [];
 
-let winners=arr.slice(0,count);
+        for(const d of snap.docs) {
+            const user = (await getDoc(doc(db, "Users", d.data().userId))).data();
+            candidates.push({
+                uid: d.data().userId,
+                name: d.data().userName,
+                phone: d.data().userPhone,
+                guardian: user?.femaleGuardianName || '',
+                gPhone: user?.femaleGuardianPhone || ''
+            });
+        }
 
-confetti({particleCount:200,spread:100});
+        candidates = [...new Map(candidates.map(item => [item.uid, item])).values()];
 
-let html="<div class='card'><h3>النتائج</h3><table><tr><th>#</th><th>الاسم</th><th>الجوال</th></tr>";
-winners.forEach((w,i)=>{
-html+=`<tr><td>${i+1}</td><td>${w.name}</td><td>${w.phone}</td></tr>`;
-});
-html+="</table></div>";
+        if(candidates.length === 0) {
+            document.getElementById('statusText').innerText = "للأسف، لا توجد إجابات صحيحة";
+            return;
+        }
 
-results.innerHTML=html;
+        // تأثير التشويق
+        setTimeout(async () => {
+            let winners = [];
+            for(let i=0; i<Math.min(count, candidates.length); i++) {
+                const rand = Math.floor(Math.random() * candidates.length);
+                winners.push(candidates.splice(rand, 1)[0]);
+            }
 
-await addDoc(collection(db,"WinnersHistory"),{
-compId:cid,
-winners,
-createdAt:serverTimestamp()
-});
-};
+            // حفظ في الداتابيز
+            await setDoc(doc(db, "Winners", cid), { list: winners, drawnAt: serverTimestamp() });
+
+            document.getElementById('statusText').innerText = "🎉 مبروك للفائزين!";
+            document.getElementById('winnersResult').innerHTML = winners.map((w, idx) => `
+                <div class="winner-item" style="animation-delay: ${idx * 0.5}s">
+                    <span class="win-badge">الفائز ${idx+1}</span>
+                    <div style="margin-top:5px; font-weight:bold; font-size:18px;">${w.name}</div>
+                </div>
+            `).join('');
+        }, 2000);
+    };
+
+    window.closeModal = () => document.getElementById('lotteryModal').style.display = 'none';
 </script>
-
 </body>
 </html>
