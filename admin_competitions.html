@@ -78,29 +78,34 @@
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, addDoc, onSnapshot, getDocs, query, where, doc, getDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, onSnapshot, getDocs, query, where, doc, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. إنشاء مسابقة
+    // 1. إنشاء مسابقة (تعمل بشكل صحيح)
     window.createNewCompetition = async () => {
         const title = document.getElementById('compTitle').value;
         const endDate = document.getElementById('compEndDate').value;
         if (!title || !endDate) return alert("أكمل البيانات أولاً");
 
-        await addDoc(collection(db, "Competitions"), {
-            title, endDate, visible: true, createdAt: serverTimestamp()
-        });
-        alert("تم إنشاء المسابقة بنجاح!");
-        document.getElementById('compTitle').value = "";
+        try {
+            await addDoc(collection(db, "Competitions"), {
+                title, endDate, visible: true, createdAt: serverTimestamp()
+            });
+            alert("تم إنشاء المسابقة بنجاح!");
+            document.getElementById('compTitle').value = "";
+        } catch (e) { alert("خطأ في الإضافة: " + e.message); }
     };
 
-    // 2. تحميل المسابقات والنتائج (فرز تلقائي)
-    onSnapshot(query(collection(db, "Competitions"), orderBy("createdAt", "desc")), async (snap) => {
+    // 2. تحميل المسابقات - تم تبسيط الكود لضمان التحميل
+    onSnapshot(collection(db, "Competitions"), async (snap) => {
         const container = document.getElementById('resultsSections');
         container.innerHTML = "";
 
-        if(snap.empty) container.innerHTML = "<p style='text-align:center;'>لا توجد مسابقات منشأة حالياً.</p>";
+        if(snap.empty) {
+            container.innerHTML = "<p style='text-align:center; padding:20px;'>لا توجد مسابقات منشأة حالياً.</p>";
+            return;
+        }
 
-        snap.forEach(async (compDoc) => {
+        snap.forEach((compDoc) => {
             const comp = compDoc.data();
             const cid = compDoc.id;
 
@@ -110,7 +115,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid #EEE; padding-bottom:10px;">
                     <div>
                         <h2 style="margin:0;">🏆 ${comp.title}</h2>
-                        <small style="color:gray;">تنتهي في: ${comp.endDate.replace('T', ' ')}</small>
+                        <small style="color:gray;">تنتهي في: ${comp.endDate ? comp.endDate.replace('T', ' ') : 'غير محدد'}</small>
                     </div>
                     <div style="display:flex; gap:5px;">
                         <button class="btn btn-draw" onclick="runDraw('${cid}', '${comp.title}')">🎲 قرعة</button>
@@ -118,7 +123,6 @@
                         <button class="btn btn-danger" onclick="deleteComp('${cid}')">🗑️</button>
                     </div>
                 </div>
-
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -126,12 +130,11 @@
                                 <th>المشارك</th>
                                 <th>الجوال</th>
                                 <th>الحالة</th>
-                                <th>السؤال</th>
                                 <th>النقاط</th>
                             </tr>
                         </thead>
                         <tbody id="table-${cid}">
-                            <tr><td colspan="5" style="text-align:center; color:#CCC;">جاري تحميل المشاركات...</td></tr>
+                            <tr><td colspan="4" style="text-align:center; color:#CCC;">جاري جلب الإجابات...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -141,85 +144,88 @@
         });
     });
 
-    // 3. جلب الإجابات لكل مسابقة بشكل مستقل
+    // 3. جلب الإجابات (تم إصلاح الفلترة)
     async function fetchAnswers(cid) {
-        const q = query(collection(db, "Answers"), where("compId", "==", cid), orderBy("timestamp", "desc"));
-        const snap = await getDocs(q);
-        const tbody = document.getElementById(`table-${cid}`);
-        tbody.innerHTML = "";
+        try {
+            const q = query(collection(db, "Answers"), where("compId", "==", cid));
+            const snap = await getDocs(q);
+            const tbody = document.getElementById(`table-${cid}`);
+            if(!tbody) return;
+            tbody.innerHTML = "";
 
-        if(snap.empty) {
-            tbody.innerHTML = "<tr><td colspan="5" style="text-align:center; color:gray;">لا توجد مشاركات لهذه المسابقة بعد.</td></tr>";
-            return;
-        }
+            if(snap.empty) {
+                tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:gray;'>لا توجد مشاركات لهذه المسابقة.</td></tr>";
+                return;
+            }
 
-        snap.forEach(d => {
-            const a = d.data();
-            tbody.innerHTML += `
-                <tr>
-                    <td class="clickable-name" onclick="showUserInfo('${a.userId}')">${a.userName}</td>
-                    <td>${a.userPhone}</td>
-                    <td style="color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">
-                        ${a.isCorrect ? '✅ صح' : '❌ خطأ'}
-                    </td>
-                    <td style="font-size:11px; color:#666;">${a.questionText.substring(0,20)}...</td>
-                    <td>${a.pointsAwarded}ن</td>
-                </tr>
-            `;
-        });
+            snap.forEach(d => {
+                const a = d.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="clickable-name" onclick="showUserInfo('${a.userId}')">${a.userName || 'مشاركت'}</td>
+                        <td>${a.userPhone || '---'}</td>
+                        <td style="color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">
+                            ${a.isCorrect ? '✅ صح' : '❌ خطأ'}
+                        </td>
+                        <td>${a.pointsAwarded || 0}ن</td>
+                    </tr>
+                `;
+            });
+        } catch (e) { console.error("Error fetching answers:", e); }
     }
 
-    // 4. عرض تفاصيل العضو (النافذة المنسدلة)
+    // 4. عرض تفاصيل العضو (النافذة المنسدلة) - بيانات كاملة
     window.showUserInfo = async (uid) => {
-        const userDoc = await getDoc(doc(db, "Users", uid));
-        if (!userDoc.exists()) return alert("تعذر العثور على بيانات العضو الأصلية");
-        
-        const u = userDoc.data();
-        const infoDiv = document.getElementById('modalInfo');
-        
-        infoDiv.innerHTML = `
-            <div class="info-row"><span class="info-label">الاسم بالكامل:</span> <span>${u.fullName || u.name}</span></div>
-            <div class="info-row"><span class="info-label">رقم الجوال:</span> <span>${u.phone}</span></div>
-            <div class="info-row"><span class="info-label">البريد الإلكتروني:</span> <span>${u.email || 'غير مسجل'}</span></div>
-            <div style="margin-top:15px; background:#FFF9F2; padding:10px; border-radius:10px; border:1px solid #FFE0B2;">
-                <div style="font-weight:bold; color:var(--gold); margin-bottom:5px;">بيانات الولي (للإناث):</div>
-                <div class="info-row"><span class="info-label">اسم المعرّف:</span> <span>${u.femaleGuardianName || '---'}</span></div>
-                <div class="info-row"><span class="info-label">جوال المعرّف:</span> <span>${u.femaleGuardianPhone || '---'}</span></div>
-            </div>
-        `;
-        document.getElementById('userModal').style.display = 'flex';
+        try {
+            const userDoc = await getDoc(doc(db, "Users", uid));
+            const infoDiv = document.getElementById('modalInfo');
+            
+            if (!userDoc.exists()) {
+                infoDiv.innerHTML = "<p>تعذر العثور على ملف العضو، قد يكون مسجلاً كضيف.</p>";
+            } else {
+                const u = userDoc.data();
+                infoDiv.innerHTML = `
+                    <div class="info-row"><span class="info-label">الاسم:</span> <span>${u.fullName || u.name || '---'}</span></div>
+                    <div class="info-row"><span class="info-label">الجوال:</span> <span>${u.phone || '---'}</span></div>
+                    <div class="info-row"><span class="info-label">الإيميل:</span> <span>${u.email || '---'}</span></div>
+                    <div style="margin-top:15px; background:#FFF9F2; padding:10px; border-radius:10px; border:1px solid #FFE0B2;">
+                        <div style="font-weight:bold; color:var(--gold); margin-bottom:5px;">بيانات الولي (للإناث):</div>
+                        <div class="info-row"><span class="info-label">اسم المعرّف:</span> <span>${u.femaleGuardianName || '---'}</span></div>
+                        <div class="info-row"><span class="info-label">جوال المعرّف:</span> <span>${u.femaleGuardianPhone || '---'}</span></div>
+                    </div>
+                `;
+            }
+            document.getElementById('userModal').style.display = 'flex';
+        } catch (e) { alert("خطأ في جلب البيانات"); }
     };
 
     window.closeModal = () => document.getElementById('userModal').style.display = 'none';
 
-    // 5. وظيفة القرعة (فقط من الإجابات الصحيحة)
+    // 5. القرعة الذكية
     window.runDraw = async (cid, title) => {
         const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid), where("isCorrect", "==", true)));
+        if (snap.empty) return alert("لا توجد إجابات صحيحة للسحب عليها!");
+        
         const winners = snap.docs.map(d => ({id: d.data().userId, name: d.data().userName}));
+        const lucky = winners[Math.floor(Math.random() * winners.length)];
         
-        if (winners.length === 0) return alert("لا توجد إجابات صحيحة للسحب عليها في هذه المسابقة!");
-        
-        alert("جاري السحب العشوائي...");
-        setTimeout(() => {
-            const lucky = winners[Math.floor(Math.random() * winners.length)];
-            alert(`🎉 الفائز هو: ${lucky.name}`);
-            showUserInfo(lucky.id);
-        }, 1000);
+        alert(`🎉 الفائز في مسابقة (${title}) هو: ${lucky.name}`);
+        showUserInfo(lucky.id);
     };
 
-    // 6. تصدير البيانات إلى Excel
+    // 6. تصدير Excel
     window.exportExcel = async (cid, title) => {
         const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid)));
+        if (snap.empty) return alert("لا توجد بيانات لتصديرها");
+
         const data = snap.docs.map(d => {
             const a = d.data();
             return {
-                "المسابقة": a.compTitle,
                 "اسم المشارك": a.userName,
                 "رقم الجوال": a.userPhone,
                 "النتيجة": a.isCorrect ? "صحيحة" : "خاطئة",
-                "النقاط المستحقة": a.pointsAwarded,
-                "نص السؤال": a.questionText,
-                "التوقيت": a.timestamp?.toDate().toLocaleString('ar-EG')
+                "النقاط": a.pointsAwarded,
+                "نص السؤال": a.questionText
             };
         });
 
@@ -229,12 +235,8 @@
         XLSX.writeFile(wb, `نتائج_${title}.xlsx`);
     };
 
-    // 7. حذف المسابقة
     window.deleteComp = async (id) => {
-        if(confirm("هل أنت متأكد من حذف هذه المسابقة وكل نتائجها؟")) {
-            await deleteDoc(doc(db, "Competitions", id));
-            alert("تم الحذف.");
-        }
+        if(confirm("حذف المسابقة نهائياً؟")) await deleteDoc(doc(db, "Competitions", id));
     };
 </script>
 </body>
