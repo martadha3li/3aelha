@@ -33,11 +33,18 @@
 
         .container { padding: 15px; max-width: 600px; margin: auto; }
 
+        /* بطاقة المسابقة */
         .comp-card { 
             background: var(--card-bg); border-radius: 22px; padding: 20px; 
             margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
         }
         
+        /* شكل المسابقة المنتهية */
+        .comp-card.ended {
+            border: 2px solid var(--ios-red);
+            background: #FFF5F5;
+        }
+
         .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
         
         .comp-end-timer { 
@@ -45,9 +52,18 @@
             padding: 6px 12px; border-radius: 10px; font-weight: bold; border: 0.5px solid #FFE0B2; 
         }
 
+        .ended-label { color: var(--ios-red); font-weight: bold; font-size: 12px; }
+
         /* تنسيق السؤال */
-        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; transition: 0.3s; }
-        .q-box.answered { opacity: 0.7; pointer-events: none; } /* باهت وغير قابل للضغط */
+        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1.5px solid #EEE; transition: 0.3s; position: relative; }
+        
+        /* السؤال المجاب عليه: باهت جداً وإطار أخضر */
+        .q-box.answered { 
+            opacity: 0.4; 
+            pointer-events: none; 
+            border: 3px solid var(--ios-green); 
+            background: #F0FFF4;
+        }
 
         .option-btn { 
             width: 100%; padding: 15px; margin-top: 10px; border-radius: 14px; 
@@ -56,14 +72,20 @@
         }
         
         .option-btn.correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
-        .option-btn.wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
 
-        .answered-label { 
-            font-size: 12px; color: var(--ios-green); font-weight: bold; 
-            display: block; margin-top: 12px; text-align: center; background: #E8F5E9; padding: 5px; border-radius: 8px;
+        .ans-meta {
+            font-size: 10px; color: #555; margin-top: 8px; text-align: left; font-style: italic;
         }
 
-        /* شريط التنقل السفلي */
+        .answered-label-container {
+            display: flex; justify-content: space-between; align-items: center; margin-top: 10px;
+        }
+
+        .answered-tag { 
+            font-size: 11px; color: var(--ios-green); font-weight: bold; 
+            background: #E8F5E9; padding: 4px 10px; border-radius: 20px;
+        }
+
         .bottom-bar {
             position: fixed; bottom: 0; width: 100%; height: 75px;
             background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
@@ -98,7 +120,7 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     let userData = null;
-    let myAnswers = []; // تخزين إجابات المستخدم محلياً لتسريع الفحص
+    let myAnswersData = {}; // تخزين تفاصيل الإجابة (الوقت، معرف السؤال)
 
     onAuthStateChanged(auth, async user => {
         if (user) {
@@ -108,10 +130,13 @@
                 document.getElementById('adminTools').style.display = 'block';
             }
             
-            // 1. جلب كل إجابات المستخدم مرة واحدة لتجنب تكرار الطلبات
+            // جلب الإجابات مع التوقيت
             const ansQuery = query(collection(db, "Answers"), where("userId", "==", user.uid));
             const ansSnap = await getDocs(ansQuery);
-            myAnswers = ansSnap.docs.map(d => d.data().questionId);
+            ansSnap.forEach(doc => {
+                const data = doc.data();
+                myAnswersData[data.questionId] = data.timestamp;
+            });
 
             loadComps();
         } else location.href = "login.html";
@@ -125,18 +150,34 @@
 
             snap.forEach(d => {
                 const c = d.data();
+                const isEnded = new Date(c.endDate) < new Date();
+                
                 const card = document.createElement('div');
-                card.className = "comp-card";
-                card.innerHTML = `
-                    <div class="comp-header">
-                        <h3>${c.title}</h3>
-                        <div id="end-timer-${d.id}" class="comp-end-timer">...</div>
-                    </div>
-                    <div id="qs-${d.id}"></div>
-                `;
+                card.className = `comp-card ${isEnded ? 'ended' : ''}`;
+                
+                if (isEnded) {
+                    const endFormatted = new Date(c.endDate).toLocaleString('ar-EG');
+                    card.innerHTML = `
+                        <div class="comp-header" style="margin-bottom:0">
+                            <div>
+                                <h3 style="margin:0">${c.title}</h3>
+                                <p class="ended-label">هذه المسابقة انتهت بتاريخ: ${endFormatted}</p>
+                            </div>
+                            <div class="comp-end-timer" style="background:#FFEBEB; color:red; border-color:#FFD1D1">منتهية</div>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="comp-header">
+                            <h3>${c.title}</h3>
+                            <div id="end-timer-${d.id}" class="comp-end-timer">...</div>
+                        </div>
+                        <div id="qs-${d.id}"></div>
+                    `;
+                    startCountdown(c.endDate, `end-timer-${d.id}`);
+                    loadQuestions(d.id, c.title);
+                }
                 feed.appendChild(card);
-                startCountdown(c.endDate, `end-timer-${d.id}`);
-                loadQuestions(d.id, c.title);
             });
         });
     }
@@ -148,25 +189,17 @@
 
         qSnap.forEach(qDoc => {
             const q = qDoc.data();
-            const showAt = new Date(q.showAt);
-            
-            // التحقق إذا كان السؤال متاحاً للعرض حالياً
-            if (showAt > now) return; 
+            if (new Date(q.showAt) > now) return; 
 
-            // التحقق من الإجابة السابقة
-            const isAns = myAnswers.includes(qDoc.id);
+            const ansTime = myAnswersData[qDoc.id];
+            const isAns = !!ansTime;
 
             const qBox = document.createElement('div');
             qBox.className = `q-box ${isAns ? 'answered' : ''}`;
             
             let optsHtml = "";
             q.options.forEach(opt => {
-                let cls = "";
-                // إذا كان مجاباً، نظهر النتيجة فوراً
-                if (isAns) {
-                    if (opt === q.correctOption) cls = "correct";
-                }
-
+                let cls = (isAns && opt === q.correctOption) ? "correct" : "";
                 optsHtml += `
                     <button class="option-btn ${cls}" ${isAns ? 'disabled' : ''} 
                         onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">
@@ -174,13 +207,25 @@
                     </button>`;
             });
 
+            // تحويل التوقيت لتنسيق مقروء
+            let timeString = "";
+            if (isAns && ansTime) {
+                const d = ansTime.toDate ? ansTime.toDate() : new Date(ansTime);
+                timeString = d.toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' });
+            }
+
             qBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <b>${q.text}</b> 
-                    <span style="color:var(--ios-blue); font-size:12px; font-weight:bold;">💎 ${q.points} ن</span>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <b style="flex:1">${q.text}</b> 
+                    <span style="color:var(--ios-blue); font-size:11px; font-weight:bold; margin-right:8px;">💎 ${q.points} ن</span>
                 </div>
                 ${optsHtml}
-                ${isAns ? '<span class="answered-label">✓ تمت الإجابة مسبقاً</span>' : ''}
+                ${isAns ? `
+                    <div class="answered-label-container">
+                        <span class="answered-tag">✓ تمت الإجابة</span>
+                        <span class="ans-meta">وقت الإجابة: ${timeString}</span>
+                    </div>
+                ` : ''}
             `;
             cont.appendChild(qBox);
         });
@@ -188,18 +233,14 @@
 
     window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
         if(!confirm("تأكيد الإجابة؟")) return;
-        
-        // تعطيل الأزرار فوراً لمنع التكرار
         const buttons = btn.parentElement.querySelectorAll('button');
         buttons.forEach(b => b.disabled = true);
-
         const isC = sel.trim() === corr.trim();
         
         try {
             await addDoc(collection(db, "Answers"), {
                 userId: auth.currentUser.uid,
                 userName: userData.fullName || "عضو",
-                userPhone: userData.phone || "",
                 compId: cid,
                 compTitle: ct,
                 questionId: qid,
@@ -209,12 +250,9 @@
                 pointsAwarded: isC ? pts : 0,
                 timestamp: serverTimestamp()
             });
-            
-            alert(isC ? "إجابة صحيحة! 🎉" : "إجابة خاطئة، حظاً موفقاً المرة القادمة.");
-            location.reload(); // تحديث الصفحة لتعطيل السؤال وبقية الأسئلة
+            location.reload(); 
         } catch (error) {
-            console.error(error);
-            alert("فشل الإرسال: تأكد من اتصالك بالإنترنت.");
+            alert("حدث خطأ، حاول مجدداً.");
             buttons.forEach(b => b.disabled = false);
         }
     };
@@ -223,15 +261,13 @@
         const target = new Date(dateStr).getTime();
         const el = document.getElementById(elementId);
         if(!el) return;
-
         const update = () => {
-            const now = new Date().getTime();
-            const diff = target - now;
-            if (diff <= 0) { el.innerHTML = "انتهت"; return; }
+            const diff = target - new Date().getTime();
+            if (diff <= 0) { el.innerHTML = "منتهية"; return; }
             const d = Math.floor(diff / 86400000);
             const h = Math.floor((diff % 86400000) / 3600000);
             const m = Math.floor((diff % 3600000) / 60000);
-            el.innerHTML = `⏳ ${d}ي و ${h}س و ${m}د`;
+            el.innerHTML = `⏳ ينتهي خلال ${d}ي و ${h}س`;
         };
         update();
         setInterval(update, 60000);
