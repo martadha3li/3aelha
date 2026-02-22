@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة المسابقات المتكاملة</title>
+    <title>إدارة المسابقات | نظام النقاط</title>
     <style>
         :root { --primary: #5856d6; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; --text: #1c1c1e; --gold: #ff9500; }
         body { background-color: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; color: var(--text); line-height: 1.5; }
@@ -19,7 +19,7 @@
         th { background: #f8f8fb; padding: 12px; text-align: right; color: #8e8e93; border-bottom: 1px solid #eee; }
         td { padding: 12px; border-bottom: 1px solid #f2f2f7; }
         .badge { padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; color: white; border: none; cursor: pointer; }
-        .bg-primary { background: var(--primary); } .bg-danger { background: var(--danger); } .bg-success { background: var(--success); } .bg-gold { background: var(--gold); }
+        .bg-primary { background: var(--primary); } .bg-danger { background: var(--danger); } .bg-success { background: var(--success); }
         .comp-item { border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #fff; }
         .q-list { margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 8px; display: none; border-top: 1px solid #eee; }
         .q-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
@@ -33,14 +33,14 @@
 
 <div class="top-bar">
     <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:20px;">➡️</button>
-    <b>إدارة المسابقات والنتائج</b>
+    <b>إدارة مسابقات العائلة 🏠</b>
     <div style="width:20px;"></div>
 </div>
 
 <div class="container">
 
     <div class="card" style="border: 2px solid var(--gold);">
-        <div class="card-title" style="color: var(--gold);">🎰 لوحة التحكم والمسح</div>
+        <div class="card-title" style="color: var(--gold);">🎰 تصفير النتائج والقرعة</div>
         <select id="drawCompSelect" class="form-input"></select>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="startDrawProcess()" class="btn-main" style="background: var(--gold);">سحب قرعة 🎲</button>
@@ -50,23 +50,16 @@
     </div>
 
     <div class="card">
-        <div class="card-title">🆕 مسابقة جديدة</div>
-        <input type="text" id="compTitle" placeholder="عنوان المسابقة..." class="form-input">
-        <input type="datetime-local" id="compEndDate" class="form-input">
-        <button onclick="createNewCompetition()" class="btn-main">نشر المسابقة</button>
-    </div>
-
-    <div class="card">
-        <div class="card-title">📋 المسابقات والأسئلة</div>
+        <div class="card-title">📋 المسابقات المتاحة</div>
         <div id="compsList">جاري التحميل...</div>
     </div>
 
     <div class="card">
-        <div class="card-title">📊 آخر النتائج والمشاركين</div>
+        <div class="card-title">📊 ترتيب المشاركين والنقاط</div>
         <div class="table-wrapper">
             <table>
                 <thead>
-                    <tr><th>المشارك</th><th>المسابقة</th><th>الحالة</th><th>التوقيت</th></tr>
+                    <tr><th>المشارك</th><th>المسابقة</th><th>النقاط</th><th>الحالة</th></tr>
                 </thead>
                 <tbody id="resultsBody"></tbody>
             </table>
@@ -79,12 +72,20 @@
         <h3 id="modalTitle" style="color:var(--primary);">إضافة سؤال</h3>
         <input type="hidden" id="activeCompId">
         <input type="hidden" id="activeQId">
-        <input type="text" id="qText" placeholder="نص السؤال..." class="form-input">
+        
+        <label style="font-size: 12px; font-weight: bold;">نص السؤال:</label>
+        <input type="text" id="qText" placeholder="مثال: من هو أكبر أفراد العائلة؟" class="form-input">
+        
+        <label style="font-size: 12px; font-weight: bold;">عدد نقاط هذا السؤال:</label>
+        <input type="number" id="qPoints" placeholder="مثال: 10" class="form-input" value="10">
+
+        <label style="font-size: 12px; font-weight: bold;">الخيارات (حدد الإجابة الصحيحة):</label>
         <div class="opt-row"><input type="radio" name="correctCheck" value="0" checked id="r0"> <input type="text" id="opt0" placeholder="الخيار 1" class="form-input"></div>
         <div class="opt-row"><input type="radio" name="correctCheck" value="1" id="r1"> <input type="text" id="opt1" placeholder="الخيار 2" class="form-input"></div>
         <div class="opt-row"><input type="radio" name="correctCheck" value="2" id="r2"> <input type="text" id="opt2" placeholder="الخيار 3" class="form-input"></div>
+        
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="closeQModal()" style="flex:1; padding:15px; border-radius:12px; border:none;">إلغاء</button>
+            <button onclick="closeQModal()" style="flex:1; padding:15px; border-radius:12px; border:none; background:#eee;">إلغاء</button>
             <button onclick="saveQuestion()" class="btn-main" style="flex:2;">حفظ ✅</button>
         </div>
     </div>
@@ -94,19 +95,18 @@
     import { db } from './config.js';
     import { collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp, query, orderBy, getDocs, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. عرض المسابقات والأسئلة
+    // 1. عرض المسابقات
     onSnapshot(collection(db, "Competitions"), (snap) => {
         const list = document.getElementById('compsList');
         const select = document.getElementById('drawCompSelect');
         list.innerHTML = "";
         select.innerHTML = `<option value="">-- اختر مسابقة --</option>`;
 
-        snap.forEach(async (d) => {
+        snap.forEach((d) => {
             const c = d.data();
             const compId = d.id;
             select.innerHTML += `<option value="${compId}">${c.title}</option>`;
 
-            // بناء عنصر المسابقة
             const compDiv = document.createElement('div');
             compDiv.className = 'comp-item';
             compDiv.innerHTML = `
@@ -115,7 +115,6 @@
                     <div>
                         <button class="badge bg-success" onclick="openAddQ('${compId}')">➕ سؤال</button>
                         <button class="badge bg-primary" onclick="toggleQLst('${compId}')">👁️ عرض</button>
-                        <button class="badge bg-danger" onclick="deleteItem('Competitions','${compId}')">🗑️</button>
                     </div>
                 </div>
                 <div id="qlst-${compId}" class="q-list">جاري تحميل الأسئلة...</div>
@@ -124,29 +123,21 @@
         });
     });
 
-    // 2. جلب الأسئلة عند النقر على "عرض"
+    // 2. جلب الأسئلة وعرض نقاط كل سؤال
     window.toggleQLst = async (compId) => {
         const el = document.getElementById(`qlst-${compId}`);
-        if (el.style.display === 'block') {
-            el.style.display = 'none';
-            return;
-        }
-
+        if (el.style.display === 'block') { el.style.display = 'none'; return; }
         el.style.display = 'block';
-        const qSnap = await getDocs(query(collection(db, "Questions"), where("compId", "==", compId)));
         
-        if(qSnap.empty) {
-            el.innerHTML = '<small>لا توجد أسئلة بعد</small>';
-            return;
-        }
-
-        el.innerHTML = "";
+        const qSnap = await getDocs(query(collection(db, "Questions"), where("compId", "==", compId)));
+        el.innerHTML = qSnap.empty ? '<small>لا توجد أسئلة</small>' : "";
+        
         qSnap.forEach(qDoc => {
             const q = qDoc.data();
             const qItem = document.createElement('div');
             qItem.className = 'q-item';
             qItem.innerHTML = `
-                <span>❓ ${q.text}</span>
+                <span>❓ ${q.text} <b style="color:var(--gold)">(${q.points || 0} ن)</b></span>
                 <div>
                     <button class="badge bg-primary" onclick="openEditQ('${compId}', '${qDoc.id}', ${JSON.stringify(q).replace(/"/g, '&quot;')})">✏️</button>
                     <button class="badge bg-danger" onclick="deleteItem('Questions', '${qDoc.id}')">🗑️</button>
@@ -156,29 +147,29 @@
         });
     };
 
-    // 3. عرض النتائج والمشاركين (الجدول المفقود)
+    // 3. عرض النتائج مع النقاط (التي حصل عليها المستخدم)
     onSnapshot(query(collection(db, "Answers"), orderBy("timestamp", "desc")), snap => {
         const body = document.getElementById('resultsBody');
         body.innerHTML = "";
         snap.forEach(d => {
             const a = d.data();
-            const date = a.timestamp ? new Date(a.timestamp.seconds * 1000).toLocaleTimeString('ar-SA') : "...";
             body.innerHTML += `
                 <tr>
                     <td>${a.userName}</td>
                     <td>${a.compTitle}</td>
+                    <td style="font-weight:bold; color:var(--primary)">+${a.pointsAwarded || 0}</td>
                     <td>${a.isCorrect ? '✅ صح' : '❌ خطأ'}</td>
-                    <td>${date}</td>
                 </tr>`;
         });
     });
 
-    // 4. إدارة الأسئلة (إضافة وتعديل)
+    // 4. إدارة الأسئلة والنقاط
     window.openAddQ = (compId) => {
         document.getElementById('modalTitle').innerText = "إضافة سؤال";
         document.getElementById('activeCompId').value = compId;
         document.getElementById('activeQId').value = "";
         document.getElementById('qText').value = "";
+        document.getElementById('qPoints').value = "10";
         document.getElementById('qModal').style.display = 'flex';
     };
 
@@ -187,6 +178,7 @@
         document.getElementById('activeCompId').value = compId;
         document.getElementById('activeQId').value = qId;
         document.getElementById('qText').value = qData.text;
+        document.getElementById('qPoints').value = qData.points || 10;
         document.getElementById('opt0').value = qData.options[0];
         document.getElementById('opt1').value = qData.options[1];
         document.getElementById('opt2').value = qData.options[2];
@@ -200,50 +192,46 @@
         const compId = document.getElementById('activeCompId').value;
         const qId = document.getElementById('activeQId').value;
         const text = document.getElementById('qText').value;
+        const pts = parseInt(document.getElementById('qPoints').value) || 0;
         const options = [document.getElementById('opt0').value, document.getElementById('opt1').value, document.getElementById('opt2').value];
         const correct = parseInt(document.querySelector('input[name="correctCheck"]:checked').value);
 
         if(!text || options.includes("")) return alert("أكمل البيانات");
 
+        const data = { compId, text, points: pts, options, correctAnswer: correct };
+
         if(qId) {
-            await updateDoc(doc(db, "Questions", qId), { text, options, correctAnswer: correct });
+            await updateDoc(doc(db, "Questions", qId), data);
             alert("تم التعديل ✅");
         } else {
-            await addDoc(collection(db, "Questions"), { compId, text, options, correctAnswer: correct, createdAt: serverTimestamp() });
+            data.createdAt = serverTimestamp();
+            await addDoc(collection(db, "Questions"), data);
             alert("تمت الإضافة ✅");
         }
         closeQModal();
     };
 
-    // 5. وظائف المسح الشامل والخاص
+    window.deleteItem = async (col, id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, col, id)); };
+
+    // دوال المسح الشامل والخاص تبقى كما هي
     window.clearAllAnswersGlobal = async () => {
-        if(!confirm("⚠️ هل أنت متأكد من مسح كافة الإجابات نهائياً؟")) return;
+        if(!confirm("⚠️ مسح شامل للنتائج؟")) return;
         const snap = await getDocs(collection(db, "Answers"));
         const batch = writeBatch(db);
         snap.forEach(d => batch.delete(doc(db, "Answers", d.id)));
         await batch.commit();
-        alert("تم مسح كافة النتائج ✅");
+        alert("تم التنظيف ✅");
     };
 
     window.clearCompetitionResults = async () => {
         const id = document.getElementById('drawCompSelect').value;
         if(!id) return alert("اختر مسابقة");
-        if(!confirm("مسح نتائج هذه المسابقة فقط؟")) return;
         const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", id)));
         const batch = writeBatch(db);
         snap.forEach(d => batch.delete(doc(db, "Answers", d.id)));
         await batch.commit();
         alert("تم مسح نتائج المسابقة ✅");
     };
-
-    window.createNewCompetition = async () => {
-        const t = document.getElementById('compTitle').value;
-        const e = document.getElementById('compEndDate').value;
-        if(t && e) { await addDoc(collection(db, "Competitions"), { title: t, endDate: e }); alert("تم النشر"); }
-    };
-
-    window.deleteItem = async (col, id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, col, id)); };
-
 </script>
 </body>
 </html>
