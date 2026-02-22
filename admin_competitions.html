@@ -3,200 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة الإدارة الذهبية | إدارة المسابقات</title>
-
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<title>إدارة المسابقات</title>
 
 <style>
-:root{
---primary:#007AFF;
---success:#34C759;
---danger:#FF3B30;
---gold:#FF9500;
---bg:#F2F2F7;
---card:#ffffff;
-}
-body{
-margin:0;
-padding:20px;
-background:var(--bg);
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-direction:rtl;
-color:#1c1c1e;
-}
-.container{max-width:1100px;margin:auto;}
-h1{text-align:center;font-size:28px;font-weight:800;margin-bottom:35px;}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:30px;}
-.card{
-background:var(--card);
-border-radius:22px;
-padding:22px;
-box-shadow:0 15px 35px rgba(0,0,0,0.05);
-border:1px solid rgba(0,0,0,0.04);
-transition:.3s;
-margin-bottom:20px;
-}
-.card:hover{transform:translateY(-4px);box-shadow:0 20px 45px rgba(0,0,0,0.08);}
-.card h2{margin:0 0 18px 0;font-size:18px;display:flex;align-items:center;gap:8px;}
-input,select,textarea{
-width:100%;padding:13px;border-radius:14px;border:1px solid #E5E5EA;
-background:#F9F9FB;font-size:14px;margin-bottom:12px;outline:none;
-}
-input:focus,textarea:focus{border-color:var(--primary);background:#fff;}
-.btn{
-padding:12px;border:none;border-radius:14px;cursor:pointer;
-font-weight:600;transition:.2s;display:flex;justify-content:center;align-items:center;gap:6px;
-}
-.btn-main{background:var(--primary);color:#fff;}
-.btn-draw{background:linear-gradient(135deg,#FF9500,#FFCC00);color:#fff;}
-.btn-ghost{background:#F2F2F7;}
-.btn-danger{background:var(--danger);color:#fff;}
-.btn:active{transform:scale(.96);}
-.comp-header{display:flex;justify-content:space-between;align-items:flex-start;}
-.menu-dots{font-size:22px;cursor:pointer;padding:5px 10px;}
-.dropdown{display:none;position:absolute;background:#fff;border-radius:14px;
-box-shadow:0 10px 25px rgba(0,0,0,.15);overflow:hidden;z-index:999;}
-.dropdown div{padding:12px 18px;font-size:13px;cursor:pointer;border-bottom:1px solid #eee;}
-.dropdown div:hover{background:#F2F2F7;}
-.dropdown div:last-child{border:none;color:var(--danger);}
-table{width:100%;border-collapse:collapse;margin-top:12px;}
-th{font-size:12px;background:#F9F9FB;padding:10px;color:#8E8E93;}
-td{padding:12px;border-bottom:1px solid #F2F2F7;font-size:14px;}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
-backdrop-filter:blur(10px);justify-content:center;align-items:center;z-index:9999;}
-.modal-body{background:#fff;width:95%;max-width:600px;border-radius:28px;padding:28px;max-height:90vh;overflow:auto;}
-.option-box{display:flex;align-items:center;gap:10px;background:#F2F2F7;
-padding:10px;border-radius:12px;margin-bottom:10px;}
-.option-box input[type="checkbox"]{width:22px;height:22px;accent-color:var(--success);}
-.winner-row{animation:fadeUp .6s forwards;opacity:0;transform:translateY(20px);}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
-.big-winner{
-font-size:30px;
-font-weight:900;
-color:#FF9500;
-margin-bottom:20px;
-animation:pop 1s ease;
-}
-@keyframes pop{
-0%{transform:scale(.5);opacity:0;}
-100%{transform:scale(1);opacity:1;}
-}
+body{font-family:Arial;background:#F2F2F7;padding:20px;direction:rtl}
+.card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
+input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #ddd;margin-bottom:10px}
+button{padding:10px 15px;border:none;border-radius:12px;cursor:pointer}
+.btn-main{background:#007AFF;color:#fff}
+.option-box{display:flex;gap:10px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #eee}
 </style>
 </head>
-
 <body>
 
-<audio id="winSound">
-<source src="https://actions.google.com/sounds/v1/crowd/large_crowd_cheer.ogg">
-</audio>
-
-<div class="container">
-<h1>👑 لوحة إدارة المسابقات الذهبية</h1>
-
-<div class="grid">
+<h2>⚙️ إدارة المسابقات</h2>
 
 <div class="card">
-<h2>🆕 إضافة مسابقة</h2>
+<h3>إضافة مسابقة</h3>
 <input type="text" id="compTitle" placeholder="اسم المسابقة">
-<label style="font-size:12px;color:#8E8E93">موعد العرض (اختياري)</label>
-<input type="datetime-local" id="compEndDate">
-<button class="btn btn-ghost" onclick="publishNow()">⚡ عرض الآن</button>
-<br>
-<button class="btn btn-main" onclick="createNewCompetition()">حفظ المسابقة</button>
+<button class="btn-main" onclick="createNewCompetition()">حفظ</button>
 </div>
 
-<div class="card" style="border:2px solid var(--gold);background:#FFFDF8">
-<h2>🎲 السحب الذهبي</h2>
-<select id="drawCompSelect"></select>
-<select id="drawMode">
-<option value="random">🎲 عشوائي</option>
-<option value="points">🥇 أعلى نقاط</option>
-</select>
-<input type="number" id="winnersCount" value="1" min="1">
-<button class="btn btn-draw" onclick="runAdvancedDraw()">🔥 بدء السحب</button>
-</div>
+<div id="competitions"></div>
 
-</div>
-
-<div id="resultsSections"></div>
-
-<div class="card">
-<h2>📜 سجل السحوبات</h2>
-<div id="historyList">جاري التحميل...</div>
-</div>
-
-</div>
-
-<div id="qModal" class="modal">
-<div class="modal-body">
-<h3>❓ إدارة الأسئلة</h3>
+<!-- مودال الأسئلة -->
+<div id="qModal" style="display:none" class="card">
+<h3>إضافة سؤال</h3>
 <input type="hidden" id="activeCid">
 <textarea id="qText" placeholder="نص السؤال"></textarea>
-<input type="text" id="qImage" placeholder="رابط صورة السؤال">
-<input type="number" id="qPoints" value="10" placeholder="نقاط السؤال">
-<div id="optionsList"></div>
-<button class="btn btn-ghost" onclick="addOptionField()">+ إضافة خيار</button>
-<br><br>
-<button class="btn btn-main" onclick="saveQuestion()">حفظ السؤال</button>
-<br><br>
-<button class="btn btn-ghost" onclick="closeModal('qModal')">إغلاق</button>
-<div id="currentQs" style="margin-top:20px;border-top:1px solid #eee;padding-top:15px;"></div>
-</div>
-</div>
 
-<div id="drawModal" class="modal">
-<div class="modal-body" style="text-align:center">
-<h2 id="drawStatus">⏳ استعدوا...</h2>
-<div id="winnersTableContainer"></div>
-<button class="btn btn-main" onclick="closeModal('drawModal')">تم</button>
-</div>
+<label>صورة السؤال:</label>
+<input type="file" id="qImageFile" accept="image/*">
+
+<input type="number" id="qPoints" value="10">
+
+<div id="optionsList"></div>
+<button onclick="addOption()">+ خيار</button>
+<br><br>
+<button class="btn-main" onclick="saveQuestion()">حفظ السؤال</button>
+<button onclick="closeQ()">إغلاق</button>
 </div>
 
 <script type="module">
 import { db } from './config.js';
-import { collection, addDoc, onSnapshot, getDocs, query, where, doc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { collection, addDoc, onSnapshot, getDocs, query, where, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-window.publishNow=()=>{
-const now=new Date();
-now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
-compEndDate.value=now.toISOString().slice(0,16);
-};
+const storage = getStorage();
 
-window.createNewCompetition=async()=>{
-if(!compTitle.value)return alert("أدخل الاسم");
+window.createNewCompetition = async()=>{
+if(!compTitle.value) return alert("أدخل الاسم");
 await addDoc(collection(db,"Competitions"),{
 title:compTitle.value,
-endDate:compEndDate.value,
 createdAt:serverTimestamp()
 });
 compTitle.value="";
 };
 
-onSnapshot(query(collection(db,"Competitions"),orderBy("createdAt","desc")),(snap)=>{
-resultsSections.innerHTML="";
-drawCompSelect.innerHTML="";
+onSnapshot(collection(db,"Competitions"),snap=>{
+competitions.innerHTML="";
 snap.forEach(d=>{
 const comp=d.data();
 const cid=d.id;
-drawCompSelect.innerHTML+=`<option value="${cid}">${comp.title}</option>`;
-resultsSections.innerHTML+=`
+competitions.innerHTML+=`
 <div class="card">
-<div class="comp-header">
-<div>
 <h3>${comp.title}</h3>
-<small>موعد: ${comp.endDate||"غير محدد"}</small>
-</div>
-<div style="position:relative">
-<span class="menu-dots" onclick="toggleMenu('${cid}')">⋮</span>
-<div id="menu-${cid}" class="dropdown">
-<div onclick="openQManager('${cid}')">❓ إضافة سؤال</div>
-<div onclick="deleteComp('${cid}')">🗑️ حذف</div>
-</div>
-</div>
-</div>
+<button onclick="openQ('${cid}')">❓ إضافة سؤال</button>
+<button onclick="deleteComp('${cid}')">🗑 حذف</button>
 <table id="table-${cid}">
 <thead><tr><th>الاسم</th><th>الجوال</th><th>الحالة</th><th>النقاط</th></tr></thead>
-<tbody><tr><td colspan="4">تحميل...</td></tr></tbody>
+<tbody></tbody>
 </table>
 </div>
 `;
@@ -204,59 +82,61 @@ loadAnswers(cid);
 });
 });
 
-window.runAdvancedDraw=async()=>{
-const cid=drawCompSelect.value;
-const count=parseInt(winnersCount.value);
-const mode=drawMode.value;
-if(!cid)return alert("اختر المسابقة");
-drawModal.style.display="flex";
-drawStatus.innerText="3";
-let c=3;
-const interval=setInterval(()=>{
-c--;
-drawStatus.innerText=c;
-if(c===0){clearInterval(interval);start();}
-},1000);
-
-async function start(){
-drawStatus.innerText="🎰 جاري التدوير...";
-const snap=await getDocs(query(collection(db,"Answers"),where("compId","==",cid),where("isCorrect","==",true)));
-let candidates=snap.docs.map(d=>({
-uid:d.data().userId,
-name:d.data().userName,
-phone:d.data().userPhone,
-points:d.data().pointsAwarded||0
-}));
-candidates=[...new Map(candidates.map(i=>[i.uid,i])).values()];
-if(mode==="points")candidates.sort((a,b)=>b.points-a.points);
-let winners=(mode==="random")?candidates.sort(()=>0.5-Math.random()).slice(0,count):candidates.slice(0,count);
-announce(winners);
-await addDoc(collection(db,"WinnersHistory"),{compId:cid,winners,createdAt:serverTimestamp()});
-}
+window.openQ=(cid)=>{
+activeCid.value=cid;
+optionsList.innerHTML="";
+addOption();addOption();
+qModal.style.display="block";
 };
 
-function announce(winners){
-drawStatus.innerHTML=`<div class="big-winner">🏆 ${winners[0].name}</div>`;
-confetti({particleCount:200,spread:100});
-document.getElementById("winSound").play();
-let html=`<table><thead><tr><th>#</th><th>الاسم</th><th>الجوال</th></tr></thead><tbody>`;
-winners.forEach((w,i)=>{
-html+=`<tr class="winner-row" style="animation-delay:${i*.4}s">
-<td>${i+1}</td><td>${w.name}</td><td>${w.phone}</td>
-</tr>`;
+window.addOption=()=>{
+optionsList.innerHTML+=`
+<div class="option-box">
+<input type="checkbox" class="opt-check">
+<input type="text" class="opt-text" placeholder="الخيار">
+</div>
+`;
+};
+
+window.saveQuestion=async()=>{
+const cid=activeCid.value;
+const text=qText.value;
+const pts=parseInt(qPoints.value);
+
+let imageUrl="";
+
+const file = qImageFile.files[0];
+if(file){
+const storageRef = ref(storage, "questions/"+Date.now()+"_"+file.name);
+await uploadBytes(storageRef,file);
+imageUrl = await getDownloadURL(storageRef);
+}
+
+let options=[];
+let correct=-1;
+
+document.querySelectorAll(".option-box").forEach((el,i)=>{
+const txt=el.querySelector(".opt-text").value;
+if(txt){
+options.push(txt);
+if(el.querySelector(".opt-check").checked) correct=i;
+}
 });
-html+="</tbody></table>";
-winnersTableContainer.innerHTML+=html;
-}
 
-window.toggleMenu=(id)=>{
-const m=document.getElementById("menu-"+id);
-m.style.display=m.style.display==="block"?"none":"block";
-};
+if(!text || correct===-1) return alert("أكمل البيانات");
 
-window.deleteComp=async(id)=>{
-if(confirm("حذف المسابقة؟"))
-await deleteDoc(doc(db,"Competitions",id));
+await addDoc(collection(db,"Questions"),{
+compId:cid,
+text,
+image:imageUrl,
+points:pts,
+options,
+correctAnswer:correct,
+createdAt:serverTimestamp()
+});
+
+alert("تم حفظ السؤال");
+qModal.style.display="none";
 };
 
 async function loadAnswers(cid){
@@ -265,16 +145,23 @@ const tbody=document.querySelector(`#table-${cid} tbody`);
 tbody.innerHTML="";
 snap.forEach(d=>{
 const a=d.data();
-tbody.innerHTML+=`<tr>
+tbody.innerHTML+=`
+<tr>
 <td>${a.userName}</td>
 <td>${a.userPhone}</td>
 <td>${a.isCorrect?'✅':'❌'}</td>
 <td>${a.pointsAwarded||0}</td>
-</tr>`;
+</tr>
+`;
 });
 }
 
-window.closeModal=(id)=>document.getElementById(id).style.display="none";
+window.deleteComp=async(id)=>{
+if(confirm("حذف؟"))
+await deleteDoc(doc(db,"Competitions",id));
+};
+
+window.closeQ=()=>qModal.style.display="none";
 </script>
 
 </body>
