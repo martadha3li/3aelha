@@ -44,7 +44,7 @@
             border-radius: 12px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer;
         }
 
-        .table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; }
+        .table-wrapper { overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
         th { background: #f8f8fb; padding: 12px; color: #8e8e93; border-bottom: 1px solid #eee; }
         td { padding: 12px; border-bottom: 1px solid #f2f2f7; }
@@ -66,7 +66,6 @@
         .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; color: white; border: none; cursor: pointer; }
         .bg-primary { background: var(--primary); } .bg-danger { background: var(--danger); } .bg-success { background: var(--success); }
 
-        /* --- القرعة --- */
         #drawOverlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.95);
             z-index: 5000; display: none; flex-direction: column;
@@ -84,7 +83,6 @@
         }
         @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-        /* --- شريط التنقل السفلي --- */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
             background: white; display: flex; justify-content: space-around;
@@ -93,6 +91,11 @@
         .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 22px; margin-bottom: 2px; }
+        
+        /* تنسيق جدول الأسئلة الفرعي */
+        .qs-sub-table { margin-top: 10px; border: 1px solid #f0f0f0; border-radius: 8px; }
+        .qs-sub-table th { font-size: 11px; padding: 8px; }
+        .qs-sub-table td { font-size: 11px; padding: 8px; }
     </style>
 </head>
 <body>
@@ -129,7 +132,7 @@
     </div>
 
     <div class="card">
-        <div class="card-title">📋 المسابقات الحالية</div>
+        <div class="card-title">📋 المسابقات والأسئلة</div>
         <div id="compsList">جاري التحميل...</div>
     </div>
 
@@ -179,7 +182,6 @@
     import { db } from './config.js';
     import { collection, addDoc, onSnapshot, doc, getDoc, getDocs, setDoc, deleteDoc, serverTimestamp, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- العمليات الأساسية ---
     window.createNewCompetition = async () => {
         const title = document.getElementById('compTitle').value;
         const end = document.getElementById('compEndDate').value;
@@ -195,16 +197,61 @@
         select.innerHTML = `<option value="">-- اختر مسابقة للسحب --</option>`;
         snap.forEach(d => {
             const c = d.data();
-            list.innerHTML += `<div class="comp-item" style="border-bottom:1px solid #eee; padding:10px 0;">
-                <b>🏆 ${c.title}</b> 
-                <button class="badge bg-primary" onclick="openQModal('${d.id}')">إضافة سؤال</button>
-                <button class="badge bg-danger" onclick="deleteItem('Competitions','${d.id}')">حذف</button>
+            list.innerHTML += `
+            <div class="comp-item" style="border:1px solid #eee; border-radius:12px; padding:12px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <b>🏆 ${c.title}</b> 
+                    <div>
+                        <button class="badge bg-primary" onclick="openQModal('${d.id}')">➕ سؤال</button>
+                        <button class="badge bg-danger" onclick="deleteItem('Competitions','${d.id}')">🗑️ حذف</button>
+                    </div>
+                </div>
+                <div class="table-wrapper qs-sub-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>السؤال</th>
+                                <th>الموعد</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qs-list-${d.id}">
+                            <tr><td colspan="3" style="text-align:center; color:#999;">جاري تحميل الأسئلة...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>`;
             select.innerHTML += `<option value="${d.id}">${c.title}</option>`;
+            loadQuestionsForComp(d.id);
         });
     });
 
-    // --- نظام القرعة وحفظ الفائزين ---
+    // وظيفة جلب الأسئلة لكل مسابقة وعرضها في الجدول الصغير
+    function loadQuestionsForComp(compId) {
+        const qRef = collection(db, `Competitions/${compId}/Questions`);
+        onSnapshot(qRef, (snap) => {
+            const tbody = document.getElementById(`qs-list-${compId}`);
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">لا توجد أسئلة مضافة</td></tr>';
+                return;
+            }
+            snap.forEach(qDoc => {
+                const qData = qDoc.data();
+                const dateStr = qData.showAt ? qData.showAt.replace('T', ' ') : 'غير محدد';
+                tbody.innerHTML += `
+                <tr>
+                    <td>${qData.text}</td>
+                    <td style="color:#666;">${dateStr}</td>
+                    <td>
+                        <button onclick="deleteItem('Competitions/${compId}/Questions','${qDoc.id}')" style="border:none; background:none; color:var(--danger); font-size:16px;">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+        });
+    }
+
     window.startDrawProcess = async () => {
         const compId = document.getElementById('drawCompSelect').value;
         const count = parseInt(document.getElementById('drawWinnerCount').value) || 1;
@@ -225,7 +272,6 @@
             return alert("لا يوجد إجابات صحيحة");
         }
 
-        // تأثير الدوران
         let timer = setInterval(() => {
             document.getElementById('slotBox').innerText = participants[Math.floor(Math.random()*participants.length)].userName;
         }, 100);
@@ -235,7 +281,6 @@
             const shuffled = participants.sort(() => 0.5 - Math.random());
             const finalWinners = shuffled.slice(0, count);
             
-            // حفظ الفائزين في الداتابيز
             let winnersList = [];
             for(let p of finalWinners) {
                 const userDoc = await getDoc(doc(db, "Users", p.userId));
@@ -259,7 +304,6 @@
         }, 3000);
     };
 
-    // --- سجل الفائزين واتساب ---
     onSnapshot(collection(db, "Winners"), (snap) => {
         const container = document.getElementById('winnersHistoryList');
         if (snap.empty) return;
@@ -283,18 +327,32 @@
         });
     });
 
-    // --- الأسئلة والمودال ---
     window.openQModal = (id) => { document.getElementById('activeCompId').value = id; document.getElementById('qModal').style.display = 'flex'; };
     window.closeQModal = () => document.getElementById('qModal').style.display = 'none';
+    
     window.saveQuestion = async () => {
         const id = document.getElementById('activeCompId').value;
         const text = document.getElementById('qText').value;
         const opts = [document.getElementById('opt0').value, document.getElementById('opt1').value, document.getElementById('opt2').value];
         const correct = opts[document.querySelector('input[name="correctCheck"]:checked').value];
-        await addDoc(collection(db, `Competitions/${id}/Questions`), { text, options: opts, correctOption: correct, showAt: document.getElementById('qShowAt').value });
-        closeQModal(); alert("تم الحفظ");
+        
+        if(!text || !correct) return alert("يرجى تعبئة نص السؤال والخيارات");
+        
+        await addDoc(collection(db, `Competitions/${id}/Questions`), { 
+            text, 
+            options: opts, 
+            correctOption: correct, 
+            showAt: document.getElementById('qShowAt').value 
+        });
+        closeQModal(); 
+        alert("تم حفظ السؤال ✅");
     };
-    window.deleteItem = async (p, id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, p, id)); };
+
+    window.deleteItem = async (p, id) => { 
+        if(confirm("هل أنت متأكد من الحذف؟")) {
+            await deleteDoc(doc(db, p, id)); 
+        }
+    };
 </script>
 </body>
 </html>
