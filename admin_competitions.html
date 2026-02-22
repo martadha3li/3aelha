@@ -1,234 +1,399 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>المسابقات | منصة العائلة</title>
-    
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15" });
-      });
-    </script>
-
+    <title>إدارة المسابقات | نسخة الجوال</title>
     <style>
-        :root { 
-            --ios-blue: #007AFF; --ios-bg: #F2F2F7; --ios-orange: #FF9500; 
-            --ios-green: #34C759; --ios-red: #FF3B30; --card-bg: #FFFFFF;
-        }
-
+        :root { --primary: #5856d6; --success: #34c759; --danger: #ff3b30; --bg: #f2f2f7; --text: #1c1c1e; --gold: #ff9500; }
+        
         body { 
-            background: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 75px; padding-bottom: 90px; direction: rtl;
+            background-color: var(--bg); 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; padding: 0; color: var(--text);
+            line-height: 1.5;
         }
 
-        /* الهيدر العلوي المطور */
         .top-bar {
-            position: fixed; top: 0; width: 100%; height: 65px;
-            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000;
-        }
-        .nav-btn-top { text-decoration: none; font-size: 20px; padding: 5px 10px; }
-
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-
-        .comp-card, .history-card { 
-            background: var(--card-bg); border-radius: 22px; padding: 20px; 
-            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
+            background: white; padding: 15px; display: flex; align-items: center; 
+            justify-content: space-between; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
         }
 
-        .section-title { font-size: 18px; font-weight: 800; margin: 10px 5px 15px; color: #1c1c1e; display: flex; align-items: center; gap: 8px; }
+        .container { padding: 12px; max-width: 100%; box-sizing: border-box; }
         
-        /* سجل المشاركات */
-        .history-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 12px 0; border-bottom: 0.5px solid #F2F2F7; 
+        .card { 
+            background: white; border-radius: 16px; padding: 16px; 
+            margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
         }
-        .history-item:last-child { border-bottom: none; }
-        .history-info b { display: block; font-size: 14px; }
-        .history-info span { font-size: 11px; color: #8e8e93; }
-        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: white; }
 
-        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; }
-        .q-box.answered { opacity: 0.7; pointer-events: none; }
-
-        .option-btn { 
-            width: 100%; padding: 15px; margin-top: 10px; border-radius: 14px; 
-            border: 1px solid #E5E5EA; background: white; cursor: pointer; 
-            text-align: right; font-size: 15px; font-weight: 500;
+        .card-title { 
+            font-size: 16px; font-weight: 800; margin-bottom: 15px; 
+            display: flex; align-items: center; gap: 8px; color: var(--primary);
         }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #666; }
         
-        .option-btn.correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
-        .option-btn.wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
-
-        .draw-nav-btn {
-            background: linear-gradient(135deg, var(--ios-orange), #FFCC00);
-            color: white; text-decoration: none; display: flex; align-items: center;
-            justify-content: center; padding: 15px; border-radius: 18px;
-            font-weight: bold; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(255,149,0,0.3);
+        .form-input { 
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; 
+            box-sizing: border-box; font-size: 14px; background: #fafafa;
         }
 
-        .bottom-bar {
-            position: fixed; bottom: 0; width: 100%; height: 75px;
-            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-around; align-items: center; border-top: 0.5px solid #C6C6C8; z-index: 5000;
+        .btn-main {
+            background: var(--primary); color: white; border: none; padding: 14px;
+            border-radius: 12px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer;
         }
-        .nav-item { font-size: 26px; color: #8E8E93; text-decoration: none; }
-        .nav-item.active { color: var(--ios-blue); }
+
+        .table-wrapper { 
+            overflow-x: auto; -webkit-overflow-scrolling: touch; 
+            background: #fff; border-radius: 12px; margin-top: 5px;
+        }
+
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 13px; }
+        th { background: #f8f8fb; padding: 12px; text-align: right; color: #8e8e93; border-bottom: 1px solid #eee; }
+        td { padding: 12px; border-bottom: 1px solid #f2f2f7; }
+
+        .modal { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
+            z-index: 2000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); 
+        }
+
+        .modal-content { 
+            background: white; padding: 20px; border-radius: 25px 25px 0 0; 
+            width: 100%; max-height: 90vh; overflow-y: auto; 
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .opt-row { 
+            display: flex; align-items: center; gap: 10px; 
+            background: #f2f2f7; padding: 10px; border-radius: 12px; margin-bottom: 10px; 
+        }
+
+        .opt-row input[type="radio"] { width: 22px; height: 22px; accent-color: var(--success); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; color: white; border: none; }
+        .bg-primary { background: var(--primary); } .bg-danger { background: var(--danger); } .bg-success { background: var(--success); }
+
+        .comp-item { border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+
+        /* --- تنسيقات القرعة --- */
+        #drawOverlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            z-index: 5000; display: none; flex-direction: column;
+            align-items: center; justify-content: center; color: white; text-align: center;
+        }
+        .slot-machine {
+            font-size: 28px; font-weight: bold; color: var(--gold);
+            height: 90px; overflow: hidden; display: flex; align-items: center;
+            justify-content: center; border: 3px solid var(--gold);
+            width: 85%; border-radius: 20px; margin: 25px 0; background: #222;
+        }
+        .winner-tag {
+            background: var(--success); color: white; padding: 10px 20px;
+            border-radius: 12px; margin: 5px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold; font-size: 16px;
+        }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <a href="index.html" class="nav-btn-top">🏠</a>
-    <b>المسابقات</b>
-    <div style="display: flex; gap: 10px;">
-        <div id="adminTools" style="display:none; cursor:pointer; font-size:22px;" onclick="location.href='add_competition.html'">⊕</div>
-        <div onclick="history.back()" style="cursor:pointer; font-size:20px;">🔙</div>
-    </div>
+    <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:20px;">➡️</button>
+    <b style="font-size: 16px;">إدارة المسابقات</b>
+    <div style="width:20px;"></div>
 </div>
 
 <div class="container">
-    <a href="draw.html" class="draw-nav-btn">
-        🎰 دخول سحب القرعة المتطور
-    </a>
 
-    <div class="section-title">🏆 المسابقات المتاحة</div>
-    <div id="compsFeed">
-        <p style="text-align:center; color:gray;">جاري تحميل المسابقات...</p>
+    <div class="card" style="border: 2px solid var(--gold);">
+        <div class="card-title" style="color: var(--gold);">🎰 سحب قرعة الفائزين</div>
+        <div class="form-group">
+            <label>اختر المسابقة:</label>
+            <select id="drawCompSelect" class="form-input"></select>
+        </div>
+        <div class="form-group">
+            <label>عدد الفائزين المطلوب:</label>
+            <input type="number" id="drawWinnerCount" value="1" min="1" class="form-input">
+        </div>
+        <button onclick="startDrawProcess()" class="btn-main" style="background: var(--gold);">بدء السحب العشوائي 🎲</button>
     </div>
 
-    <div class="section-title">🕒 سجل مشاركاتي الأخيرة</div>
-    <div class="history-card" id="userHistory">
-        <p style="text-align:center; color:gray; font-size:13px;">جاري تحميل سجل مشاركاتك...</p>
+    <div class="card">
+        <div class="card-title">🆕 مسابقة جديدة</div>
+        <input type="text" id="compTitle" placeholder="عنوان المسابقة..." class="form-input">
+        <div class="form-group">
+            <label>تاريخ ووقت انتهاء المسابقة:</label>
+            <input type="datetime-local" id="compEndDate" class="form-input">
+        </div>
+        <button onclick="createNewCompetition()" class="btn-main">نشر المسابقة</button>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📋 المسابقات والأسئلة</div>
+        <div id="compsList">جاري التحميل...</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📊 آخر الإجابات والنتائج</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>المشارك</th>
+                        <th>المسابقة</th>
+                        <th>الحالة</th>
+                        <th>النقاط</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="border: 1px solid #ddd; background: #fdfdfd;">
+        <div class="card-title">📤 تصدير البيانات (Excel)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="exportToExcel('all')" class="badge bg-primary" style="height: 45px; font-size: 13px;">تصدير كافة المشاركين 📁</button>
+            <button onclick="exportToExcel('correct')" class="badge bg-success" style="height: 45px; font-size: 13px;">تصدير الإجابات الصحيحة فقط ✅</button>
+        </div>
     </div>
 </div>
 
-<nav class="bottom-bar">
-    <a href="news.html" class="nav-item">🏠</a>
-    <a href="chat.html" class="nav-item">💬</a>
-    <a href="competitions.html" class="nav-item active">🏆</a>
-    <a href="profile.html" class="nav-item">👤</a>
-</nav>
+<div id="drawOverlay">
+    <div id="drawInfo" style="font-size: 18px; margin-bottom: 10px;">جاري اختيار الفائز...</div>
+    <div id="slotBox" class="slot-machine">---</div>
+    <div id="winnersDisplay" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"></div>
+    <button id="closeDrawBtn" onclick="document.getElementById('drawOverlay').style.display='none'" 
+            style="display:none; margin-top:30px; padding:12px 30px; border-radius:10px; border:none; background:white; font-weight:bold;">إغلاق الشاشة</button>
+</div>
+
+<div id="qModal" class="modal">
+    <div class="modal-content">
+        <div style="width: 40px; height: 5px; background: #ddd; border-radius: 10px; margin: 0 auto 15px;"></div>
+        <h3 style="margin-top:0; color: var(--primary);">➕ إضافة سؤال مجدول</h3>
+        <input type="hidden" id="activeCompId">
+        <div class="form-group">
+            <label>نص السؤال:</label>
+            <input type="text" id="qText" placeholder="مثال: من هو مخترع...؟" class="form-input">
+        </div>
+        <label style="font-size: 12px; font-weight: bold; color: #666;">الخيارات (حدد الإجابة الصحيحة):</label>
+        <div class="opt-row"><input type="radio" name="correctCheck" value="0" checked><input type="text" id="opt0" placeholder="الخيار الأول" class="form-input"></div>
+        <div class="opt-row"><input type="radio" name="correctCheck" value="1"><input type="text" id="opt1" placeholder="الخيار الثاني" class="form-input"></div>
+        <div class="opt-row"><input type="radio" name="correctCheck" value="2"><input type="text" id="opt2" placeholder="الخيار الثالث" class="form-input"></div>
+        <div class="grid-2">
+            <div class="form-group"><label>📅 موعد العرض:</label><input type="datetime-local" id="qShowAt" class="form-input"></div>
+            <div class="form-group"><label>💎 النقاط:</label><input type="number" id="qPoints" value="10" class="form-input"></div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="closeQModal()" style="flex:1; background:#eee; border:none; padding:15px; border-radius:12px; font-weight:bold;">إلغاء</button>
+            <button onclick="saveQuestion()" style="flex:2;" class="btn-main">حفظ وجدولة ✅</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { db } from './config.js';
+    import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userData = null;
-    let myAnswersIds = [];
+    // --- إدارة المسابقات ---
+    window.createNewCompetition = async () => {
+        const title = document.getElementById('compTitle').value;
+        const end = document.getElementById('compEndDate').value;
+        if(!title || !end) return alert("أكمل البيانات");
+        await addDoc(collection(db, "Competitions"), { title, endDate: end, visible: true, createdAt: serverTimestamp() });
+        alert("تم الحفظ ✅");
+        document.getElementById('compTitle').value = "";
+    };
 
-    onAuthStateChanged(auth, async user => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            userData = snap.data();
-            if (userData?.role === 'admin' || userData?.role === 'مدير') {
-                document.getElementById('adminTools').style.display = 'block';
-            }
-            
-            loadUserHistory(user.uid);
-            loadComps();
-        } else location.href = "login.html";
+    onSnapshot(collection(db, "Competitions"), snap => {
+        const list = document.getElementById('compsList');
+        const select = document.getElementById('drawCompSelect');
+        list.innerHTML = "";
+        select.innerHTML = `<option value="">-- اختر مسابقة للسحب --</option>`;
+        snap.forEach(d => {
+            const c = d.data();
+            list.innerHTML += `
+                <div class="comp-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <b>🏆 ${c.title}</b>
+                        <div>
+                            <button class="badge bg-primary" onclick="openQModal('${d.id}')">➕</button>
+                            <button class="badge bg-danger" onclick="deleteItem('Competitions','${d.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div id="qs-list-${d.id}" style="font-size:12px; color:#666; margin-top:5px;"></div>
+                </div>`;
+            select.innerHTML += `<option value="${d.id}">${c.title}</option>`;
+            loadQuestions(d.id);
+        });
     });
 
-    // جلب سجل المشاركات
-    async function loadUserHistory(uid) {
-        const hQuery = query(
-            collection(db, "Answers"), 
-            where("userId", "==", uid),
-            orderBy("timestamp", "desc"),
-            limit(5)
-        );
+    function loadQuestions(compId) {
+        onSnapshot(collection(db, `Competitions/${compId}/Questions`), s => {
+            const cont = document.getElementById(`qs-list-${compId}`);
+            if(!cont) return;
+            cont.innerHTML = s.empty ? "لا توجد أسئلة." : "";
+            s.forEach(qDoc => {
+                const q = qDoc.data();
+                cont.innerHTML += `<div style="padding:3px 0; border-top:1px solid #f9f9f9; display:flex; justify-content:space-between;">
+                    <span>❓ ${q.text}</span>
+                    <button onclick="deleteItem('Competitions/${compId}/Questions','${qDoc.id}')" style="border:none; background:none; color:red;">✕</button>
+                </div>`;
+            });
+        });
+    }
+
+    // --- القرعة الذكية ---
+    window.startDrawProcess = async () => {
+        const compId = document.getElementById('drawCompSelect').value;
+        const winnerCount = parseInt(document.getElementById('drawWinnerCount').value) || 1;
+        if(!compId) return alert("الرجاء اختيار المسابقة أولاً");
+
+        const overlay = document.getElementById('drawOverlay');
+        const slotBox = document.getElementById('slotBox');
+        const winnersDisplay = document.getElementById('winnersDisplay');
+        const drawInfo = document.getElementById('drawInfo');
+        const closeBtn = document.getElementById('closeDrawBtn');
+
+        // 1. جلب الإجابات الصحيحة لهذه المسابقة فقط
+        drawInfo.innerText = "جاري تجميع المشاركين ذوي الإجابات الصحيحة...";
+        overlay.style.display = 'flex';
+        winnersDisplay.innerHTML = "";
+        closeBtn.style.display = 'none';
+
+        const q = query(collection(db, "Answers"), where("compId", "==", compId), where("isCorrect", "==", true));
+        const snap = await getDocs(q);
         
-        onSnapshot(hQuery, snap => {
-            const hDiv = document.getElementById('userHistory');
-            hDiv.innerHTML = "";
-            myAnswersIds = [];
+        let participants = [];
+        let uniqueUsers = new Set();
 
-            if(snap.empty) {
-                hDiv.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">لم تشارك في أي مسابقات بعد</p>';
-                return;
+        snap.forEach(doc => {
+            const data = doc.data();
+            if(!uniqueUsers.has(data.userId)) {
+                participants.push(data.userName);
+                uniqueUsers.add(data.userId);
             }
+        });
 
-            snap.forEach(d => {
-                const data = d.data();
-                myAnswersIds.push(data.questionId);
-                const statusColor = data.isCorrect ? 'var(--ios-green)' : 'var(--ios-red)';
-                const statusText = data.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة';
+        if(participants.length === 0) {
+            overlay.style.display = 'none';
+            return alert("عذراً، لا يوجد مشاركون بإجابات صحيحة في هذه المسابقة.");
+        }
 
-                hDiv.innerHTML += `
-                    <div class="history-item">
-                        <div class="history-info">
-                            <b>${data.questionText || 'سؤال مسابقة'}</b>
-                            <span>${data.compTitle || ''}</span>
-                        </div>
-                        <div class="status-badge" style="background:${statusColor}">${statusText}</div>
-                    </div>
-                `;
-            });
+        // 2. عملية القرعة المرئية
+        drawInfo.innerText = "جاري السحب العشوائي...";
+        let counter = 0;
+        const spinTime = 3000; // 3 ثواني دوران
+        const startTime = Date.now();
+
+        const spinInterval = setInterval(() => {
+            const randomName = participants[Math.floor(Math.random() * participants.length)];
+            slotBox.innerText = randomName;
+
+            if (Date.now() - startTime > spinTime) {
+                clearInterval(spinInterval);
+                finishDraw(participants, winnerCount);
+            }
+        }, 80);
+    };
+
+    function finishDraw(list, count) {
+        const winnersDisplay = document.getElementById('winnersDisplay');
+        const drawInfo = document.getElementById('drawInfo');
+        const slotBox = document.getElementById('slotBox');
+        
+        // خلط الأسماء وسحب العدد المطلوب
+        const shuffled = list.sort(() => 0.5 - Math.random());
+        const finalWinners = shuffled.slice(0, count);
+
+        slotBox.innerText = "تم السحب بنجاح!";
+        slotBox.style.borderColor = "var(--success)";
+        drawInfo.innerText = "🎉 مبروك للفائزين:";
+
+        finalWinners.forEach((name, index) => {
+            setTimeout(() => {
+                const div = document.createElement('div');
+                div.className = 'winner-tag';
+                div.innerText = `🏆 ${name}`;
+                winnersDisplay.appendChild(div);
+                
+                if(index === finalWinners.length -1) {
+                    document.getElementById('closeDrawBtn').style.display = 'block';
+                }
+            }, index * 1000); // ظهور تدريجي للفائزين لمزيد من الحماس
         });
     }
 
-    function loadComps() {
-        onSnapshot(collection(db, "Competitions"), snap => {
-            const feed = document.getElementById('compsFeed');
-            feed.innerHTML = "";
-            snap.forEach(d => {
-                const c = d.data();
-                const card = document.createElement('div');
-                card.className = "comp-card";
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; font-size:17px;">${c.title}</h3>
-                        <span id="timer-${d.id}" style="font-size:11px; color:var(--ios-orange); font-weight:bold;">...</span>
-                    </div>
-                    <div id="qs-${d.id}"></div>
-                `;
-                feed.appendChild(card);
-                loadQuestions(d.id, c.title);
+    // --- الإجابات والتصدير ---
+    onSnapshot(query(collection(db, "Answers"), orderBy("timestamp", "desc")), snap => {
+        const body = document.getElementById('resultsBody');
+        if(!body) return;
+        body.innerHTML = "";
+        snap.forEach(d => {
+            const a = d.data();
+            body.innerHTML += `<tr>
+                <td><b>${a.userName}</b></td>
+                <td>${a.compTitle}</td>
+                <td style="color:${a.isCorrect ? 'green' : 'red'}; font-weight:bold;">${a.isCorrect ? 'صح' : 'خطأ'}</td>
+                <td>+${a.pointsAwarded || 0}</td>
+            </tr>`;
+        });
+    });
+
+    window.openQModal = (id) => { 
+        document.getElementById('activeCompId').value = id; 
+        document.getElementById('qModal').style.display = 'flex'; 
+    };
+    window.closeQModal = () => document.getElementById('qModal').style.display = 'none';
+
+    window.saveQuestion = async () => {
+        const id = document.getElementById('activeCompId').value;
+        const text = document.getElementById('qText').value;
+        const show = document.getElementById('qShowAt').value;
+        const pts = parseInt(document.getElementById('qPoints').value) || 10;
+        const opts = [
+            document.getElementById('opt0').value,
+            document.getElementById('opt1').value,
+            document.getElementById('opt2').value
+        ].filter(x => x !== "");
+        const selectedRadio = document.querySelector('input[name="correctCheck"]:checked');
+        const correctOption = opts[selectedRadio ? selectedRadio.value : 0];
+
+        if(!text || opts.length < 2 || !show || !correctOption) return alert("أكمل بيانات السؤال والخيارات");
+        await addDoc(collection(db, `Competitions/${id}/Questions`), { text, options: opts, correctOption, active: true, showAt: show, points: pts });
+        closeQModal();
+        alert("تم الحفظ ✅");
+    };
+
+    window.deleteItem = async (p, id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, p, id)); };
+
+    window.exportToExcel = async (type) => {
+        const q = query(collection(db, "Answers"), orderBy("timestamp", "desc"));
+        const snap = await getDocs(q);
+        let exportData = [];
+        snap.forEach(d => {
+            const a = d.data();
+            if (type === 'correct' && !a.isCorrect) return;
+            exportData.push({
+                "اسم المشارك": a.userName,
+                "اسم المسابقة": a.compTitle,
+                "الحالة": a.isCorrect ? "صحيحة" : "خاطئة",
+                "النقاط": a.pointsAwarded || 0,
+                "التاريخ": a.timestamp?.toDate().toLocaleString('ar-EG') || ""
             });
         });
-    }
-
-    async function loadQuestions(cid, ctitle) {
-        const qSnap = await getDocs(collection(db, `Competitions/${cid}/Questions`));
-        const cont = document.getElementById(`qs-${cid}`);
-        const now = new Date();
-
-        qSnap.forEach(qDoc => {
-            const q = qDoc.data();
-            if (new Date(q.showAt) > now) return; 
-
-            const isAns = myAnswersIds.includes(qDoc.id);
-            const qBox = document.createElement('div');
-            qBox.className = `q-box ${isAns ? 'answered' : ''}`;
-            
-            let optsHtml = "";
-            q.options.forEach(opt => {
-                let cls = (isAns && opt === q.correctOption) ? "correct" : "";
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
-            });
-
-            qBox.innerHTML = `<b>${q.text}</b> ${optsHtml} ${isAns ? '<div style="color:var(--ios-green); font-size:11px; margin-top:10px; text-align:center;">✓ تمت المشاركة</div>' : ''}`;
-            cont.appendChild(qBox);
-        });
-    }
-
-    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
-        if(!confirm("إرسال الإجابة؟")) return;
-        const isC = sel.trim() === corr.trim();
-        await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid,
-            userName: userData.fullName || "عضو",
-            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
-            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
-            timestamp: serverTimestamp()
-        });
-        alert(isC ? "أحسنت! إجابة صحيحة" : "للأسف، إجابة خاطئة");
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "النتائج");
+        XLSX.writeFile(workbook, "نتائج_المسابقات.xlsx");
     };
 </script>
 </body>
