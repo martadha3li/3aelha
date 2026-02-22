@@ -35,6 +35,10 @@
         th { text-align: right; color: #8E8E93; font-size: 12px; padding: 10px; border-bottom: 1px solid #EEE; }
         td { padding: 10px; border-bottom: 1px solid #F2F2F7; font-size: 13px; }
         .clickable { color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline; }
+
+        /* تنسيق إدارة الأسئلة */
+        .q-row { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 5px; text-align: right; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .q-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -72,6 +76,31 @@
     </div>
 </div>
 
+<div id="questionModal" class="modal">
+    <div class="modal-body">
+        <h3 id="qModalTitle">إدارة الأسئلة</h3>
+        <hr>
+        <div style="text-align: right; margin-bottom: 15px;">
+            <input type="hidden" id="activeCompId">
+            <label>نص السؤال:</label>
+            <input type="text" id="newQText" class="q-input" placeholder="اكتب السؤال هنا...">
+            <label>النقاط:</label>
+            <input type="number" id="newQPoints" class="q-input" value="10">
+            <div id="optionsContainer">
+                <input type="text" class="q-input opt" placeholder="الخيار الأول">
+                <input type="text" class="q-input opt" placeholder="الخيار الثاني">
+                <input type="text" class="q-input opt" placeholder="الخيار الثالث">
+            </div>
+            <label>رقم الإجابة الصحيحة (1-3):</label>
+            <input type="number" id="correctIdx" class="q-input" min="1" max="3" value="1">
+            <button class="btn btn-main" onclick="saveQuestion()">حفظ السؤال ➕</button>
+        </div>
+        <hr>
+        <div id="existingQsList" style="max-height: 200px; overflow-y: auto;"></div>
+        <button onclick="closeModal('questionModal')" class="btn btn-main" style="background:#EEE; color:black; margin-top:10px;">إغلاق</button>
+    </div>
+</div>
+
 <div id="userModal" class="modal">
     <div class="modal-body" id="modalUserInfo"></div>
 </div>
@@ -91,7 +120,6 @@
             const comp = compDoc.data();
             const cid = compDoc.id;
 
-            // تحديث قائمة السحب
             select.innerHTML += `<option value="${cid}">${comp.title}</option>`;
 
             const section = document.createElement('div');
@@ -103,11 +131,11 @@
                         <div id="timer-${cid}" class="timer-badge">جاري حساب الوقت...</div>
                     </div>
                     <div style="display:flex; gap:5px;">
+                        <button class="btn" style="background:var(--primary); color:white;" onclick="openQuestionModal('${cid}', '${comp.title}')">❓ الأسئلة</button>
                         <button class="btn btn-excel" style="background:var(--success); color:white;" onclick="exportExcel('${cid}', '${comp.title}')">📊 Excel</button>
                         <button class="btn btn-danger" onclick="deleteComp('${cid}')">🗑️</button>
                     </div>
                 </div>
-                <div id="qs-list-${cid}" style="margin-top:10px;"></div>
                 <div class="table-wrapper">
                     <table>
                         <thead><tr><th>المشارك</th><th>الجوال</th><th>الحالة</th></tr></thead>
@@ -121,102 +149,132 @@
         });
     });
 
-    // 2. نظام القرعة المتقدم (عدد محدد + ترتيب عكسي)
+    // إدارة الأسئلة
+    window.openQuestionModal = async (cid, title) => {
+        document.getElementById('qModalTitle').innerText = "أسئلة: " + title;
+        document.getElementById('activeCompId').value = cid;
+        document.getElementById('questionModal').style.display = 'flex';
+        loadCompQuestions(cid);
+    };
+
+    async function loadCompQuestions(cid) {
+        const listDiv = document.getElementById('existingQsList');
+        listDiv.innerHTML = "جاري التحميل...";
+        const q = query(collection(db, "Questions"), where("compId", "==", cid));
+        const snap = await getDocs(q);
+        listDiv.innerHTML = "";
+        snap.forEach(d => {
+            const data = d.data();
+            listDiv.innerHTML += `
+                <div class="q-row">
+                    <span>${data.text}</span>
+                    <button class="btn btn-danger" style="padding:5px" onclick="deleteQuestion('${d.id}', '${cid}')">حذف</button>
+                </div>`;
+        });
+    }
+
+    window.saveQuestion = async () => {
+        const cid = document.getElementById('activeCompId').value;
+        const text = document.getElementById('newQText').value;
+        const points = document.getElementById('newQPoints').value;
+        const correct = parseInt(document.getElementById('correctIdx').value) - 1;
+        const opts = Array.from(document.querySelectorAll('.opt')).map(i => i.value);
+
+        if(!text || opts.some(o => !o)) return alert("أكمل بيانات السؤال");
+
+        await addDoc(collection(db, "Questions"), {
+            compId: cid,
+            text: text,
+            points: parseInt(points),
+            options: opts,
+            correctAnswer: correct,
+            createdAt: serverTimestamp()
+        });
+        
+        alert("تمت إضافة السؤال");
+        document.getElementById('newQText').value = "";
+        loadCompQuestions(cid);
+    };
+
+    window.deleteQuestion = async (id, cid) => {
+        if(confirm("هل تريد حذف السؤال؟")) {
+            await deleteDoc(doc(db, "Questions", id));
+            loadCompQuestions(cid);
+        }
+    };
+
+    // --- بقية الوظائف الأساسية كما هي بدون تغيير ---
     window.startAdvancedDraw = async () => {
         const cid = document.getElementById('drawCompSelect').value;
         const count = parseInt(document.getElementById('winnersCount').value);
         if(!cid) return alert("اختر مسابقة أولاً");
-
         const modal = document.getElementById('drawModal');
         const list = document.getElementById('winnersList');
         const loader = document.getElementById('drawLoading');
-        
         modal.style.display = 'flex';
         list.innerHTML = "";
         loader.style.display = 'block';
-
-        // جلب الإجابات الصحيحة فقط
         const snap = await getDocs(query(collection(db, "Answers"), where("compId", "==", cid), where("isCorrect", "==", true)));
         const allCandidates = snap.docs.map(d => ({ uid: d.data().userId, name: d.data().userName }));
-
-        // إزالة التكرار (لو العضو أجاب على أكثر من سؤال صح يحسب اسم واحد)
         const uniqueCandidates = [...new Map(allCandidates.map(item => [item.uid, item])).values()];
-
         if (uniqueCandidates.length === 0) {
             loader.style.display = 'none';
-            list.innerHTML = "❌ لا توجد إجابات صحيحة في هذه المسابقة.";
+            list.innerHTML = "❌ لا توجد إجابات صحيحة.";
             return;
         }
-
-        // اختيار العشوائيين
         let winners = [];
         let tempPool = [...uniqueCandidates];
         for(let i=0; i < Math.min(count, uniqueCandidates.length); i++) {
             const randomIndex = Math.floor(Math.random() * tempPool.length);
             winners.push(tempPool.splice(randomIndex, 1)[0]);
         }
-
         loader.style.display = 'none';
-
-        // عرض الفائزين من الأخير للأول بتأثير زمني
         for(let i = winners.length - 1; i >= 0; i--) {
-            await new Promise(r => setTimeout(r, 1200)); // تأخير ثانية ونصف بين كل فائز
+            await new Promise(r => setTimeout(r, 1200));
             const div = document.createElement('div');
             div.className = "winner-item";
             div.onclick = () => showUserInfo(winners[i].uid);
-            div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div class="rank-badge">${i + 1}</div>
-                    <b>${winners[i].name}</b>
-                </div>
-                <span style="font-size:11px; color:var(--primary);">اضغط للتفاصيل ℹ️</span>
-            `;
-            list.prepend(div); // الإضافة في الأعلى ليكون المركز الأول هو الأخير في الظهور
+            div.innerHTML = `<div style="display:flex; align-items:center; gap:15px;"><div class="rank-badge">${i + 1}</div><b>${winners[i].name}</b></div><span style="font-size:11px; color:var(--primary);">التفاصيل ℹ️</span>`;
+            list.prepend(div);
         }
     };
 
-    // 3. عرض الوقت المتبقي
     function startTimer(targetDate, elementId) {
         const update = () => {
             const now = new Date().getTime();
             const diff = new Date(targetDate).getTime() - now;
             const el = document.getElementById(elementId);
             if (!el) return;
-            if (diff <= 0) { el.innerHTML = "🛑 المسابقة منتهية"; el.style.color = "red"; return; }
+            if (diff <= 0) { el.innerHTML = "🛑 منتهية"; el.style.color = "red"; return; }
             const d = Math.floor(diff / 86400000);
             const h = Math.floor((diff % 86400000) / 3600000);
             const m = Math.floor((diff % 3600000) / 60000);
             el.innerHTML = `⏳ متبقي: ${d}ي ${h}س ${m}د`;
         };
-        update();
-        setInterval(update, 60000);
+        update(); setInterval(update, 60000);
     }
 
-    // 4. عرض تفاصيل العضو (نفس الهيكلية السابقة)
     window.showUserInfo = async (uid) => {
         const userDoc = await getDoc(doc(db, "Users", uid));
-        if(!userDoc.exists()) return alert("بيانات العضو غير متوفرة");
+        if(!userDoc.exists()) return alert("غير متوفر");
         const u = userDoc.data();
         const modal = document.getElementById('userModal');
         document.getElementById('modalUserInfo').innerHTML = `
-            <h3 style="color:var(--primary)">👤 بيانات الفائز بالتواصل</h3>
+            <h3 style="color:var(--primary)">👤 بيانات الفائز</h3>
             <div style="text-align:right;">
-                <p><b>الاسم الكامل:</b> ${u.fullName || u.name}</p>
-                <p><b>رقم الجوال:</b> <a href="tel:${u.phone}">${u.phone}</a></p>
+                <p><b>الاسم:</b> ${u.fullName || u.name}</p>
+                <p><b>الجوال:</b> <a href="tel:${u.phone}">${u.phone}</a></p>
                 <p><b>البريد:</b> ${u.email || '---'}</p>
-                <hr>
-                <p style="color:var(--gold)"><b>بيانات المحرم (للإناث):</b></p>
+                <hr><p style="color:var(--gold)"><b>بيانات المحرم:</b></p>
                 <p><b>المعرّف:</b> ${u.femaleGuardianName || '---'}</p>
                 <p><b>جوال المعرّف:</b> ${u.femaleGuardianPhone || '---'}</p>
             </div>
-            <button onclick="closeModal('userModal')" class="btn btn-main" style="background:#F2F2F7; color:black;">إغلاق</button>
-        `;
+            <button onclick="closeModal('userModal')" class="btn btn-main" style="background:#F2F2F7; color:black;">إغلاق</button>`;
         modal.style.display = 'flex';
     };
 
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 
-    // 5. الوظائف الأساسية (جلب الإجابات، حذف، إكسل)
     async function fetchAnswers(cid) {
         const q = query(collection(db, "Answers"), where("compId", "==", cid));
         const snap = await getDocs(q);
@@ -247,7 +305,6 @@
         XLSX.utils.book_append_sheet(wb, ws, "النتائج");
         XLSX.writeFile(wb, `${title}.xlsx`);
     };
-
 </script>
 </body>
 </html>
