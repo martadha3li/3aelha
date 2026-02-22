@@ -21,39 +21,33 @@
 
         body { 
             background: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 75px; padding-bottom: 90px; direction: rtl;
+            margin: 0; padding-top: 70px; padding-bottom: 90px; direction: rtl;
         }
 
-        /* الهيدر العلوي المطور */
         .top-bar {
             position: fixed; top: 0; width: 100%; height: 65px;
             background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000;
+            padding: 0 20px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000;
         }
-        .nav-btn-top { text-decoration: none; font-size: 20px; padding: 5px 10px; }
 
         .container { padding: 15px; max-width: 600px; margin: auto; }
 
-        .comp-card, .history-card { 
+        .comp-card { 
             background: var(--card-bg); border-radius: 22px; padding: 20px; 
-            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
+            margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
         }
-
-        .section-title { font-size: 18px; font-weight: 800; margin: 10px 5px 15px; color: #1c1c1e; display: flex; align-items: center; gap: 8px; }
         
-        /* سجل المشاركات */
-        .history-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 12px 0; border-bottom: 0.5px solid #F2F2F7; 
+        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        
+        .comp-end-timer { 
+            font-size: 11px; background: #FFF9F2; color: var(--ios-orange); 
+            padding: 6px 12px; border-radius: 10px; font-weight: bold; border: 0.5px solid #FFE0B2; 
         }
-        .history-item:last-child { border-bottom: none; }
-        .history-info b { display: block; font-size: 14px; }
-        .history-info span { font-size: 11px; color: #8e8e93; }
-        .status-badge { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: white; }
 
-        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; }
-        .q-box.answered { opacity: 0.7; pointer-events: none; }
+        /* تنسيق السؤال */
+        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 0.5px solid #EEE; transition: 0.3s; }
+        .q-box.answered { opacity: 0.7; pointer-events: none; } /* باهت وغير قابل للضغط */
 
         .option-btn { 
             width: 100%; padding: 15px; margin-top: 10px; border-radius: 14px; 
@@ -64,13 +58,12 @@
         .option-btn.correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
         .option-btn.wrong { background: var(--ios-red) !important; color: white; border-color: var(--ios-red); }
 
-        .draw-nav-btn {
-            background: linear-gradient(135deg, var(--ios-orange), #FFCC00);
-            color: white; text-decoration: none; display: flex; align-items: center;
-            justify-content: center; padding: 15px; border-radius: 18px;
-            font-weight: bold; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(255,149,0,0.3);
+        .answered-label { 
+            font-size: 12px; color: var(--ios-green); font-weight: bold; 
+            display: block; margin-top: 12px; text-align: center; background: #E8F5E9; padding: 5px; border-radius: 8px;
         }
 
+        /* شريط التنقل السفلي */
         .bottom-bar {
             position: fixed; bottom: 0; width: 100%; height: 75px;
             background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
@@ -83,28 +76,13 @@
 <body>
 
 <div class="top-bar">
-    <a href="index.html" class="nav-btn-top">🏠</a>
+    <div onclick="history.back()" style="cursor:pointer">🔙</div>
     <b>المسابقات</b>
-    <div style="display: flex; gap: 10px;">
-        <div id="adminTools" style="display:none; cursor:pointer; font-size:22px;" onclick="location.href='add_competition.html'">⊕</div>
-        <div onclick="history.back()" style="cursor:pointer; font-size:20px;">🔙</div>
-    </div>
+    <div id="adminTools" style="display:none;" onclick="location.href='add_competition.html'">⊕</div>
 </div>
 
-<div class="container">
-    <a href="draw.html" class="draw-nav-btn">
-        🎰 دخول سحب القرعة المتطور
-    </a>
-
-    <div class="section-title">🏆 المسابقات المتاحة</div>
-    <div id="compsFeed">
-        <p style="text-align:center; color:gray;">جاري تحميل المسابقات...</p>
-    </div>
-
-    <div class="section-title">🕒 سجل مشاركاتي الأخيرة</div>
-    <div class="history-card" id="userHistory">
-        <p style="text-align:center; color:gray; font-size:13px;">جاري تحميل سجل مشاركاتك...</p>
-    </div>
+<div class="container" id="compsFeed">
+    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات...</p>
 </div>
 
 <nav class="bottom-bar">
@@ -116,11 +94,11 @@
 
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     let userData = null;
-    let myAnswersIds = [];
+    let myAnswers = []; // تخزين إجابات المستخدم محلياً لتسريع الفحص
 
     onAuthStateChanged(auth, async user => {
         if (user) {
@@ -130,65 +108,34 @@
                 document.getElementById('adminTools').style.display = 'block';
             }
             
-            loadUserHistory(user.uid);
+            // 1. جلب كل إجابات المستخدم مرة واحدة لتجنب تكرار الطلبات
+            const ansQuery = query(collection(db, "Answers"), where("userId", "==", user.uid));
+            const ansSnap = await getDocs(ansQuery);
+            myAnswers = ansSnap.docs.map(d => d.data().questionId);
+
             loadComps();
         } else location.href = "login.html";
     });
-
-    // جلب سجل المشاركات
-    async function loadUserHistory(uid) {
-        const hQuery = query(
-            collection(db, "Answers"), 
-            where("userId", "==", uid),
-            orderBy("timestamp", "desc"),
-            limit(5)
-        );
-        
-        onSnapshot(hQuery, snap => {
-            const hDiv = document.getElementById('userHistory');
-            hDiv.innerHTML = "";
-            myAnswersIds = [];
-
-            if(snap.empty) {
-                hDiv.innerHTML = '<p style="text-align:center; color:gray; font-size:12px;">لم تشارك في أي مسابقات بعد</p>';
-                return;
-            }
-
-            snap.forEach(d => {
-                const data = d.data();
-                myAnswersIds.push(data.questionId);
-                const statusColor = data.isCorrect ? 'var(--ios-green)' : 'var(--ios-red)';
-                const statusText = data.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة';
-
-                hDiv.innerHTML += `
-                    <div class="history-item">
-                        <div class="history-info">
-                            <b>${data.questionText || 'سؤال مسابقة'}</b>
-                            <span>${data.compTitle || ''}</span>
-                        </div>
-                        <div class="status-badge" style="background:${statusColor}">${statusText}</div>
-                    </div>
-                `;
-            });
-        });
-    }
 
     function loadComps() {
         onSnapshot(collection(db, "Competitions"), snap => {
             const feed = document.getElementById('compsFeed');
             feed.innerHTML = "";
+            if(snap.empty) feed.innerHTML = '<p style="text-align:center; color:gray;">لا توجد مسابقات حالياً</p>';
+
             snap.forEach(d => {
                 const c = d.data();
                 const card = document.createElement('div');
                 card.className = "comp-card";
                 card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="margin:0; font-size:17px;">${c.title}</h3>
-                        <span id="timer-${d.id}" style="font-size:11px; color:var(--ios-orange); font-weight:bold;">...</span>
+                    <div class="comp-header">
+                        <h3>${c.title}</h3>
+                        <div id="end-timer-${d.id}" class="comp-end-timer">...</div>
                     </div>
                     <div id="qs-${d.id}"></div>
                 `;
                 feed.appendChild(card);
+                startCountdown(c.endDate, `end-timer-${d.id}`);
                 loadQuestions(d.id, c.title);
             });
         });
@@ -201,35 +148,94 @@
 
         qSnap.forEach(qDoc => {
             const q = qDoc.data();
-            if (new Date(q.showAt) > now) return; 
+            const showAt = new Date(q.showAt);
+            
+            // التحقق إذا كان السؤال متاحاً للعرض حالياً
+            if (showAt > now) return; 
 
-            const isAns = myAnswersIds.includes(qDoc.id);
+            // التحقق من الإجابة السابقة
+            const isAns = myAnswers.includes(qDoc.id);
+
             const qBox = document.createElement('div');
             qBox.className = `q-box ${isAns ? 'answered' : ''}`;
             
             let optsHtml = "";
             q.options.forEach(opt => {
-                let cls = (isAns && opt === q.correctOption) ? "correct" : "";
-                optsHtml += `<button class="option-btn ${cls}" ${isAns?'disabled':''} onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">${opt}</button>`;
+                let cls = "";
+                // إذا كان مجاباً، نظهر النتيجة فوراً
+                if (isAns) {
+                    if (opt === q.correctOption) cls = "correct";
+                }
+
+                optsHtml += `
+                    <button class="option-btn ${cls}" ${isAns ? 'disabled' : ''} 
+                        onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">
+                        ${opt}
+                    </button>`;
             });
 
-            qBox.innerHTML = `<b>${q.text}</b> ${optsHtml} ${isAns ? '<div style="color:var(--ios-green); font-size:11px; margin-top:10px; text-align:center;">✓ تمت المشاركة</div>' : ''}`;
+            qBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <b>${q.text}</b> 
+                    <span style="color:var(--ios-blue); font-size:12px; font-weight:bold;">💎 ${q.points} ن</span>
+                </div>
+                ${optsHtml}
+                ${isAns ? '<span class="answered-label">✓ تمت الإجابة مسبقاً</span>' : ''}
+            `;
             cont.appendChild(qBox);
         });
     }
 
     window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
-        if(!confirm("إرسال الإجابة؟")) return;
+        if(!confirm("تأكيد الإجابة؟")) return;
+        
+        // تعطيل الأزرار فوراً لمنع التكرار
+        const buttons = btn.parentElement.querySelectorAll('button');
+        buttons.forEach(b => b.disabled = true);
+
         const isC = sel.trim() === corr.trim();
-        await addDoc(collection(db, "Answers"), {
-            userId: auth.currentUser.uid,
-            userName: userData.fullName || "عضو",
-            compId: cid, compTitle: ct, questionId: qid, questionText: qt,
-            selectedOption: sel, isCorrect: isC, pointsAwarded: isC ? pts : 0,
-            timestamp: serverTimestamp()
-        });
-        alert(isC ? "أحسنت! إجابة صحيحة" : "للأسف، إجابة خاطئة");
+        
+        try {
+            await addDoc(collection(db, "Answers"), {
+                userId: auth.currentUser.uid,
+                userName: userData.fullName || "عضو",
+                userPhone: userData.phone || "",
+                compId: cid,
+                compTitle: ct,
+                questionId: qid,
+                questionText: qt,
+                selectedOption: sel,
+                isCorrect: isC,
+                pointsAwarded: isC ? pts : 0,
+                timestamp: serverTimestamp()
+            });
+            
+            alert(isC ? "إجابة صحيحة! 🎉" : "إجابة خاطئة، حظاً موفقاً المرة القادمة.");
+            location.reload(); // تحديث الصفحة لتعطيل السؤال وبقية الأسئلة
+        } catch (error) {
+            console.error(error);
+            alert("فشل الإرسال: تأكد من اتصالك بالإنترنت.");
+            buttons.forEach(b => b.disabled = false);
+        }
     };
+
+    function startCountdown(dateStr, elementId) {
+        const target = new Date(dateStr).getTime();
+        const el = document.getElementById(elementId);
+        if(!el) return;
+
+        const update = () => {
+            const now = new Date().getTime();
+            const diff = target - now;
+            if (diff <= 0) { el.innerHTML = "انتهت"; return; }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            el.innerHTML = `⏳ ${d}ي و ${h}س و ${m}د`;
+        };
+        update();
+        setInterval(update, 60000);
+    }
 </script>
 </body>
 </html>
