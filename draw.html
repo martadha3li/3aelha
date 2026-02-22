@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>🎲 صفحة القرعة</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+body{font-family:Arial;background:#F2F2F7;padding:20px;direction:rtl}
+.card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,.05)}
+select,input{width:100%;padding:10px;margin-bottom:10px}
+button{padding:10px;border:none;border-radius:12px;background:#FF9500;color:#fff;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #eee}
+</style>
+</head>
+<body>
+
+<h2>🎲 نظام القرعة</h2>
+
+<div class="card">
+<select id="drawCompSelect"></select>
+<select id="drawMode">
+<option value="random">عشوائي</option>
+<option value="points">أعلى نقاط</option>
+</select>
+<input type="number" id="count" value="1">
+<button onclick="runDraw()">بدء السحب</button>
+</div>
+
+<div id="results"></div>
+
+<script type="module">
+import { db } from './config.js';
+import { collection, onSnapshot, getDocs, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+onSnapshot(collection(db,"Competitions"),snap=>{
+drawCompSelect.innerHTML="";
+snap.forEach(d=>{
+drawCompSelect.innerHTML+=`<option value="${d.id}">${d.data().title}</option>`;
+});
+});
+
+window.runDraw=async()=>{
+const cid=drawCompSelect.value;
+const mode=drawMode.value;
+const count=parseInt(count.value);
+
+const snap=await getDocs(query(collection(db,"Answers"),where("compId","==",cid),where("isCorrect","==",true)));
+
+let arr=snap.docs.map(d=>({
+name:d.data().userName,
+phone:d.data().userPhone,
+points:d.data().pointsAwarded||0
+}));
+
+arr=[...new Map(arr.map(i=>[i.name,i])).values()];
+
+if(mode==="points") arr.sort((a,b)=>b.points-a.points);
+else arr.sort(()=>0.5-Math.random());
+
+let winners=arr.slice(0,count);
+
+confetti({particleCount:200,spread:100});
+
+let html="<div class='card'><h3>النتائج</h3><table><tr><th>#</th><th>الاسم</th><th>الجوال</th></tr>";
+winners.forEach((w,i)=>{
+html+=`<tr><td>${i+1}</td><td>${w.name}</td><td>${w.phone}</td></tr>`;
+});
+html+="</table></div>";
+
+results.innerHTML=html;
+
+await addDoc(collection(db,"WinnersHistory"),{
+compId:cid,
+winners,
+createdAt:serverTimestamp()
+});
+};
+</script>
+
+</body>
+</html>
