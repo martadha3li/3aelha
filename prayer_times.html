@@ -8,9 +8,8 @@
         :root { --islamic-green: #006644; --gold: #D4AF37; --soft-bg: #F8F9F5; --white: #FFFFFF; }
         body { background-color: var(--soft-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; text-align: center; direction: rtl; }
         
-        /* تنسيق التاريخ الجديد */
-        .date-display { font-size: 16px; font-weight: bold; color: var(--islamic-green); margin: 15px 0; line-height: 1.6; }
-        .date-separator { color: var(--gold); margin: 0 8px; font-weight: normal; }
+        .date-display { font-size: 15px; font-weight: bold; color: var(--islamic-green); margin: 15px 0; line-height: 1.6; }
+        .date-separator { color: var(--gold); margin: 0 5px; }
 
         .main-header-card { 
             background: linear-gradient(145deg, var(--islamic-green), #004422); 
@@ -26,7 +25,7 @@
         }
 
         .prayer-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        .prayer-table th { color: var(--islamic-green); font-size: 12px; padding-bottom: 5px; }
+        .prayer-table th { color: var(--islamic-green); font-size: 11px; padding-bottom: 5px; }
         
         .prayer-row { background: var(--white); border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .prayer-row td { padding: 16px 8px; font-size: 15px; font-weight: bold; }
@@ -74,38 +73,26 @@
     let prayerTimesArr = [];
     let currentConfig = {};
 
-    const prayers = [
-        { id: 'Imsak', name: 'الإمساك', base: '04:35', key: 'offsetImsak' },
-        { id: 'Fajr', name: 'الفجر', base: '04:45', key: 'offsetFajr' },
-        { id: 'Shuruq', name: 'الشروق', base: '06:05', key: 'offsetShuruq' },
-        { id: 'Dhuhr', name: 'الظهر', base: '12:05', key: 'offsetDhuhr' },
-        { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
-    ];
-
-    // --- 1. معالجة التاريخ واليوم (هجري | ميلادي - اليوم) ---
+    // --- 1. تصحيح عرض التاريخ (هجري | ميلادي) ---
     const now = new Date();
     const arabicMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
     const weekDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
-    // تفاصيل الهجري
-    const hParts = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric', year:'numeric'}).formatToParts(now);
-    const hDay = hParts.find(p => p.type === 'day').value;
-    const hMonth = hParts.find(p => p.type === 'month').value;
-    const hYear = hParts.find(p => p.type === 'year').value;
+    const hFormatter = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric', year:'numeric'});
+    const hParts = hFormatter.formatToParts(now);
+    const hDay = parseInt(hParts.find(p => p.type === 'day').value);
+    const hMonth = parseInt(hParts.find(p => p.type === 'month').value);
+    const hYear = hParts.find(p => p.type === 'year').value; // سيظهر 1447
 
-    // تفاصيل الميلادي
-    const mDay = now.getDate();
-    const mMonth = now.getMonth() + 1;
-    const mYear = now.getFullYear();
-    const dayName = weekDays[now.getDay()];
+    const mDate = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+    const dName = weekDays[now.getDay()];
 
-    // العرض النهائي للتاريخ (أرقام إنجليزية مع نصوص عربية)
     document.getElementById('fullDateDisplay').innerHTML = `
-        ${hDay} ${arabicMonths[parseInt(hMonth)-1]} ${hYear} هـ 
+        ${hDay} ${arabicMonths[hMonth-1]} ${hYear} هـ 
         <span class="date-separator">|</span> 
-        ${mDay}/${mMonth}/${mYear} م
+        ${mDate} م
         <span class="date-separator">-</span>
-        ${dayName}
+        ${dName}
     `;
 
     // --- 2. جلب الموقع والبيانات ---
@@ -131,6 +118,14 @@
         tbody.innerHTML = "";
         prayerTimesArr = [];
 
+        const prayers = [
+            { id: 'Imsak', name: 'الإمساك', base: '04:35', key: 'offsetImsak' },
+            { id: 'Fajr', name: 'الفجر', base: '04:45', key: 'offsetFajr' },
+            { id: 'Shuruq', name: 'الشروق', base: '06:05', key: 'offsetShuruq' },
+            { id: 'Dhuhr', name: 'الظهر', base: '12:05', key: 'offsetDhuhr' },
+            { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
+        ];
+
         prayers.forEach(p => {
             const off = currentConfig[p.key] || 0;
             const ahsaDate = calc(p.base, off);
@@ -150,29 +145,34 @@
             tbody.appendChild(row);
         });
 
-        // --- 3. حسبة المناسبات المتقدمة ---
+        // --- 3. تصحيح حسبة المناسبات (الفرق بالأيام) ---
         const evSnap = await getDocs(collection(db, "HijriEvents"));
         let todayMsg = null;
         let upcoming = null;
-        let minDiff = 1000;
-
-        // اليوم الحالي من السنة الهجرية (حسبة تقريبية دقيقة للمقارنة)
-        const currentTotalDays = (parseInt(hMonth) - 1) * 30 + parseInt(hDay);
+        let minDiff = 400;
 
         evSnap.forEach(dDoc => {
             const ev = dDoc.data();
-            if(ev.day == hDay && ev.month == hMonth) todayMsg = ev.title;
+            const evDay = parseInt(ev.day);
+            const evMonth = parseInt(ev.month);
 
-            // حسبة الفرق بالأيام
-            const eventTotalDays = (parseInt(ev.month) - 1) * 30 + parseInt(ev.day);
-            let diff = eventTotalDays - currentTotalDays;
-            
-            // إذا كانت المناسبة مضت هذا العام، نحسبها للعام القادم
-            if (diff <= 0) diff += 354; 
+            if(evDay === hDay && evMonth === hMonth) {
+                todayMsg = ev.title;
+            }
 
-            if (diff < minDiff) { 
-                minDiff = diff; 
-                upcoming = { title: ev.title, days: diff }; 
+            // حسبة الفرق بدقة: (الشهر الحالي - شهر المناسبة)
+            let diff = 0;
+            if (evMonth === hMonth) {
+                diff = evDay - hDay;
+            } else if (evMonth > hMonth) {
+                diff = (evMonth - hMonth) * 29.5 + (evDay - hDay);
+            } else {
+                diff = (12 - hMonth + evMonth) * 29.5 + (evDay - hDay);
+            }
+
+            if (diff > 0 && diff < minDiff) {
+                minDiff = Math.floor(diff);
+                upcoming = { title: ev.title, days: Math.floor(diff) };
             }
         });
 
