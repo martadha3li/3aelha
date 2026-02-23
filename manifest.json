@@ -1,6 +1,6 @@
 {
-  "short_name": "مسابقاتي",
-  "name": "تطبيق إدارة المسابقات الذكي",
+  "short_name": "منصة العائلة",
+  "name": "منصة العائلة - الأخبار والمسابقات",
   "icons": [
     {
       "src": "logo.png",
@@ -8,14 +8,13 @@
       "type": "image/png"
     },
     {
-      "src": "logo/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "start_url": "/index.html",
-  "background_color": "#f2f2f7",
+  "start_url": "/news.html",
   "display": "standalone",
-  "theme_color": "#5856d6",
-  "description": "منصة إدارة المشاركين وسحب القرعة الإلكترونية"
+  "theme_color": "#007AFF",
+  "background_color": "#F2F2F7"
 }
