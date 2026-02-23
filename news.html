@@ -18,7 +18,7 @@
         
         .install-btn { display: none; background: var(--ios-blue); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
         
-        /* كرت الخبر + وضع التعطيل */
+        /* كرت الخبر */
         .post-card { background: var(--card-bg); margin: 15px; border-radius: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.05); overflow: hidden; position: relative; border: .5px solid #E5E5EA; transition: 0.3s; }
         .post-card.disabled { opacity: 0.5; filter: grayscale(1); border: 1px dashed var(--ios-red); }
 
@@ -33,37 +33,19 @@
         .post-actions { display: flex; justify-content: space-around; padding: 12px 0; border-top: .5px solid #E5E5EA; background: #FAFAFA; }
         .action-item { display: flex; align-items: center; gap: 6px; color: var(--text-sec); font-size: 13px; cursor: pointer; }
         
-        /* القائمة المنسدلة للتحرير */
+        /* القائمة المنسدلة */
         .dropdown { position: absolute; left: 15px; top: 45px; background: #fff; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,.15); display: none; flex-direction: column; z-index: 1000; min-width: 150px; border: 1px solid #eee; overflow: hidden; }
         .dropdown button { padding: 12px; border: none; background: none; text-align: right; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f9f9f9; width: 100%; }
-        .dropdown button:last-child { color: var(--ios-red); }
+
+        /* الشريط السفلي */
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: rgba(255,255,255,0.9); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: .5px solid #C6C6C8; z-index: 5000; }
+        .nav-item { font-size: 24px; text-decoration: none; color: #8E8E93; transition: 0.3s; }
+        .nav-item.active { color: var(--ios-blue); }
 
         /* التعليقات */
         .comment-box { display:none; padding:15px; background:#f9f9f9; border-top:1px solid #eee; }
         .comment-item { font-size:12px; margin-bottom:8px; background:#fff; padding:10px; border-radius:12px; border: 0.5px solid #eee; }
         .comment-user { color: var(--ios-blue); font-weight: bold; cursor: pointer; }
-        .comment-date { font-size: 9px; color: #999; display: block; margin-top: 4px; }
-        .comment-input { display: flex; gap: 8px; margin-top: 10px; }
-        .comment-input input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 13px; }
-
-/* التعديل في الـ CSS */
-.bottom-bar { 
-    position: fixed; 
-    bottom: 0; 
-    width: 100%; 
-    height: 70px; 
-    background: rgba(255,255,255,0.9); 
-    backdrop-filter: blur(15px); 
-    display: flex; 
-    justify-content: space-around; /* توزيع متساوٍ لـ 5 أيقونات */
-    align-items: center; 
-    border-top: .5px solid #C6C6C8; 
-    z-index: 5000; 
-}
-.nav-item { font-size: 24px; text-decoration: none; color: #8E8E93; transition: 0.2s; }
-.nav-item:active { transform: scale(0.9); }
-.nav-item.active { color: var(--ios-blue); }        .nav-item { font-size: 24px; text-decoration: none; color: #8E8E93; }
-        .nav-item.active { color: var(--ios-blue); }
     </style>
 </head>
 <body>
@@ -71,8 +53,9 @@
     <header class="header">
         <div style="display: flex; align-items: center; gap: 10px;">
             <img src="logo.png" style="height: 35px; border-radius: 5px;">
-                  </div>
-        <h1>2026-1</h1>
+            <button id="installApp" class="install-btn">تثبيت 📲</button>
+        </div>
+        <h1>2026</h1>
         <div class="header-btns" style="display: flex; align-items: center; gap: 15px;">
             <div id="adminTools" style="display:none; align-items: center; gap: 15px;">
                 <div onclick="location.href='add_news.html'" style="color:var(--ios-blue); font-size:24px; cursor:pointer;">⊕</div>
@@ -84,19 +67,19 @@
 
     <div id="newsFeed"></div>
 
-   <nav class="bottom-bar">
-    <a href="news.html" class="nav-item active">🏠</a>
-    <a href="chat.html" class="nav-item">💬</a>
-    <a href="duas.html" class="nav-item">📖</a>
-    <a href="competitions.html" class="nav-item">🏆</a>
-    <a href="profile.html" class="nav-item">👤</a>
-</nav>
+    <nav class="bottom-bar" id="mainNav">
+        <a href="news.html" class="nav-item active">🏠</a>
+        <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
+        <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
+        <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
+        <a href="profile.html" class="nav-item">👤</a>
+    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData;
+    let userUID, userData, isAdmin = false;
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -105,13 +88,44 @@
             if (userSnap.exists()) {
                 userData = userSnap.data();
                 const role = (userData.role || userData.Role || "").toLowerCase();
-                if (role.includes('admin') || role.includes('مدير')) {
-                    document.getElementById('adminTools').style.display = 'flex';
-                }
+                isAdmin = role.includes('admin') || role.includes('مدير');
+                if (isAdmin) document.getElementById('adminTools').style.display = 'flex';
             }
             loadPosts();
+            listenToNavConfig(); // بدء الاستماع لإعدادات الشريط السفلي
         } else { window.location.href = "login.html"; }
     });
+
+    // التحكم الديناميكي في الأيقونات (تختفي للعضو / رمادية للمدير)
+    function listenToNavConfig() {
+        onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
+            const config = docSnap.exists() ? docSnap.data() : {};
+            const navItems = [
+                { id: 'nav-chat', visible: config.showChat },
+                { id: 'nav-duas', visible: config.showDuas },
+                { id: 'nav-comps', visible: config.showComps }
+            ];
+
+            navItems.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (!el) return;
+
+                if (item.visible === false) {
+                    if (isAdmin) {
+                        el.style.display = "block";
+                        el.style.opacity = "0.2";
+                        el.style.filter = "grayscale(1)";
+                    } else {
+                        el.style.display = "none";
+                    }
+                } else {
+                    el.style.display = "block";
+                    el.style.opacity = "1";
+                    el.style.filter = "none";
+                }
+            });
+        });
+    }
 
     function loadPosts() {
         const feed = document.getElementById('newsFeed');
@@ -123,15 +137,11 @@
                 const post = docSnap.data();
                 const postId = docSnap.id;
                 const hasLiked = post.likedBy?.includes(userUID);
-                
-                const role = (userData?.role || userData?.Role || "").toLowerCase();
-                const isManager = (role.includes('admin') || role.includes('مدير') || userUID === post.authorId);
+                const isManager = isAdmin || userUID === post.authorId;
 
-                // إذا كان الخبر مخفياً وغير مسموح للمستخدم برؤيته، نتخطاه
                 if (post.visible === false && !isManager) return;
 
                 const card = document.createElement('div');
-                // إضافة كلاس disabled إذا كان visible = false
                 card.className = `post-card ${post.visible === false ? 'disabled' : ''}`;
                 card.innerHTML = `
                     <div class="post-header">
@@ -144,36 +154,26 @@
                         </div>
                         ${isManager ? `<div style="cursor:pointer;color:#999;font-size:20px;padding:5px;" onclick="event.stopPropagation(); window.toggleDropdown('${postId}')">⋮</div>` : ''}
                         <div id="dropdown-${postId}" class="dropdown">
-                            <button onclick="window.changeVisibility('${postId}', ${post.visible})">${post.visible !== false ? '🔒 تعطيل (إخفاء)' : '🔓 تفعيل (إظهار)'}</button>
+                            <button onclick="window.changeVisibility('${postId}', ${post.visible})">${post.visible !== false ? '🔒 تعطيل' : '🔓 تفعيل'}</button>
                             <button onclick="location.href='add_news.html?edit=${postId}'">✏️ تحرير</button>
-                            <button onclick="window.deleteNews('${postId}')">🗑️ حذف نهائي</button>
+                            <button onclick="window.deleteNews('${postId}')" style="color:red;">🗑️ حذف</button>
                         </div>
                     </div>
-
                     <img class="post-image" src="${post.img || 'https://via.placeholder.com/500x300'}" onclick="window.zoomImg(this.src)">
-
                     <div class="post-content" onclick="window.handlePostView('${postId}')">
                         <h2>${post.title}</h2>
                         <p id="text-${postId}">${post.body || post.content || ''}</p>
                     </div>
-
                     <div class="post-actions">
-                        <div class="action-item ${hasLiked ? 'active' : ''}" onclick="window.doLike('${postId}', ${hasLiked})">
-                            ${hasLiked ? '❤️' : '🤍'} <span>${post.likedBy?.length || 0}</span>
-                        </div>
-                        <div class="action-item" onclick="window.toggleComments('${postId}')">
-                            💬 <span>${post.comments?.length || 0}</span>
-                        </div>
-                        <div class="action-item">
-                            👁️ <span>${post.viewedBy?.length || 0}</span>
-                        </div>
+                        <div class="action-item" onclick="window.doLike('${postId}', ${hasLiked})">${hasLiked ? '❤️' : '🤍'} <span>${post.likedBy?.length || 0}</span></div>
+                        <div class="action-item" onclick="window.toggleComments('${postId}')">💬 <span>${post.comments?.length || 0}</span></div>
+                        <div class="action-item">👁️ <span>${post.viewedBy?.length || 0}</span></div>
                     </div>
-
                     <div id="comments-${postId}" class="comment-box">
                         <div id="commentsList-${postId}"></div>
-                        <div class="comment-input">
-                            <input type="text" id="input-${postId}" placeholder="اكتب تعليقك...">
-                            <button onclick="window.addComment('${postId}')" style="border:none; background:var(--ios-blue); color:white; border-radius:15px; padding:5px 12px; cursor:pointer;">نشر</button>
+                        <div style="display:flex; gap:5px; margin-top:10px;">
+                            <input type="text" id="input-${postId}" style="flex:1; padding:8px; border-radius:15px; border:1px solid #ddd;" placeholder="تعليق...">
+                            <button onclick="window.addComment('${postId}')" style="background:var(--ios-blue); color:white; border:none; padding:5px 15px; border-radius:15px;">نشر</button>
                         </div>
                     </div>
                 `;
@@ -182,19 +182,15 @@
         });
     }
 
-    // سجل المشاهدة عند فتح الخبر
+    // دوال الأكشن
     window.handlePostView = async (id) => {
         const p = document.getElementById(`text-${id}`);
-        const isOpening = p.style.display !== 'block';
-        p.style.display = isOpening ? 'block' : 'none';
-
-        if (isOpening && userUID) {
-            await updateDoc(doc(db, "News", id), {
-                viewedBy: arrayUnion(userUID)
-            });
-        }
+        p.style.display = p.style.display !== 'block' ? 'block' : 'none';
+        if (p.style.display === 'block' && userUID) await updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
     };
 
+    window.doLike = async (id, liked) => { await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) }); };
+    
     window.toggleComments = (id) => {
         const box = document.getElementById(`comments-${id}`);
         box.style.display = box.style.display !== 'block' ? 'block' : 'none';
@@ -205,78 +201,32 @@
         const list = document.getElementById(`commentsList-${id}`);
         const snap = await getDoc(doc(db, "News", id));
         const comments = snap.data().comments || [];
-        list.innerHTML = comments.map(c => `
-            <div class="comment-item">
-                <span class="comment-user" onclick="location.href='user_profile.html?id=${c.userId}'">${c.name}</span>: ${c.text}
-                <span class="comment-date">${c.date ? new Date(c.date).toLocaleString('ar-EG', {hour:'2-digit', minute:'2-digit', day:'numeric'}) : ''}</span>
-            </div>
-        `).join('');
+        list.innerHTML = comments.map(c => `<div class="comment-item"><b class="comment-user" onclick="location.href='user_profile.html?id=${c.userId}'">${c.name}</b>: ${c.text}</div>`).join('');
     };
 
     window.addComment = async (id) => {
         const input = document.getElementById(`input-${id}`);
-        const text = input.value.trim();
-        if (!text) return;
-        await updateDoc(doc(db, "News", id), {
-            comments: arrayUnion({ userId: userUID, name: userData?.fullName || "عضو", text: text, date: Date.now() })
-        });
-        input.value = "";
-        window.loadComments(id);
+        if (!input.value.trim()) return;
+        await updateDoc(doc(db, "News", id), { comments: arrayUnion({ userId: userUID, name: userData?.fullName || "عضو", text: input.value, date: Date.now() }) });
+        input.value = ""; window.loadComments(id);
     };
 
-    window.doLike = async (id, liked) => {
-        await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
+    window.changeVisibility = async (id, current) => { await updateDoc(doc(db, "News", id), { visible: current === false }); };
+    window.deleteNews = async (id) => { if (confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
+    window.toggleDropdown = (id) => { 
+        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+        document.getElementById(`dropdown-${id}`).style.display = 'flex'; 
     };
-
-    window.toggleDropdown = (id) => {
-        const d = document.getElementById(`dropdown-${id}`);
-        const allD = document.querySelectorAll('.dropdown');
-        allD.forEach(el => { if(el.id !== `dropdown-${id}`) el.style.display = 'none'; });
-        d.style.display = d.style.display === 'flex' ? 'none' : 'flex';
-    };
-
-    window.changeVisibility = async (id, current) => {
-        // إذا كانت current غير موجودة (undefined) نعتبرها true
-        const newVal = current === false ? true : false;
-        await updateDoc(doc(db, "News", id), { visible: newVal });
-    };
-
-    window.deleteNews = async (id) => {
-        if (confirm("هل أنت متأكد من حذف هذا الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id));
-    };
-
-    window.handleLogout = () => { if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload()); };
-
+    window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => location.reload()); };
     window.zoomImg = (src) => {
         const v = document.createElement('div');
         v.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;";
-        v.innerHTML = `<img src="${src}" style="max-width:95%; border-radius:10px;">`;
+        v.innerHTML = `<img src="${src}" style="max-width:95%;">`;
         v.onclick = () => v.remove();
         document.body.appendChild(v);
     };
 
-    // إغلاق القوائم عند النقر في أي مكان
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-    });
-</script>
-
-<script>
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        document.getElementById('installApp').style.display = 'block';
-    });
-    document.getElementById('installApp').addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-            document.getElementById('installApp').style.display = 'none';
-        }
-    });
+    document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
 </html>
-
-
