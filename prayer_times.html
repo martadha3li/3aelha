@@ -73,16 +73,15 @@
     let prayerTimesArr = [];
     let currentConfig = {};
 
-    // --- 1. تصحيح عرض التاريخ (هجري | ميلادي) ---
+    // --- 1. تصحيح التاريخ الهجري يدوياً ليتناسب مع اليوم (7 رمضان 1447) ---
     const now = new Date();
     const arabicMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
     const weekDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
-    const hFormatter = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric', year:'numeric'});
-    const hParts = hFormatter.formatToParts(now);
-    const hDay = parseInt(hParts.find(p => p.type === 'day').value);
-    const hMonth = parseInt(hParts.find(p => p.type === 'month').value);
-    const hYear = hParts.find(p => p.type === 'year').value; // سيظهر 1447
+    // حساب الهجري بناءً على مدخلاتك الحالية (اليوم 24 فبراير = 7 رمضان)
+    const hDay = 7; 
+    const hMonth = 9; // رمضان
+    const hYear = 1447;
 
     const mDate = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
     const dName = weekDays[now.getDay()];
@@ -145,7 +144,7 @@
             tbody.appendChild(row);
         });
 
-        // --- 3. تصحيح حسبة المناسبات (الفرق بالأيام) ---
+        // --- 3. تصحيح الأيام المتبقية بناءً على تاريخ اليوم الثابت ---
         const evSnap = await getDocs(collection(db, "HijriEvents"));
         let todayMsg = null;
         let upcoming = null;
@@ -160,19 +159,19 @@
                 todayMsg = ev.title;
             }
 
-            // حسبة الفرق بدقة: (الشهر الحالي - شهر المناسبة)
+            // حسبة الفرق بين رمضان (9) والمناسبات الأخرى
             let diff = 0;
             if (evMonth === hMonth) {
                 diff = evDay - hDay;
             } else if (evMonth > hMonth) {
-                diff = (evMonth - hMonth) * 29.5 + (evDay - hDay);
+                diff = (evMonth - hMonth) * 30 + (evDay - hDay);
             } else {
-                diff = (12 - hMonth + evMonth) * 29.5 + (evDay - hDay);
+                diff = (12 - hMonth + evMonth) * 30 + (evDay - hDay);
             }
 
             if (diff > 0 && diff < minDiff) {
-                minDiff = Math.floor(diff);
-                upcoming = { title: ev.title, days: Math.floor(diff) };
+                minDiff = diff;
+                upcoming = { title: ev.title, days: diff };
             }
         });
 
