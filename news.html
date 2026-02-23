@@ -135,6 +135,9 @@
             </div>
             <div class="logout-btn" onclick="handleLogout()">🚪</div>
         </div>
+          <div style="display: flex; align-items: center;">
+        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
+    </div>
     </header>
 
     <div id="newsFeed"></div>
@@ -145,9 +148,7 @@
         <a href="competitions.html" class="nav-item">🏆</a>
         <a href="profile.html" class="nav-item">👤</a>
     </nav>
-     <div style="display: flex; align-items: center;">
-        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
-    </div>
+   
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -357,6 +358,7 @@
 </script>
 </body>
 </html>
+
 
 
 
