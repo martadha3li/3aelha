@@ -2,92 +2,190 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بروفايل العضو</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الملف الشخصي | منصة العائلة</title>
+    
     <style>
-        .profile-header { background: white; padding: 40px 20px; text-align: center; border-radius: 0 0 35px 35px; box-shadow: var(--shadow); }
-        .profile-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: #eee; }
-        .data-card { background: white; margin: 20px 15px; border-radius: 20px; padding: 10px 20px; box-shadow: var(--shadow); }
-        .data-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f9f9f9; }
-        .label { color: #8e8e93; font-size: 13px; font-weight: bold; }
-        .value { color: #1c1c1e; font-weight: 600; }
+        :root {
+            --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF;
+            --ios-gray: #8E8E93; --ios-red: #FF3B30;
+        }
+
+        body { 
+            background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; padding: 20px 15px 100px; direction: rtl;
+        }
+
+        /* رأس الصفحة (البروفايل) */
+        .profile-header {
+            text-align: center; padding: 30px 20px; background: var(--card-bg);
+            border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 100px; height: 100px; background: linear-gradient(135deg, var(--ios-blue), #5AC8FA);
+            color: white; font-size: 40px; font-weight: bold; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;
+            box-shadow: 0 8px 15px rgba(0, 122, 255, 0.2);
+        }
+
+        .profile-name { font-size: 22px; font-weight: 800; color: #1c1c1e; margin: 0; }
+        .profile-role { font-size: 14px; color: var(--ios-blue); font-weight: 600; margin-top: 5px; display: block; }
+
+        /* شبكة الإحصائيات */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg); padding: 15px; border-radius: 20px; text-align: center;
+        }
+        .stat-value { display: block; font-size: 18px; font-weight: 800; color: var(--ios-blue); }
+        .stat-label { font-size: 11px; color: var(--ios-gray); font-weight: 600; }
+
+        /* قائمة البيانات */
+        .info-list {
+            background: var(--card-bg); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        .info-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; border-bottom: 0.5px solid #F2F2F7;
+        }
+        .info-item:last-child { border-bottom: none; }
+        .info-label { font-size: 14px; color: var(--ios-gray); }
+        .info-value { font-size: 14px; font-weight: 600; color: #1c1c1e; }
+
+        /* أزرار التحكم */
+        .action-btns { margin-top: 25px; display: flex; flex-direction: column; gap: 12px; }
+        .btn {
+            padding: 16px; border-radius: 15px; border: none; font-size: 16px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; text-align: center; text-decoration: none;
+        }
+        .btn-primary { background: var(--ios-blue); color: white; }
+        .btn-outline { background: #E5E5EA; color: #1c1c1e; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        .back-btn {
+            position: absolute; top: 20px; right: 20px; background: white;
+            width: 35px; height: 35px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; text-decoration: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 18px;
+        }
     </style>
 </head>
-<body style="background: #f8f9fa;">
+<body>
 
-    <div class="top-bar">
-        <button onclick="history.back()" style="border:none; background:none; font-size:20px;">➡️</button>
-        <b>بروفايل العضو</b>
-        <div style="width:20px;"></div>
+    <a href="news.html" class="back-btn">✕</a>
+
+    <div class="profile-header">
+        <div id="userAvatar" class="profile-avatar">?</div>
+        <h1 id="userName" class="profile-name">جاري التحميل...</h1>
+        <span id="userRole" class="profile-role">...</span>
     </div>
 
-    <div id="loader" style="text-align:center; margin-top:50px; color:gray;">جاري تحميل بيانات العضو...</div>
-
-    <div id="profileContent" style="display:none;">
-        <div class="profile-header">
-            <img id="uImg" src="https://via.placeholder.com/110" class="profile-img">
-            <h2 id="uName" style="margin: 15px 0 5px 0; font-size: 20px;"></h2>
-            <span id="uRole" style="background: #eef6ff; color: var(--primary); padding: 4px 12px; border-radius: 12px; font-size: 12px;">عضو</span>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span id="countPosts" class="stat-value">0</span>
+            <span class="stat-label">الأخبار المنشورة</span>
         </div>
-
-        <div class="data-card">
-            <div class="data-row"><span class="label">المدينة</span> <span id="uCity" class="value">--</span></div>
-            <div class="data-row"><span class="label">الجنس</span> <span id="uGender" class="value">--</span></div>
-            <div class="data-row"><span class="label">تاريخ الانضمام</span> <span id="uDate" class="value">--</span></div>
+        <div class="stat-card">
+            <span id="countLikes" class="stat-value">0</span>
+            <span class="stat-label">إجمالي الإعجابات</span>
         </div>
+    </div>
 
-        <h3 style="margin-right:20px; font-size:16px;">✍️ منشورات العضو</h3>
-        <div id="userPosts" style="padding: 0 15px 100px 15px;"></div>
+    <div class="info-list">
+        <div class="info-item">
+            <span class="info-label">رقم الهاتف</span>
+            <span id="userPhone" class="info-value">---</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">البريد الإلكتروني</span>
+            <span id="userEmail" class="info-value">---</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">تاريخ الانضمام</span>
+            <span id="joinDate" class="info-value">---</span>
+        </div>
+    </div>
+
+    <div id="ownerActions" class="action-btns" style="display: none;">
+        <a href="edit_profile.html" class="btn btn-primary">تعديل بياناتي ✏️</a>
+        <button onclick="handleLogout()" class="btn btn-outline" style="color: var(--ios-red);">تسجيل الخروج 🚪</button>
+    </div>
+
+    <div id="visitorActions" class="action-btns" style="display: none;">
+        <button id="whatsappBtn" class="btn btn-primary">تواصل عبر واتساب 💬</button>
     </div>
 
 <script type="module">
-    import { db } from './config.js';
+    import { auth, db } from './config.js';
     import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // جلب معرف العضو من الرابط (URL)
     const urlParams = new URLSearchParams(window.location.search);
-    // تنظيف المعرف من أي مسافات زائدة
-    const targetUid = urlParams.get('uid')?.trim(); 
+    const targetUserId = urlParams.get('id');
 
-    if (!targetUid || targetUid === "undefined" || targetUid === "null") {
-        document.getElementById('loader').innerText = "خطأ: معرف العضو غير صحيح أو غير موجود";
-    } else {
-        loadMemberData();
-    }
+    auth.onAuthStateChanged(async (currentUser) => {
+        if (!currentUser) { window.location.href = "login.html"; return; }
 
-    async function loadMemberData() {
+        // إذا لم يوجد ID في الرابط، اعرض بروفايل المستخدم الحالي
+        const finalId = targetUserId || currentUser.uid;
+        loadUserProfile(finalId, currentUser.uid === finalId);
+    });
+
+    async function loadUserProfile(uid, isOwner) {
         try {
-            // جلب البيانات من سجل Users
-            const userSnap = await getDoc(doc(db, "Users", targetUid));
-            
-            if (userSnap.exists()) {
-                const data = userSnap.data();
-                
-                document.getElementById('uName').innerText = data.fullName || "عضو مجهول";
-                document.getElementById('uCity').innerText = data.city || "غير محددة";
-                document.getElementById('uGender').innerText = data.gender === 'male' ? 'ذكر' : 'أنثى';
-                document.getElementById('uImg').src = data.profileImg || 'https://via.placeholder.com/110';
-                
-                if(data.createdAt) {
-                    document.getElementById('uDate').innerText = new Date(data.createdAt.toDate()).toLocaleDateString('ar-EG');
-                }
-
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('profileContent').style.display = 'block';
-
-                loadMemberPosts();
-            } else {
-                // هذا هو الخطأ الذي ظهر لك، والآن أضفنا الـ ID المفقود في الرسالة للتأكد
-                document.getElementById('loader').innerText = "لم يتم العثور على بيانات للعضو في سجل Users.";
-                console.log("الـ ID الذي تم البحث عنه ولم يوجد:", targetUid);
+            const userSnap = await getDoc(doc(db, "Users", uid));
+            if (!userSnap.exists()) {
+                alert("العضو غير موجود");
+                window.location.href = "news.html";
+                return;
             }
+
+            const data = userSnap.data();
+            
+            // تعبئة البيانات الأساسية
+            document.getElementById('userName').innerText = data.fullName || data.name || "عضو العائلة";
+            document.getElementById('userAvatar').innerText = (data.fullName || "U").charAt(0);
+            document.getElementById('userRole').innerText = data.role || "عضو";
+            document.getElementById('userPhone').innerText = data.phone || "غير متوفر";
+            document.getElementById('userEmail').innerText = data.email || "---";
+            document.getElementById('joinDate').innerText = data.joinDate ? new Date(data.joinDate).toLocaleDateString('ar-EG') : "---";
+
+            // إظهار الأزرار المناسبة
+            if (isOwner) {
+                document.getElementById('ownerActions').style.display = 'flex';
+            } else {
+                document.getElementById('visitorActions').style.display = 'flex';
+                if(data.phone) {
+                    document.getElementById('whatsappBtn').onclick = () => {
+                        window.open(`https://wa.me/${data.phone.replace(/\s/g, '')}`, '_blank');
+                    };
+                }
+            }
+
+            // جلب إحصائيات الأخبار (من مجموعة News)
+            const q = query(collection(db, "News"), where("authorId", "==", uid));
+            const newsSnap = await getDocs(q);
+            document.getElementById('countPosts').innerText = newsSnap.size;
+
+            let totalLikes = 0;
+            newsSnap.forEach(doc => {
+                totalLikes += (doc.data().likedBy?.length || 0);
+            });
+            document.getElementById('countLikes').innerText = totalLikes;
+
         } catch (error) {
-            console.error(error);
-            document.getElementById('loader').innerText = "حدث خطأ في الاتصال بقاعدة البيانات";
+            console.error("Error loading profile:", error);
         }
     }
-    
-    // ... دالة loadMemberPosts تبقى كما هي ...
+
+    window.handleLogout = () => {
+        if (confirm("هل تريد تسجيل الخروج؟")) {
+            auth.signOut().then(() => location.href = "login.html");
+        }
+    };
 </script>
 </body>
 </html>
