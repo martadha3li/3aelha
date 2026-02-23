@@ -8,7 +8,9 @@
         :root { --islamic-green: #006644; --gold: #D4AF37; --soft-bg: #F8F9F5; --white: #FFFFFF; }
         body { background-color: var(--soft-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; text-align: center; direction: rtl; }
         
-        .hijri-display { font-size: 20px; font-weight: bold; color: var(--islamic-green); margin: 15px 0; }
+        /* تنسيق التاريخ الجديد */
+        .date-display { font-size: 16px; font-weight: bold; color: var(--islamic-green); margin: 15px 0; line-height: 1.6; }
+        .date-separator { color: var(--gold); margin: 0 8px; font-weight: normal; }
 
         .main-header-card { 
             background: linear-gradient(145deg, var(--islamic-green), #004422); 
@@ -20,7 +22,7 @@
 
         .event-box {
             background: rgba(255, 255, 255, 0.1); border: 1px dashed var(--gold);
-            border-radius: 15px; padding: 12px; margin-top: 15px; font-size: 14px;
+            border-radius: 15px; padding: 12px; margin-top: 15px; font-size: 14px; min-height: 45px;
         }
 
         .prayer-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
@@ -40,12 +42,12 @@
 </head>
 <body>
 
-    <div class="hijri-display" id="hijriDate">جاري التحميل...</div>
+    <div class="date-display" id="fullDateDisplay">جاري تحديد التاريخ...</div>
 
     <div class="main-header-card">
         <div id="nextPrayerLabel" style="font-size: 13px; opacity: 0.9;">الصلاة القادمة بعد:</div>
         <div class="timer-val" id="timer">00:00:00</div>
-        <div id="eventContainer" class="event-box">فحص المناسبات...</div>
+        <div id="eventContainer" class="event-box">جاري فحص المناسبات...</div>
     </div>
 
     <table class="prayer-table">
@@ -80,18 +82,33 @@
         { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
     ];
 
-    // --- 1. التعامل مع التاريخ الهجري (أرقام إنجليزية) ---
-    const today = new Date();
+    // --- 1. معالجة التاريخ واليوم (هجري | ميلادي - اليوم) ---
+    const now = new Date();
     const arabicMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
-    
-    const hParts = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric', year:'numeric'}).formatToParts(today);
+    const weekDays = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
+    // تفاصيل الهجري
+    const hParts = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric', year:'numeric'}).formatToParts(now);
     const hDay = hParts.find(p => p.type === 'day').value;
     const hMonth = hParts.find(p => p.type === 'month').value;
     const hYear = hParts.find(p => p.type === 'year').value;
-    
-    document.getElementById('hijriDate').innerText = `${hDay} ${arabicMonths[parseInt(hMonth)-1]} ${hYear} هـ`;
 
-    // --- 2. جلب الموقع (GPS) ---
+    // تفاصيل الميلادي
+    const mDay = now.getDate();
+    const mMonth = now.getMonth() + 1;
+    const mYear = now.getFullYear();
+    const dayName = weekDays[now.getDay()];
+
+    // العرض النهائي للتاريخ (أرقام إنجليزية مع نصوص عربية)
+    document.getElementById('fullDateDisplay').innerHTML = `
+        ${hDay} ${arabicMonths[parseInt(hMonth)-1]} ${hYear} هـ 
+        <span class="date-separator">|</span> 
+        ${mDay}/${mMonth}/${mYear} م
+        <span class="date-separator">-</span>
+        ${dayName}
+    `;
+
+    // --- 2. جلب الموقع والبيانات ---
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
             userOffset = (AHSA_LONG - pos.coords.longitude) * 4;
@@ -100,7 +117,6 @@
         }, () => startListening());
     } else { startListening(); }
 
-    // --- 3. جلب البيانات من Firebase ---
     function startListening() {
         onSnapshot(doc(db, "Settings", "PrayerConfig"), (snap) => {
             if (snap.exists()) {
@@ -111,7 +127,6 @@
     }
 
     async function renderUI() {
-        // عرض المواقيت
         const tbody = document.getElementById('prayerTableBody');
         tbody.innerHTML = "";
         prayerTimesArr = [];
@@ -135,27 +150,38 @@
             tbody.appendChild(row);
         });
 
-        // التعامل مع المناسبات
+        // --- 3. حسبة المناسبات المتقدمة ---
         const evSnap = await getDocs(collection(db, "HijriEvents"));
         let todayMsg = null;
         let upcoming = null;
-        let minDiff = 400;
+        let minDiff = 1000;
+
+        // اليوم الحالي من السنة الهجرية (حسبة تقريبية دقيقة للمقارنة)
+        const currentTotalDays = (parseInt(hMonth) - 1) * 30 + parseInt(hDay);
 
         evSnap.forEach(dDoc => {
             const ev = dDoc.data();
             if(ev.day == hDay && ev.month == hMonth) todayMsg = ev.title;
 
-            // حساب الأيام المتبقية
-            let diff = (ev.month * 30 + ev.day) - (hMonth * 30 + parseInt(hDay));
-            if (diff <= 0) diff += 354;
-            if (diff < minDiff) { minDiff = diff; upcoming = { title: ev.title, days: diff }; }
+            // حسبة الفرق بالأيام
+            const eventTotalDays = (parseInt(ev.month) - 1) * 30 + parseInt(ev.day);
+            let diff = eventTotalDays - currentTotalDays;
+            
+            // إذا كانت المناسبة مضت هذا العام، نحسبها للعام القادم
+            if (diff <= 0) diff += 354; 
+
+            if (diff < minDiff) { 
+                minDiff = diff; 
+                upcoming = { title: ev.title, days: diff }; 
+            }
         });
 
         const box = document.getElementById('eventContainer');
         if (todayMsg) {
-            box.innerHTML = `<span style="color:var(--gold)">✨ مناسبة اليوم:</span> <br> <b>${todayMsg}</b>`;
+            box.innerHTML = `<span style="color:var(--gold); font-weight:bold;">✨ مناسبة اليوم:</span><br>${todayMsg}`;
         } else if (upcoming) {
-            box.innerHTML = `<span style="opacity:0.8">المناسبة القادمة بعد ${upcoming.days} يوم:</span> <br> <b>${upcoming.title}</b>`;
+            let dayText = upcoming.days === 1 ? "غداً" : `بعد ${upcoming.days} يوم`;
+            box.innerHTML = `<span style="opacity:0.8; font-size:12px;">المناسبة القادمة (${dayText}):</span><br><b>${upcoming.title}</b>`;
         } else {
             box.innerText = currentConfig.event || "لا توجد مناسبات قريبة";
         }
@@ -163,7 +189,6 @@
         startTimer();
     }
 
-    // --- 4. دوال مساعدة ---
     function calc(base, off) {
         let [h, m] = base.split(':').map(Number);
         let d = new Date(); d.setHours(h, m + Math.round(off), 0, 0); return d;
