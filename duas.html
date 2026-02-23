@@ -4,67 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>منصة العائلة | الأدعية</title>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Cairo&family=Tajawal&family=Reem+Kufi&family=Almarai&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF;
-            --text-color: #1c1c1e; --font-size: 20px;
+            --text-color: #1c1c1e; --font-size: 24px;
         }
 
-        /* أنماط الرؤية */
         body.normal-vision { --ios-bg: #F2F2F7; --text-color: #1c1c1e; --card-bg: #FFFFFF; }
         body.low-vision { --ios-bg: #000000; --text-color: #FFFF00; --card-bg: #1c1c1e; }
         body.color-blind { --ios-bg: #E1E1E1; --text-color: #000000; --ios-blue: #0055AA; }
 
-        body { 
-            background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 70px; transition: 0.3s;
-        }
+        body { background-color: var(--ios-bg); font-family: 'Cairo', sans-serif; margin: 0; padding-top: 70px; transition: 0.3s; }
 
-        /* الهيدر */
-        .header {
-            position: fixed; top: 0; width: 100%; height: 65px;
-            background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 1000;
-        }
+        .header { position: fixed; top: 0; width: 100%; height: 65px; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 1000; }
 
-        /* القائمة الجانبية */
-        .drawer {
-            position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
-            background: var(--card-bg); box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-            transition: 0.3s; z-index: 2000; padding-top: 60px;
-        }
+        .drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: var(--card-bg); box-shadow: -5px 0 15px rgba(0,0,0,0.1); transition: 0.3s; z-index: 2000; padding-top: 60px; }
         .drawer.open { right: 0; }
         .drawer-item { padding: 18px 20px; border-bottom: 0.5px solid #eee; cursor: pointer; color: var(--text-color); font-weight: 600; }
 
-        /* شريط الأدوات */
-        .toolbar {
-            background: var(--card-bg); margin: 10px; padding: 12px;
-            border-radius: 15px; display: flex; justify-content: space-around;
-            align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
+        /* شريط الأدوات العلوي (لنمط الرؤية فقط) */
+        .toolbar { background: var(--card-bg); margin: 10px; padding: 12px; border-radius: 15px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .tool-btn { border: none; background: #eee; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-        /* قائمة عناوين الأدعية */
-        .dua-item-row { 
-            padding: 18px 20px; background: var(--card-bg); margin: 10px 15px; 
-            border-radius: 15px; border: 0.5px solid #E5E5EA; 
-            display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            font-family: 'Amiri', serif; font-size: 18px; font-weight: bold;
-        }
+        .dua-item-row { padding: 18px 20px; background: var(--card-bg); margin: 10px 15px; border-radius: 15px; border: 0.5px solid #E5E5EA; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; }
 
-        /* نافذة عرض الدعاء الكاملة */
-        #fullDuaView {
-            position: fixed; inset: 0; background: var(--ios-bg); z-index: 3000;
-            display: none; flex-direction: column; padding: 25px; overflow-y: auto;
-        }
-        .dua-full-text {
-            font-family: 'Amiri', serif; line-height: 1.8; text-align: justify;
-            white-space: pre-wrap; color: var(--text-color); margin-top: 20px;
-        }
+        /* نافذة عرض الدعاء */
+        #fullDuaView { position: fixed; inset: 0; background: var(--ios-bg); z-index: 3000; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+        
+        /* شريط التحكم داخل شاشة الدعاء */
+        .dua-controls { display: flex; gap: 10px; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .font-select { padding: 5px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; flex: 1; min-width: 120px; }
+
+        .dua-full-text { line-height: 1.8; text-align: justify; white-space: pre-wrap; color: var(--text-color); margin-top: 20px; transition: 0.2s; }
+        
+        .back-footer { text-align: center; margin-top: 40px; padding: 20px; border-top: 1px dashed #ccc; cursor: pointer; color: var(--ios-blue); font-weight: bold; }
 
         .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1500; }
     </style>
@@ -78,10 +53,7 @@
     </header>
 
     <div class="toolbar">
-        <div>
-            <button class="tool-btn" onclick="changeFontSize(2)">A+</button>
-            <button class="tool-btn" onclick="changeFontSize(-2)">A-</button>
-        </div>
+        <span style="font-size: 14px; font-weight: bold;">نمط العرض:</span>
         <select onchange="changeVision(this.value)" class="tool-btn">
             <option value="normal-vision">نظـر طبيعي</option>
             <option value="low-vision">ضعف بصر</option>
@@ -100,20 +72,36 @@
     </div>
 
     <div id="fullDuaView">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
-            <button onclick="closeFullDua()" style="border:none; background:var(--ios-red); color:white; padding:8px 18px; border-radius:10px; font-weight:bold;">إغلاق ✕</button>
-            <h2 id="viewDuaTitle" style="margin:0; font-size:20px; font-family:'Amiri', serif;"></h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <button onclick="closeFullDua()" style="border:none; background:var(--ios-blue); color:white; padding:8px 18px; border-radius:10px; font-weight:bold;">✕ إغلاق</button>
+            <h2 id="viewDuaTitle" style="margin:0; font-size:18px;"></h2>
         </div>
+
+        <div class="dua-controls">
+            <button class="tool-btn" onclick="changeFontSize(4)">A+</button>
+            <button class="tool-btn" onclick="changeFontSize(-4)">A-</button>
+            <select id="fontFamilySelect" class="font-select" onchange="changeFontFamily(this.value)">
+                <option value="'Amiri', serif">خط أميري (ديني)</option>
+                <option value="'Cairo', sans-serif">خط كايرو (مودرن)</option>
+                <option value="'Tajawal', sans-serif">خط تجول (ناعم)</option>
+                <option value="'Almarai', sans-serif">خط المراعي (واضح)</option>
+                <option value="'Reem Kufi', sans-serif">خط ريم كوفي (مميز)</option>
+            </select>
+        </div>
+
         <div id="viewDuaText" class="dua-full-text"></div>
+        
+        <div class="back-footer" onclick="closeFullDua()">
+             🔚 نهاية الدعاء - اضغط للعودة للقائمة
+        </div>
     </div>
 
 <script type="module">
     import { db } from './config.js';
     import { collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let currentFontSize = 22; // الحجم الافتراضي للخط العربي
+    let currentFontSize = 24;
 
-    // 1. جلب التصنيفات
     onSnapshot(collection(db, "DuaCategories"), (snap) => {
         const list = document.getElementById('categoriesList');
         list.innerHTML = "";
@@ -127,78 +115,61 @@
         });
     });
 
-    // 2. جلب عناوين الأدعية فقط عند اختيار تصنيف
     window.loadTitles = async (categoryName) => {
         const container = document.getElementById('duasContainer');
         container.innerHTML = `<h3 style="text-align:center; color:var(--ios-blue); margin: 20px 0;">قسم: ${categoryName}</h3>`;
-        
         const q = query(collection(db, "Duas"), where("category", "==", categoryName));
         const snap = await getDocs(q);
-        
-        if (snap.empty) {
-            container.innerHTML += "<p style='text-align:center;'>لا توجد أدعية في هذا القسم حالياً.</p>";
-            return;
-        }
+        if (snap.empty) { container.innerHTML += "<p style='text-align:center;'>لا توجد أدعية.</p>"; return; }
 
         snap.forEach(docSnap => {
             const dua = docSnap.data();
             const div = document.createElement('div');
             div.className = 'dua-item-row';
-            div.innerHTML = `<span>${dua.title}</span> <span style="color:var(--ios-blue); font-size: 14px;">عرض الدعاء ←</span>`;
+            div.innerHTML = `<span>${dua.title}</span> <span style="color:var(--ios-blue);">←</span>`;
             div.onclick = () => showFullDua(dua.title, dua.text);
             container.appendChild(div);
         });
     };
 
-    // 3. عرض الدعاء في الشاشة الكاملة
     window.showFullDua = (title, text) => {
         const view = document.getElementById('fullDuaView');
-        const viewTitle = document.getElementById('viewDuaTitle');
-        const viewText = document.getElementById('viewDuaText');
-        
         view.style.display = 'flex';
-        // تحديث نمط الرؤية في النافذة المنبثقة أيضاً
+        view.scrollTop = 0;
+        document.getElementById('viewDuaTitle').innerText = title;
+        const txtEl = document.getElementById('viewDuaText');
+        txtEl.innerText = text;
+        txtEl.style.fontSize = currentFontSize + 'px';
+        txtEl.style.color = getComputedStyle(document.body).getPropertyValue('--text-color');
         view.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ios-bg');
-        
-        viewTitle.innerText = title;
-        viewText.innerText = text;
-        viewText.style.fontSize = currentFontSize + 'px';
-        viewText.style.color = getComputedStyle(document.body).getPropertyValue('--text-color');
     };
 
-    window.closeFullDua = () => {
-        document.getElementById('fullDuaView').style.display = 'none';
-    };
+    window.closeFullDua = () => { document.getElementById('fullDuaView').style.display = 'none'; };
 
-    // 4. التحكم في حجم الخط
     window.changeFontSize = (step) => {
         currentFontSize += step;
         if(currentFontSize < 16) currentFontSize = 16;
-        if(currentFontSize > 50) currentFontSize = 50;
-        
-        const viewText = document.getElementById('viewDuaText');
-        if(viewText) viewText.style.fontSize = currentFontSize + 'px';
+        if(currentFontSize > 60) currentFontSize = 60;
+        document.getElementById('viewDuaText').style.fontSize = currentFontSize + 'px';
     };
 
-    // 5. التحكم في الرؤية
+    window.changeFontFamily = (font) => {
+        document.getElementById('viewDuaText').style.fontFamily = font;
+    };
+
     window.changeVision = (mode) => {
         document.body.className = mode;
-        // تحديث الألوان فوراً إذا كانت نافذة العرض مفتوحة
         const view = document.getElementById('fullDuaView');
         if(view.style.display === 'flex') {
-            setTimeout(() => {
-                view.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ios-bg');
-                document.getElementById('viewDuaText').style.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-            }, 50);
+            view.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--ios-bg');
+            document.getElementById('viewDuaText').style.color = getComputedStyle(document.body).getPropertyValue('--text-color');
         }
     };
 
     window.toggleDrawer = () => {
-        const d = document.getElementById('drawer');
+        document.getElementById('drawer').classList.toggle('open');
         const o = document.getElementById('drawerOverlay');
-        const isOpen = d.classList.contains('open');
-        d.classList.toggle('open');
-        o.style.display = isOpen ? 'none' : 'block';
+        o.style.display = o.style.display === 'block' ? 'none' : 'block';
     };
 </script>
 </body>
