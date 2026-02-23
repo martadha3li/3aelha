@@ -10,28 +10,23 @@
         .admin-section { background: white; padding: 20px; border-radius: 25px; box-shadow: var(--shadow); margin-bottom: 20px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 15px; }
         
-        /* كروت الإحصائيات */
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: white; padding: 15px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); border-bottom: 4px solid var(--primary); }
         .stat-card h3 { font-size: 20px; color: var(--primary); margin: 5px 0; }
         .stat-card span { font-size: 11px; color: gray; font-weight: bold; }
 
-        /* أزرار الوصول السريع */
         .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; }
         .btn-quick { flex: 1; padding: 15px; border-radius: 15px; border: none; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; box-shadow: var(--shadow); }
         .btn-quick:hover { opacity: 0.9; transform: translateY(-2px); }
 
-        /* طلبات التفعيل */
         .req-box { padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #bdf0c9; background: #f2fff5; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
         .req-box:hover { transform: scale(1.01); box-shadow: var(--shadow); }
 
-        /* الجدول والبحث */
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
         th { background: #f8f9fa; padding: 12px; border-bottom: 2px solid #eee; }
         td { padding: 12px; border-bottom: 1px solid #f5f5f5; text-align: center; }
 
-        /* النافذة المنبثقة Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
         .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 25px; overflow: hidden; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -48,6 +43,7 @@
         
         .role-badge { background: #eef6ff; color: var(--primary); padding: 3px 8px; border-radius: 8px; font-size: 11px; }
         .cat-tag { background: #f0f0f0; padding: 8px 12px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 8px; margin: 5px; }
+        .admin-card { cursor:pointer; display: flex; align-items: center; padding: 15px; background: #fff; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 0.5px solid #eee; }
     </style>
 </head>
 <body>
@@ -68,103 +64,33 @@
             <div class="stat-card"><h3 id="maxAge">0</h3><span>أكبر عمر 👴</span></div>
             <div class="stat-card"><h3 id="minAge">0</h3><span>أصغر عمر 👶</span></div>
         </div>
-<div class="admin-card" onclick="location.href='admin_duas.html'" style="cursor:pointer; display: flex; align-items: center; padding: 15px; background: #fff; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 0.5px solid #eee;">
-    <div style="font-size: 24px; margin-left: 15px; background: #E5F1FF; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">📖</div>
-    <div style="flex-grow: 1; text-align: right;">
-        <h3 style="margin: 0; font-size: 16px; color: #1c1c1e;">إدارة الأدعية والأذكار</h3>
-        <p style="margin: 5px 0 0; font-size: 12px; color: #8E8E93;">إضافة أقسام جديدة ونشر الأدعية للعائلة</p>
-    </div>
-    <div style="color: #007AFF; font-weight: bold;">←</div>
-  
-    <div style="color: #FFCC00; font-weight: bold;">←</div>
-</div>
-</div>
 
-<div class="admin-card" onclick="location.href='admin_prayer.html'" style="cursor:pointer; display: flex; align-items: center; padding: 15px; background: #fff; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 0.5px solid #eee;">
-    <div style="font-size: 24px; margin-left: 15px; background: #FFF9E5; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">🕌</div>
-    <div style="flex-grow: 1; text-align: right;">
-        <h3 style="margin: 0; font-size: 16px; color: #1c1c1e;">إدارة مواقيت الصلاة</h3>
-        <p style="margin: 5px 0 0; font-size: 12px; color: #8E8E93;">تعديل الدقائق وكتابة مناسبة اليوم</p>
-    </div>
-    <div style="color: #FFCC00; font-weight: bold;">←</div>
-</div>
-<div class="card" style="margin-top: 20px; border: 2px solid #FF9500;">
-    <h3 style="color: #FF9500;">🔒 تحكم وصول الأعضاء (توجيه مباشر)</h3>
-    
-    <div class="row" style="margin-bottom: 15px;">
-        <span>تفعيل التوجيه الإجباري:</span>
-        <select id="redirectToggle" style="width: 100px;">
-            <option value="false">تعطيل</option>
-            <option value="true">تفعيل</option>
-        </select>
-    </div>
+        <div class="admin-card" onclick="location.href='admin_duas.html'">
+            <div style="font-size: 24px; margin-left: 15px; background: #E5F1FF; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">📖</div>
+            <div style="flex-grow: 1; text-align: right;">
+                <h3 style="margin: 0; font-size: 16px; color: #1c1c1e;">إدارة الأدعية والأذكار</h3>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #8E8E93;">إضافة أقسام جديدة ونشر الأدعية للعائلة</p>
+            </div>
+            <div style="color: #007AFF; font-weight: bold;">←</div>
+        </div>
 
-    <div class="row" style="margin-bottom: 15px;">
-        <span>الصفحة المسموحة للعضو:</span>
-        <select id="targetPage" style="flex: 1; margin-right: 10px;">
-            <option value="prayer_times.html">مواقيت الصلاة</option>
-            <option value="news.html">أخبار العائلة</option>
-            <option value="gallery.html">المعرض</option>
-            <option value="events.html">المناسبات العامة</option>
-        </select>
-    </div>
-
-    <p style="font-size: 11px; color: #888;">* عند التفعيل، سيتم تحويل أي عضو (غير مدير/محرر) لهذه الصفحة فوراً ومنعه من مغادرتها.</p>
-    
-    <button onclick="saveAccessSettings()" style="background: #FF9500; color: white; width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: bold;">حفظ إعدادات الوصول ✅</button>
-</div>
-
-<script type="module">
-    import { db } from './config.js';
-    import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // تحميل الإعدادات الحالية عند فتح الصفحة
-    async function loadAccessSettings() {
-        const snap = await getDoc(doc(db, "Settings", "AccessControl"));
-        if (snap.exists()) {
-            const data = snap.data();
-            document.getElementById('redirectToggle').value = data.forcedRedirect || "false";
-            document.getElementById('targetPage').value = data.targetPage || "prayer_times.html";
-        }
-    }
-
-    // حفظ الإعدادات في Firestore
-    window.saveAccessSettings = async () => {
-        const forcedRedirect = document.getElementById('redirectToggle').value;
-        const targetPage = document.getElementById('targetPage').value;
-
-        try {
-            await setDoc(doc(db, "Settings", "AccessControl"), {
-                forcedRedirect: forcedRedirect,
-                targetPage: targetPage,
-                updatedAt: new Date()
-            });
-            alert("تم تحديث قيود الوصول بنجاح!");
-        } catch (error) {
-            alert("خطأ في الحفظ: " + error.message);
-        }
-    };
-
-    loadAccessSettings();
-</script>
+        <div class="admin-card" onclick="location.href='admin_prayer.html'">
+            <div style="font-size: 24px; margin-left: 15px; background: #FFF9E5; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">🕌</div>
+            <div style="flex-grow: 1; text-align: right;">
+                <h3 style="margin: 0; font-size: 16px; color: #1c1c1e;">إدارة مواقيت الصلاة</h3>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #8E8E93;">تعديل الدقائق وكتابة مناسبة اليوم</p>
+            </div>
+            <div style="color: #FFCC00; font-weight: bold;">←</div>
+        </div>
 
         <div class="quick-actions">
-            <button onclick="location.href='admin_categories.html'" class="btn-quick" style="background: #5856d6;">
-                📁 إدارة التصنيفات المتقدمة
-            </button>
-            <button onclick="location.href='admin_requests.html'" class="btn-quick" style="background: #ff9500;">
-                📬 إدارة كافة الطلبات
-            </button>
-            <button onclick="location.href='admin_competitions.html'" class="btn-quick" style="background: #34c759;">
-    🏆 إدارة المسابقات والنتائج
-</button>
-            <button onclick="location.href='admin_requests.html'" class="btn-quick" style="background: #5856d6;">
-    📢 إرسال طلبات التحديث
-</button>
+            <button onclick="location.href='admin_categories.html'" class="btn-quick" style="background: #5856d6;">📁 إدارة التصنيفات</button>
+            <button onclick="location.href='admin_requests.html'" class="btn-quick" style="background: #ff9500;">📬 إدارة الطلبات</button>
+            <button onclick="location.href='admin_competitions.html'" class="btn-quick" style="background: #34c759;">🏆 إدارة المسابقات</button>
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>📥 طلبات تفعيل جديدة (اضغط للمراجعة)</h2></div>
+            <div class="section-header"><h2>📥 طلبات تفعيل جديدة</h2></div>
             <div id="activationRequests"></div>
         </div>
 
@@ -177,8 +103,8 @@
         </div>
 
         <div class="admin-section">
-            <div class="section-header"><h2>👥 قاعدة بيانات الأعضاء والبحث</h2></div>
-            <input type="text" id="userSearch" class="form-input" style="width:100%; margin-bottom:15px;" placeholder="🔍 ابحث برقم الجوال أو الاسم..." onkeyup="filterUsers()">
+            <div class="section-header"><h2>👥 قاعدة بيانات الأعضاء</h2></div>
+            <input type="text" id="userSearch" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px;" placeholder="🔍 ابحث برقم الجوال أو الاسم..." onkeyup="filterUsers()">
             <div class="table-container">
                 <table>
                     <thead>
@@ -186,6 +112,13 @@
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <div class="section" style="background: #fff; padding: 20px; border-radius: 20px; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <h2 style="font-size: 17px; color: #007aff; border-bottom: 1px solid #eee; padding-bottom: 10px;">تحكم في الشريط السفلي</h2>
+            <div id="navControls" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                جاري تحميل الإعدادات...
             </div>
         </div>
     </div>
@@ -198,67 +131,60 @@
             </div>
             <div class="modal-body" id="mUserDetails"></div>
             <div class="modal-footer">
-                <button id="btnAct" class="btn-activate">تفعيل الحساب والترحيب ✅</button>
+                <button id="btnAct" class="btn-activate">تفعيل الحساب ✅</button>
                 <button onclick="document.getElementById('userModal').style.display='none'" style="flex:1; border:none; border-radius:12px; cursor:pointer;">إلغاء</button>
-                <button id="btnDel" class="btn-delete">رفض وحذف نهائي 🗑️</button>
+                <button id="btnDel" class="btn-delete">حذف 🗑️</button>
             </div>
         </div>
     </div>
-<div class="section" style="background: #fff; padding: 20px; border-radius: 20px; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-    <h2 style="font-size: 17px; color: var(--ios-blue); border-bottom: 1px solid #eee; padding-bottom: 10px;">تحكم في الشريط السفلي</h2>
-    <div id="navControls" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
-        جاري تحميل الإعدادات...
-    </div>
-</div>
 
-<script type="module">
-    import { db } from './config.js';
-    import { doc, onSnapshot, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const navItems = [
-        { id: 'showChat', label: 'الدردشة 💬' },
-        { id: 'showDuas', label: 'الأدعية 📖' },
-        { id: 'showComps', label: 'المسابقات 🏆' }
-        { id: 'showPrayer', label: 'المواقيت 🕌' } // العنصر الجديد
-    ];
-
-    onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
-        const controls = document.getElementById('navControls');
-        controls.innerHTML = "";
-        const data = docSnap.exists() ? docSnap.data() : {};
-
-        navItems.forEach(item => {
-            const status = data[item.id] !== false; // القيمة الافتراضية مفعل
-            controls.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f9f9f9;">
-                    <span style="font-weight: 600;">${item.label}</span>
-                    <button onclick="toggleNav('${item.id}', ${status})" 
-                            style="padding: 8px 15px; border-radius: 10px; border: none; background: ${status ? '#34C759' : '#8E8E93'}; color: white; cursor: pointer;">
-                        ${status ? 'مفعلة' : 'معطلة'}
-                    </button>
-                </div>
-            `;
-        });
-    });
-
-    window.toggleNav = async (field, currentStatus) => {
-        await setDoc(doc(db, "Settings", "AppConfig"), { [field]: !currentStatus }, { merge: true });
-    };
-</script>
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, query, where, addDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
             if (snap.data().role !== 'admin') location.href = 'news.html';
             initFullAdmin();
+            initNavControls();
         } else location.href = 'index.html';
     });
 
+    function initNavControls() {
+        const navItems = [
+            { id: 'showChat', label: 'الدردشة 💬' },
+            { id: 'showDuas', label: 'الأدعية 📖' },
+            { id: 'showComps', label: 'المسابقات 🏆' },
+            { id: 'showPrayer', label: 'المواقيت 🕌' }
+        ];
+
+        onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
+            const controls = document.getElementById('navControls');
+            controls.innerHTML = "";
+            const data = docSnap.exists() ? docSnap.data() : {};
+
+            navItems.forEach(item => {
+                const status = data[item.id] !== false;
+                const div = document.createElement('div');
+                div.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f9f9f9;";
+                div.innerHTML = `
+                    <span style="font-weight: 600;">${item.label}</span>
+                    <button onclick="window.toggleNav('${item.id}', ${status})" 
+                            style="padding: 8px 15px; border-radius: 10px; border: none; background: ${status ? '#34C759' : '#8E8E93'}; color: white; cursor: pointer;">
+                        ${status ? 'مفعلة' : 'معطلة'}
+                    </button>
+                `;
+                controls.appendChild(div);
+            });
+        });
+    }
+
+    window.toggleNav = async (field, currentStatus) => {
+        await setDoc(doc(db, "Settings", "AppConfig"), { [field]: !currentStatus }, { merge: true });
+    };
+
     function initFullAdmin() {
-        // 1. الإحصائيات الذكية
         onSnapshot(collection(db, "Users"), snap => {
             let male = 0, female = 0, ages = [];
             document.getElementById('uCount').innerText = snap.size;
@@ -276,7 +202,6 @@
             }
         });
 
-        // 2. طلبات التفعيل
         onSnapshot(query(collection(db, "Users"), where("status", "==", "pending")), snap => {
             const cont = document.getElementById('activationRequests');
             cont.innerHTML = snap.empty ? '<p style="color:gray; font-size:12px; text-align:center;">لا توجد طلبات جديدة</p>' : "";
@@ -285,12 +210,11 @@
                 const div = document.createElement('div');
                 div.className = 'req-box';
                 div.onclick = () => showUserDetails(u.id, d);
-                div.innerHTML = `<div><b>${d.fullName}</b> (${d.phone})</div> <span style="font-size:10px; color:var(--primary);">مراجعة التفاصيل 🔍</span>`;
+                div.innerHTML = `<div><b>${d.fullName}</b></div> <span style="font-size:10px; color:var(--primary);">مراجعة 🔍</span>`;
                 cont.appendChild(div);
             });
         });
 
-        // 3. جدول الأعضاء
         onSnapshot(collection(db, "Users"), snap => {
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = "";
@@ -309,13 +233,12 @@
             });
         });
 
-        // 4. التصنيفات
         onSnapshot(collection(db, "Categories"), snap => {
             const cont = document.getElementById('categoriesList');
             cont.innerHTML = "";
             snap.forEach(c => {
-                cont.innerHTML += `<div class="cat-tag" title="العنوان الافتراضي: ${c.data().defaultTitle}">
-                    <b>${c.data().name}</b> <span onclick="deleteDoc(doc(db, 'Categories', '${c.id}'))" style="color:red; cursor:pointer;">✕</span>
+                cont.innerHTML += `<div class="cat-tag">
+                    <b>${c.data().name}</b> <span onclick="deleteCategory('${c.id}')" style="color:red; cursor:pointer;">✕</span>
                 </div>`;
             });
         });
@@ -325,23 +248,11 @@
         const modal = document.getElementById('userModal');
         document.getElementById('mUserName').innerText = data.fullName;
         document.getElementById('mUserImg').src = data.profileImg || 'https://via.placeholder.com/80';
-        
-        let html = `
+        document.getElementById('mUserDetails').innerHTML = `
             <div class="detail-row"><span class="detail-label">الجوال:</span> <span>${data.phone}</span></div>
-            <div class="detail-row"><span class="detail-label">المدينة:</span> <span>${data.city || 'غير محددة'}</span></div>
-            <div class="detail-row"><span class="detail-label">الجنس:</span> <span>${data.gender === 'male' ? 'ذكر' : 'أنثى'}</span></div>
             <div class="detail-row"><span class="detail-label">العمر:</span> <span>${data.age} سنة</span></div>
         `;
-        if(data.gender === 'female') {
-            html += `<div style="margin-top:10px; padding:10px; background:#fff5f5; border-radius:10px;">
-                <b style="color:#d63031; font-size:12px;">🛡️ المعرف:</b>
-                <div class="detail-row"><span>الاسم: ${data.guardianName || '--'}</span></div>
-                <div class="detail-row"><span>الجوال: ${data.guardianPhone || '--'}</span></div>
-            </div>`;
-        }
-        document.getElementById('mUserDetails').innerHTML = html;
         modal.style.display = 'flex';
-
         document.getElementById('btnAct').onclick = () => { updateStatus(uid, 'active', data.fullName); modal.style.display = 'none'; };
         document.getElementById('btnDel').onclick = () => { deleteUser(uid); modal.style.display = 'none'; };
     };
@@ -352,19 +263,19 @@
             await addDoc(collection(db, "Chats"), {
                 senderId: auth.currentUser.uid,
                 receiverId: uid,
-                message: `مرحباً بك يا ${name}! تم تفعيل حسابك في منصة العائلة بنجاح. نحن سعداء بوجودك معنا 🌸`,
+                message: `مرحباً بك يا ${name}! تم تفعيل حسابك بنجاح. 🌸`,
                 timestamp: serverTimestamp()
             });
-            alert("تم التفعيل وإرسال ترحيب آلي 💌");
+            alert("تم التفعيل ✅");
         }
     };
 
     window.deleteUser = async (id) => { if(confirm("حذف نهائي؟")) await deleteDoc(doc(db, "Users", id)); };
+    window.deleteCategory = async (id) => { await deleteDoc(doc(db, "Categories", id)); };
     window.editField = async (id, field) => { const val = prompt("تعديل البيانات:"); if(val) await updateDoc(doc(db, "Users", id), { [field]: val }); };
     window.addNewCategory = async () => {
         const n = prompt("اسم التصنيف:");
-        const t = prompt("العنوان الافتراضي للخبر:");
-        if(n) await addDoc(collection(db, "Categories"), { name: n, defaultTitle: t || "" });
+        if(n) await addDoc(collection(db, "Categories"), { name: n });
     };
     window.filterUsers = () => {
         const val = document.getElementById('userSearch').value.toLowerCase();
