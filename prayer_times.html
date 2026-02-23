@@ -3,48 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مواقيت الصلاة والمناسبات</title>
+    <title>مواقيت الصلاة | عائلة مرتضى</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
-        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; text-align: center; }
+        /* تنسيق الألوان الإسلامية: الأخضر الزمردي والذهبي */
+        :root { 
+            --islamic-green: #006644; 
+            --gold: #D4AF37; 
+            --soft-bg: #F8F9F5; 
+            --white: #FFFFFF;
+        }
         
-        /* كرت العداد والمناسبة القادمة */
-        .info-card { background: #1c1c1e; color: #fff; padding: 20px; border-radius: 25px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-        .timer-value { font-size: 28px; font-weight: 900; color: #34C759; margin: 5px 0; }
-        .upcoming-event { border-top: 1px solid #333; margin-top: 10px; padding-top: 10px; font-size: 13px; color: #FFCC00; }
-
-        .date-card { background: linear-gradient(135deg, #007AFF, #0055AA); color: white; padding: 20px; border-radius: 25px; margin-bottom: 20px; }
-        .today-event-box { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 12px; font-size: 14px; margin-top: 10px; font-weight: bold; }
-
-        .times-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        .times-table th { color: var(--ios-blue); font-size: 11px; padding: 5px; }
-        .time-row-card { background: var(--card-bg); border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        .time-row-card td { padding: 12px 2px; border-bottom: 0.5px solid #f2f2f7; font-size: 13px; }
+        body { 
+            background-color: var(--soft-bg); 
+            font-family: -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            text-align: center; 
+            background-image: radial-gradient(circle at 100% 0%, #e1e9e3 0%, transparent 20%);
+        }
         
-        .prayer-name { font-weight: bold; color: #444; text-align: right; padding-right: 15px !important; }
-        .ahsa-time { color: var(--ios-blue); font-weight: 800; background: #E5F1FF; }
-        .user-loc-time { color: #5856D6; font-weight: 800; background: #F5F5FF; border: 1px solid #5856D6; border-radius: 10px; }
+        /* كرت المناسبة والعداد */
+        .main-header-card { 
+            background: linear-gradient(145deg, var(--islamic-green), #004422); 
+            color: white; 
+            padding: 25px 20px; 
+            border-radius: 30px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 10px 25px rgba(0,70,40,0.2);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--gold);
+        }
+
+        .main-header-card::before {
+            content: "🕌"; position: absolute; left: -10px; top: -10px; font-size: 80px; opacity: 0.1;
+        }
+
+        .timer-val { 
+            font-size: 36px; 
+            font-weight: 800; 
+            color: var(--gold); 
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+
+        .event-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px dashed var(--gold);
+            border-radius: 15px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .hijri-display { font-size: 20px; font-weight: bold; color: var(--islamic-green); margin-bottom: 15px; }
+
+        /* الجدول الزخرفي */
+        .prayer-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        .prayer-table th { color: var(--islamic-green); font-size: 12px; padding-bottom: 5px; font-weight: 900; }
+        
+        .prayer-row { 
+            background: var(--white); 
+            border-radius: 18px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            transition: 0.3s;
+        }
+        
+        .prayer-row td { padding: 16px 8px; font-size: 15px; font-weight: bold; border: none; }
+        .prayer-row td:first-child { border-radius: 0 18px 18px 0; text-align: right; padding-right: 20px; color: #333; }
+        .prayer-row td:last-child { border-radius: 18px 0 0 18px; }
+
+        .time-cell { font-family: 'Arial', sans-serif; font-weight: 700; color: #444; }
+        .primary-time { color: var(--islamic-green); font-size: 17px; background: #f0f7f3; }
+        .user-time { color: #5856D6; border: 1.5px solid #5856D6; border-radius: 12px; }
+        
+        button.back-btn {
+            background: var(--islamic-green); color: white; border: none; padding: 12px 30px; 
+            border-radius: 20px; font-weight: bold; margin-top: 25px; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="info-card">
-        <div id="nextPrayerLabel" style="font-size: 12px; opacity: 0.8;">الصلاة القادمة:</div>
-        <div class="timer-value" id="timer">00:00:00</div>
-        <div id="upcomingEventBox" class="upcoming-event">جاري فحص المناسبات القادمة...</div>
+    <div class="hijri-display" id="hijriDate">-- --- ----</div>
+
+    <div class="main-header-card">
+        <div id="nextPrayerLabel" style="font-size: 13px; opacity: 0.9;">الصلاة القادمة بعد:</div>
+        <div class="timer-val" id="timer">00:00:00</div>
+        
+        <div id="eventContainer" class="event-box">
+            جاري فحص المناسبات...
+        </div>
     </div>
 
-    <div class="date-card">
-        <div id="hijriDate" style="font-size: 19px; font-weight: bold;">-- --- ----</div>
-        <div id="todayEvent" class="today-event-box">لا توجد مناسبة اليوم</div>
-    </div>
-
-    <table class="times-table">
+    <table class="prayer-table">
         <thead>
             <tr>
-                <th style="text-align: right; padding-right: 15px;">الفريضة</th>
+                <th>الفريضة</th>
                 <th>الأحساء</th>
-                <th id="userCityHeader" style="display:none; color:#5856D6;">موقعك</th>
+                <th id="userCityHeader" style="display:none;">موقعك</th>
                 <th>الدمام</th>
                 <th>الرياض</th>
             </tr>
@@ -52,7 +109,7 @@
         <tbody id="prayerTableBody"></tbody>
     </table>
 
-    <button onclick="location.href='news.html'" style="margin-top:25px; border:none; background:none; color:var(--ios-blue); font-weight:bold; cursor:pointer;">🏠 العودة للرئيسية</button>
+    <button class="back-btn" onclick="location.href='news.html'">🏠 العودة للرئيسية</button>
 
 <script type="module">
     import { db } from './config.js';
@@ -70,30 +127,34 @@
         { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
     ];
 
-    // التاريخ الهجري
+    // التاريخ الهجري (الأرقام بالإنجليزية)
     const today = new Date();
-    const hOptions = { day:'numeric', month:'long', year:'numeric', calendar:'islamic-uma' };
-    const hNumOptions = { day:'numeric', month:'numeric', calendar:'islamic-uma' };
-    document.getElementById('hijriDate').innerText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', hOptions).format(today);
+    const hFormat = new Intl.DateTimeFormat('en-SA-u-ca-islamic-uma', {day:'numeric', month:'long', year:'numeric'});
+    const hNumFormat = new Intl.DateTimeFormat('en-SA-u-ca-islamic-uma', {day:'numeric', month:'numeric'});
     
-    // تحويل التاريخ الهجري الحالي لـ "يوم-شهر"
-    const hParts = new Intl.DateTimeFormat('en-u-ca-islamic-uma', {day:'numeric', month:'numeric'}).format(today).split('/');
-    const currentDayMonth = `${hParts[0]}-${hParts[1]}`;
+    // عرض التاريخ الهجري باللغة العربية مع أرقام إنجليزية
+    const arabicMonths = ["محرم", "صفر", "ربيع الأول", "ربيع الثاني", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
+    const hParts = hNumFormat.formatToParts(today);
+    const hDay = hParts.find(p => p.type === 'day').value;
+    const hMonthIdx = parseInt(hParts.find(p => p.type === 'month').value) - 1;
+    const hYear = hParts.find(p => p.type === 'year').value;
+    
+    document.getElementById('hijriDate').innerText = `${hDay} ${arabicMonths[hMonthIdx]} ${hYear} هـ`;
+    const currentDayMonth = `${hDay}-${hMonthIdx + 1}`;
 
-    // 1. طلب الموقع
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
             userOffset = (AHSA_LONG - pos.coords.longitude) * 4;
             document.getElementById('userCityHeader').style.display = 'table-cell';
-            loadApp();
-        }, () => loadApp());
-    } else { loadApp(); }
+            initData();
+        }, () => initData());
+    } else { initData(); }
 
-    function loadApp() {
+    function initData() {
         onSnapshot(doc(db, "Settings", "PrayerConfig"), (snap) => {
             const config = snap.exists() ? snap.data() : {};
             renderTimes(config);
-            findEvents(config.event);
+            handleEvents(config.event);
         });
     }
 
@@ -104,68 +165,73 @@
 
         prayers.forEach(p => {
             const off = config[p.key] || 0;
-            const ahsaDate = calculateDate(p.base, off);
+            const ahsaDate = calc(p.base, off);
             prayerTimesArr.push({ name: p.name, date: ahsaDate });
 
             const row = document.createElement('tr');
-            row.className = 'time-row-card';
+            row.className = 'prayer-row';
             
-            let userCell = userOffset !== 0 ? `<td class="user-loc-time">${formatT(calculateDate(p.base, off + userOffset))}</td>` : "";
+            let uCell = userOffset !== 0 ? `<td class="time-cell user-time">${fmt(calc(p.base, off + userOffset))}</td>` : "";
 
             row.innerHTML = `
-                <td class="prayer-name">${p.name}</td>
-                <td class="ahsa-time">${formatT(ahsaDate)}</td>
-                ${userCell}
-                <td class="other-time">${formatT(calculateDate(p.base, off - 3))}</td>
-                <td class="other-time">${formatT(calculateDate(p.base, off + 12))}</td>
+                <td>${p.name}</td>
+                <td class="time-cell primary-time">${fmt(ahsaDate)}</td>
+                ${uCell}
+                <td class="time-cell">${fmt(calc(p.base, off - 3))}</td>
+                <td class="time-cell">${fmt(calc(p.base, off + 12))}</td>
             `;
             tbody.appendChild(row);
         });
-        startCountdown();
+        countdown();
     }
 
-    async function findEvents(manualEvent) {
-        // فحص مناسبة اليوم
-        const allEventsSnap = await getDocs(collection(db, "HijriEvents"));
-        let todayMsg = manualEvent || "لا توجد مناسبة اليوم";
+    async function handleEvents(manualEvent) {
+        const snap = await getDocs(collection(db, "HijriEvents"));
+        let todayMsg = null;
         let upcoming = null;
         let minDiff = 400;
 
-        allEventsSnap.forEach(doc => {
+        snap.forEach(doc => {
             const ev = doc.data();
             const evKey = `${ev.day}-${ev.month}`;
-            
-            if(evKey === currentDayMonth) {
-                todayMsg = `🌟 ${ev.title}`;
-            }
+            if(evKey === currentDayMonth) todayMsg = ev.title;
 
-            // حساب الأيام المتبقية (تقريبي للمناسبات القادمة)
-            // ملاحظة: هذه حسبة مبسطة لفرق الشهور والأيام
-            let diff = (ev.month * 30 + ev.day) - (parseInt(hParts[1]) * 30 + parseInt(hParts[0]));
-            if (diff > 0 && diff < minDiff) {
+            let diff = (ev.month * 30 + ev.day) - ((hMonthIdx + 1) * 30 + parseInt(hDay));
+            if (diff <= 0) diff += 354; // السنة الهجرية
+
+            if (diff < minDiff) {
                 minDiff = diff;
                 upcoming = { title: ev.title, days: diff };
             }
         });
 
-        document.getElementById('todayEvent').innerText = todayMsg;
-        if(upcoming) {
-            document.getElementById('upcomingEventBox').innerText = `المناسبة القادمة: ${upcoming.title} (بعد ${upcoming.days} يوم)`;
+        const box = document.getElementById('eventContainer');
+        if (todayMsg) {
+            box.innerHTML = `<span style="color:var(--gold)">✨ مناسبة اليوم:</span> <br> <b>${todayMsg}</b>`;
+        } else if (upcoming) {
+            box.innerHTML = `<span style="opacity:0.8">المناسبة القادمة:</span> <br> <b>${upcoming.title}</b> <br> <small>(بعد ${upcoming.days} يوم)</small>`;
+        } else if (manualEvent) {
+            box.innerText = manualEvent;
         } else {
-            document.getElementById('upcomingEventBox').style.display = 'none';
+            box.innerText = "لا توجد مناسبات قريبة";
         }
     }
 
-    function calculateDate(base, offset) {
+    function calc(base, off) {
         let [h, m] = base.split(':').map(Number);
-        let d = new Date(); d.setHours(h, m + Math.round(offset), 0, 0); return d;
+        let d = new Date(); d.setHours(h, m + Math.round(off), 0, 0); return d;
     }
 
-    function formatT(d) {
-        return d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true }).replace("ص", "أ").replace("م", "م");
+    function fmt(d) {
+        // تحويل الأرقام للإنجليزية يدوياً لضمان التنسيق
+        let h = d.getHours();
+        let m = d.getMinutes();
+        let amp = h >= 12 ? ' PM' : ' AM';
+        h = h % 12 || 12;
+        return `${h}:${m < 10 ? '0'+m : m}${amp}`;
     }
 
-    function startCountdown() {
+    function countdown() {
         if(window.timer) clearInterval(window.timer);
         window.timer = setInterval(() => {
             const now = new Date();
@@ -176,7 +242,8 @@
             }
             const diff = next.date - now;
             const hh = Math.floor(diff/3600000), mm = Math.floor((diff%3600000)/60000), ss = Math.floor((diff%60000)/1000);
-            document.getElementById('timer').innerText = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+            document.getElementById('timer').innerText = 
+                `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
             document.getElementById('nextPrayerLabel').innerText = `المتبقي لـ ${next.name}:`;
         }, 1000);
     }
