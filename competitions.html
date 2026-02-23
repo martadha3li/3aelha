@@ -7,6 +7,29 @@
     
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
+import { auth, db } from './config.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        // 1. جلب رتبة المستخدم
+        const userDoc = await getDoc(doc(db, "Users", user.uid));
+        const userData = userDoc.data();
+        
+        // 2. جلب إعدادات التوجيه من المدير
+        const accessDoc = await getDoc(doc(db, "Settings", "AccessControl"));
+        const accessData = accessDoc.data();
+
+        if (userData.role === 'user' && accessData.forcedRedirect === "true") {
+            // إذا كان المستخدم عادي والتوجيه مفعل، نرسله للصفحة المحددة
+            if (!window.location.href.includes(accessData.targetPage)) {
+                window.location.href = accessData.targetPage;
+            }
+        }
+    }
+});
+
+        
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({ appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15" });
