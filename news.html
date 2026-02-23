@@ -3,371 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة العائلة | التايم لاين</title>
+    <title>منصة العائلة | الأخبار</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
 
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({ appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15" });
+      });
+    </script>
 
     <style>
-        /* زر تثبيت التطبيق */
-.install-btn {
-    display: none; /* يظهر فقط إذا كان التطبيق قابل للتثبيت */
-    background: var(--ios-blue);
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-left: 10px;
-}
-        :root {
-            --ios-blue: #007AFF;
-            --ios-red: #FF3B30;
-            --ios-bg: #F2F2F7;
-            --card-bg: #FFFFFF;
-            --text-main: #1c1c1e;
-            --text-sec: #8E8E93;
+        :root { 
+            --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF;
+            --ios-gray: #8E8E93; --ios-green: #34C759;
         }
 
-        body {
-            background-color: var(--ios-bg);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding-top: 70px;
-            padding-bottom: 90px; /* مساحة للشريط السفلي */
+        body { 
+            background: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; padding-top: 85px; padding-bottom: 90px; direction: rtl;
         }
 
         /* الهيدر العلوي */
-        .header {
-            position: fixed; top: 0; width: 100%; height: 65px;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(20px);
+        .top-bar {
+            position: fixed; top: 0; width: 100%; height: 75px;
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box;
-            border-bottom: .5px solid #C6C6C8;
-            z-index: 5000;
+            padding: 0 15px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000;
         }
 
-        .header h1 { font-size: 20px; font-weight: 800; margin: 0; }
-        .header-btns { display: flex; gap: 18px; align-items: center; }
+        .header-center { text-align: center; flex-grow: 1; }
+        .header-center h1 { font-size: 18px; margin: 0; font-weight: 800; }
+        .full-date { font-size: 10px; color: var(--ios-gray); margin-top: 3px; font-weight: 500; }
 
-        #adminTools { display: none; align-items: center; gap: 18px; }
-        .icon-btn { font-size: 26px; cursor: pointer; color: var(--ios-blue); }
-        .logout-btn { color: var(--ios-red); font-size: 24px; cursor: pointer; }
-
-        /* كرت الخبر */
-        .post-card {
-            background: var(--card-bg);
-            margin: 15px; border-radius: 18px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.05);
-            overflow: hidden; position: relative;
-            border: .5px solid #E5E5EA;
+        /* أزرار الهيدر */
+        .install-btn {
+            display: none; background: var(--ios-blue); color: white; border: none;
+            padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer;
         }
+        .admin-add-btn { font-size: 24px; color: var(--ios-blue); text-decoration: none; display: none; }
 
-        .post-card.disabled { opacity: .55; filter: grayscale(.8); border: 1px dashed red; }
-        .post-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 10px 15px; max-width: 600px; margin: auto; }
 
-        .author-info { display: flex; align-items: center; gap: 12px; }
-        .avatar {
-            width: 38px; height: 38px; background: #E5E5EA; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; color: var(--ios-blue);
+        /* بطاقة الخبر */
+        .news-card { 
+            background: var(--card-bg); border-radius: 20px; overflow: hidden;
+            margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
         }
-
-        .post-image { width: 100%; max-height: 350px; object-fit: cover; background: #f0f0f0; }
-
-        .post-content { padding: 15px; }
-        .post-content h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 700; }
-        .post-content p { margin: 0; font-size: 14px; color: #3a3a3c; display: none; margin-top: 10px; line-height: 1.5; }
-
-        .post-actions {
-            display: flex; justify-content: space-around;
-            padding: 12px 0; border-top: .5px solid #E5E5EA;
-            background: #FAFAFA;
+        .news-img { width: 100%; height: 220px; object-fit: cover; background: #eee; }
+        .news-content { padding: 15px; }
+        .news-tag { color: var(--ios-blue); font-size: 11px; font-weight: 700; margin-bottom: 6px; display: block; }
+        .news-title { font-size: 19px; font-weight: 800; color: #1c1c1e; margin: 0 0 8px 0; }
+        .news-desc { font-size: 14.5px; color: #3a3a3c; line-height: 1.5; margin-bottom: 15px; }
+        
+        .news-footer { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding-top: 12px; border-top: 0.5px solid #F2F2F7;
         }
+        .stats-group { display: flex; gap: 12px; color: var(--ios-gray); font-size: 12px; align-items: center; }
+        .like-btn { border: none; background: #F2F2F7; padding: 6px 12px; border-radius: 15px; font-size: 13px; cursor: pointer; }
 
-        .action-item { display: flex; align-items: center; gap: 6px; color: var(--text-sec); font-size: 13px; cursor: pointer; font-weight: 500; }
-        .action-item.active { color: var(--ios-red); }
-
-        /* أدوات التحرير المنسدلة */
-        .edit-dots { font-size: 22px; color: var(--text-sec); cursor: pointer; padding: 5px; }
-        .dropdown {
-            position: absolute; left: 15px; top: 45px;
-            background: #fff; border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,.15);
-            display: none; flex-direction: column; z-index: 1000;
-            min-width: 150px; border: 1px solid #eee; overflow: hidden;
-        }
-        .dropdown button {
-            padding: 12px 15px; border: none; background: none; text-align: right; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f9f9f9;
-        }
-        .dropdown button:last-child { color: var(--ios-red); border-bottom: none; }
-
-        /* الشريط السفلي (إصلاح الظهور) */
+        /* شريط التنقل */
         .bottom-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
-            background: rgba(255,255,255,0.9); backdrop-filter: blur(15px);
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: .5px solid #C6C6C8; z-index: 5000;
-            padding-bottom: env(safe-area-inset-bottom);
+            position: fixed; bottom: 0; width: 100%; height: 75px;
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center; border-top: 0.5px solid #C6C6C8; z-index: 5000;
         }
-        .nav-item { font-size: 24px; text-decoration: none; color: #8E8E93; transition: 0.2s; }
-        .nav-item.active { color: var(--ios-blue); transform: scale(1.1); }
-
-        /* صندوق التعليقات */
-        .comment-box { display:none; padding:15px; background:#f9f9f9; border-top:1px solid #eee; }
-        .comment-input { display: flex; gap: 8px; margin-top: 10px; }
-        .comment-input input { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        .nav-item { font-size: 24px; color: #8E8E93; text-decoration: none; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--ios-blue); }
+        .nav-label { font-size: 10px; margin-top: 4px; }
     </style>
 </head>
-
 <body>
 
-    <header class="header">
-       <img src="logo.png" style="height: 35px; border-radius: 5px;">   
-      <h1>2026</h1>
-         
-        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
+<div class="top-bar">
+    <button id="btnInstall" class="install-btn">تثبيت 📲</button>
+    <div class="header-center">
+        <h1>الأخبار</h1>
+        <div id="currentDate" class="full-date"></div>
+    </div>
+    <a id="adminLink" href="add_news.html" class="admin-add-btn">⊕</a>
+</div>
 
-        <div class="header-btns">
-            <div id="adminTools">
-                <div class="icon-btn" onclick="location.href='add_news.html'">⊕</div>
-                <div class="icon-btn" onclick="location.href='admin.html'">⚙️</div>
-            </div>
-            <div class="logout-btn" onclick="handleLogout()">🚪</div>
-        </div>
-   
-    </header>
+<div class="container" id="newsFeed">
+    <p style="text-align:center; color:gray; margin-top:50px;">جاري مزامنة آخر الأخبار...</p>
+</div>
 
-    <div id="newsFeed"></div>
+<nav class="bottom-bar">
+    <a href="news.html" class="nav-item active">🏠<span class="nav-label">الرئيسية</span></a>
+    <a href="chat.html" class="nav-item">💬<span class="nav-label">الدردشة</span></a>
+    <a href="competitions.html" class="nav-item">🏆<span class="nav-label">المسابقات</span></a>
+    <a href="profile.html" class="nav-item">👤<span class="nav-label">حسابي</span></a>
+</nav>
 
-    <nav class="bottom-bar">
-        <a href="news.html" class="nav-item active">🏠</a>
-        <a href="chat.html" class="nav-item">💬</a>
-        <a href="competitions.html" class="nav-item">🏆</a>
-        <a href="profile.html" class="nav-item">👤</a>
-    </nav>
-   
 <script type="module">
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, query, orderBy, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let userUID, userData;
+    const newsFeed = document.getElementById('newsFeed');
+    const adminLink = document.getElementById('adminLink');
 
-    // إظهار الأدوات للمدير
-    function enableAdminUI() {
-        const tools = document.getElementById('adminTools');
-        if(tools) tools.style.display = 'flex';
+    // 1. دالة التاريخ (هجري، ميلادي، اسم اليوم)
+    function showFullDate() {
+        const now = new Date();
+        const day = now.toLocaleDateString('ar-SA', { weekday: 'long' });
+        const hijri = now.toLocaleDateString('ar-SA-u-ca-islamic-uma', { day: 'numeric', month: 'long', year: 'numeric' });
+        const greg = now.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('currentDate').innerText = `${day} | ${hijri} هـ | ${greg} م`;
     }
 
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            userUID = user.uid;
-            const userSnap = await getDoc(doc(db, "Users", userUID));
-            if (userSnap.exists()) {
-                userData = userSnap.data();
-                const role = (userData.role || userData.Role || 'user').toString().toLowerCase();
-                if (role.includes('admin') || role.includes('مدير') || role.includes('editor')) {
-                    enableAdminUI();
-                }
-            }
-            loadPosts();
-        } else {
-            window.location.href = "login.html";
+    // 2. إدارة تثبيت التطبيق (PWA)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('btnInstall').style.display = 'block';
+    });
+
+    document.getElementById('btnInstall').addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            document.getElementById('btnInstall').style.display = 'none';
         }
     });
 
-    function loadPosts() {
-        const feed = document.getElementById('newsFeed');
-        onSnapshot(collection(db, "News"), (snap) => {
-            feed.innerHTML = "";
-            let posts = [];
-            snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
-            posts.sort((a, b) => (b.publishDate || 0) - (a.publishDate || 0));
+    // 3. التحقق من المستخدم وتحميل البيانات
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            showFullDate();
+            const userDoc = await getDoc(doc(db, "Users", user.uid));
+            if (userDoc.data()?.role === 'admin' || userDoc.data()?.role === 'مدير') {
+                adminLink.style.display = 'block';
+            }
+            loadNews();
+        } else {
+            location.href = "login.html";
+        }
+    });
 
-            posts.forEach(post => {
-                const hasLiked = post.likedBy?.includes(userUID);
-                const role = (userData?.role || '').toLowerCase();
-                const isManager = (role.includes('admin') || role.includes('مدير') || userUID === post.authorId);
+    // 4. جلب الأخبار وتحديث المشاهدات
+    function loadNews() {
+        const q = query(collection(db, "News"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            newsFeed.innerHTML = "";
+            snapshot.forEach((docSnap) => {
+                const news = docSnap.data();
+                const newsId = docSnap.id;
+
+                // تحديث عداد المشاهدات تلقائياً عند الظهور
+                updateDoc(doc(db, "News", newsId), {
+                    views: increment(1)
+                });
+
+                const timeStr = news.timestamp ? news.timestamp.toDate().toLocaleString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
                 
-                if (!post.visible && !isManager) return;
-
                 const card = document.createElement('div');
-                card.className = `post-card ${!post.visible ? 'disabled' : ''}`;
+                card.className = 'news-card';
                 card.innerHTML = `
-                    <div class="post-header">
-                        <div class="author-info">
-                            <div class="avatar">${post.authorName?.charAt(0) || 'U'}</div>
-                            <div>
-                                <b>${post.authorName || 'عضو العائلة'}</b><br>
-                                <small style="color:gray; font-size:10px;">${post.publishDate ? new Date(post.publishDate).toLocaleDateString('ar-EG') : ''}</small>
+                    ${news.imageUrl ? `<img src="${news.imageUrl}" class="news-img" loading="lazy">` : ''}
+                    <div class="news-content">
+                        <span class="news-tag">${news.category || 'أخبار العائلة'}</span>
+                        <h2 class="news-title">${news.title}</h2>
+                        <p class="news-desc">${news.content}</p>
+                        <div class="news-footer">
+                            <div class="stats-group">
+                                <span>🕒 ${timeStr}</span>
+                                <span>👁️ ${news.views || 0}</span>
                             </div>
-                        </div>
-                        ${isManager ? `<div class="edit-dots" onclick="event.stopPropagation(); window.toggleDropdown('${post.id}')">⋮</div>` : ''}
-                        <div id="dropdown-${post.id}" class="dropdown">
-                            <button onclick="window.changeVisibility('${post.id}', ${post.visible})">${post.visible ? '🔒 تعطيل' : '🔓 تفعيل'}</button>
-                            <button onclick="location.href='add_news.html?edit=${post.id}'">✏️ تعديل</button>
-                            <button onclick="window.deleteNews('${post.id}')">🗑️ حذف نهائي</button>
-                        </div>
-                    </div>
-
-                    <img class="post-image" src="${post.img || 'https://via.placeholder.com/500x300'}" onclick="window.zoomImg(this.src)">
-
-                    <div class="post-content" onclick="toggleText('${post.id}')">
-                        <h2>${post.title}</h2>
-                        <p id="text-${post.id}">${post.body || post.content || ''}</p>
-                    </div>
-
-                    <div class="post-actions">
-                        <div class="action-item ${hasLiked ? 'active' : ''}" onclick="doLike('${post.id}', ${hasLiked})">
-                            ${hasLiked ? '❤️' : '🤍'} <span>${post.likedBy?.length || 0}</span>
-                        </div>
-                        <div class="action-item" onclick="toggleComments('${post.id}')">
-                            💬 <span>${post.comments?.length || 0}</span>
-                        </div>
-                        <div class="action-item">
-                            👁️ <span>${post.viewedBy?.length || 0}</span>
-                        </div>
-                    </div>
-
-                    <div id="comments-${post.id}" class="comment-box">
-                        <div id="commentsList-${post.id}"></div>
-                        <div class="comment-input">
-                            <input type="text" id="input-${post.id}" placeholder="اكتب تعليقك..." 
-                                   onkeydown="if(event.key==='Enter') addComment('${post.id}', this.value)">
-                            <button onclick="addComment('${post.id}', document.getElementById('input-${post.id}').value)" 
-                                    style="border:none; background:var(--ios-blue); color:white; border-radius:15px; padding:5px 12px;">نشر</button>
+                            <button class="like-btn" onclick="window.handleLike('${newsId}')">❤️ ${news.likes || 0}</button>
                         </div>
                     </div>
                 `;
-                feed.appendChild(card);
+                newsFeed.appendChild(card);
             });
         });
     }
 
-    // دوال التحكم
-    window.toggleText = (id) => {
-        const p = document.getElementById(`text-${id}`);
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    // دالة الإعجاب
+    window.handleLike = async (id) => {
+        await updateDoc(doc(db, "News", id), { likes: increment(1) });
     };
-
-    window.toggleDropdown = (id) => {
-        const d = document.getElementById(`dropdown-${id}`);
-        const isOpen = d.style.display === 'flex';
-        document.querySelectorAll('.dropdown').forEach(el => el.style.display = 'none');
-        d.style.display = isOpen ? 'none' : 'flex';
-    };
-
-    window.toggleComments = (id) => {
-        const box = document.getElementById(`comments-${id}`);
-        const isOpen = box.style.display === 'block';
-        box.style.display = isOpen ? 'none' : 'block';
-        if (!isOpen) loadComments(id);
-    };
-
-    window.loadComments = async (id) => {
-        const list = document.getElementById(`commentsList-${id}`);
-        const snap = await getDoc(doc(db, "News", id));
-        const comments = snap.data().comments || [];
-        list.innerHTML = comments.map(c => `
-            <div style="font-size:13px; margin-bottom:8px; background:#eee; padding:8px; border-radius:10px;">
-                <b>${c.name}:</b> ${c.text}
-            </div>
-        `).join('');
-    };
-
-    window.addComment = async (id, text) => {
-        if (!text.trim()) return;
-        const input = document.getElementById(`input-${id}`);
-        await updateDoc(doc(db, "News", id), {
-            comments: arrayUnion({
-                name: userData?.fullName || userData?.name || "عضو",
-                text: text,
-                date: Date.now()
-            })
-        });
-        input.value = "";
-        loadComments(id);
-    };
-
-    window.doLike = async (id, liked) => {
-        await updateDoc(doc(db, "News", id), {
-            likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID)
-        });
-    };
-
-    window.changeVisibility = async (id, current) => {
-        await updateDoc(doc(db, "News", id), { visible: !current });
-    };
-
-    window.deleteNews = async (id) => {
-        if (confirm("⚠️ هل أنت متأكد من حذف الخبر نهائياً؟")) {
-            await deleteDoc(doc(db, "News", id));
-        }
-    };
-
-    window.handleLogout = () => {
-        if (confirm("هل تريد تسجيل الخروج؟")) auth.signOut().then(() => location.reload());
-    };
-
-    window.zoomImg = (src) => {
-        const v = document.createElement('div');
-        v.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;";
-        v.innerHTML = `<img src="${src}" style="max-width:100%; border-radius:10px;">`;
-        v.onclick = () => v.remove();
-        document.body.appendChild(v);
-    };
-
-    // إغلاق القوائم عند النقر في الخارج
-    window.onclick = () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
 </script>
-<script src="onesignal-handler.js"></script>
-    <script>
-    let deferredPrompt;
-    const installBtn = document.getElementById('installApp');
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        // منع المتصفح من إظهار النافذة التلقائية
-        e.preventDefault();
-        // حفظ الحدث لاستخدامه لاحقاً
-        deferredPrompt = e;
-        // إظهار الزر للمستخدم
-        installBtn.style.display = 'block';
-    });
-
-    installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            // إظهار نافذة التثبيت
-            deferredPrompt.prompt();
-            // انتظار رد المستخدم
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt');
-            }
-            deferredPrompt = null;
-            installBtn.style.display = 'none';
-        }
-    });
-
-    // إخفاء الزر بعد التثبيت بنجاح
-    window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
-        alert('تم تثبيت تطبيق منصة العائلة بنجاح!');
-    });
-</script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
