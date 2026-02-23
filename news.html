@@ -77,6 +77,29 @@
     </nav>
 
 <script type="module">
+import { auth, db } from './config.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        // 1. جلب رتبة المستخدم
+        const userDoc = await getDoc(doc(db, "Users", user.uid));
+        const userData = userDoc.data();
+        
+        // 2. جلب إعدادات التوجيه من المدير
+        const accessDoc = await getDoc(doc(db, "Settings", "AccessControl"));
+        const accessData = accessDoc.data();
+
+        if (userData.role === 'user' && accessData.forcedRedirect === "true") {
+            // إذا كان المستخدم عادي والتوجيه مفعل، نرسله للصفحة المحددة
+            if (!window.location.href.includes(accessData.targetPage)) {
+                window.location.href = accessData.targetPage;
+            }
+        }
+    }
+});
+
+    
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -230,3 +253,4 @@
 </script>
 </body>
 </html>
+
