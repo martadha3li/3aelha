@@ -322,8 +322,42 @@
     window.onclick = () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
 </script>
 <script src="onesignal-handler.js"></script>
+    <script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installApp');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // منع المتصفح من إظهار النافذة التلقائية
+        e.preventDefault();
+        // حفظ الحدث لاستخدامه لاحقاً
+        deferredPrompt = e;
+        // إظهار الزر للمستخدم
+        installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // إظهار نافذة التثبيت
+            deferredPrompt.prompt();
+            // انتظار رد المستخدم
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        }
+    });
+
+    // إخفاء الزر بعد التثبيت بنجاح
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+        alert('تم تثبيت تطبيق منصة العائلة بنجاح!');
+    });
+</script>
 </body>
 </html>
+
 
 
 
