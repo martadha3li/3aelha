@@ -3,76 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مواقيت الصلاة | العائلة</title>
+    <title>مواقيت الصلاة | الأحساء والمناطق</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
-        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; text-align: center; }
         
-        .date-card { background: var(--ios-blue); color: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,122,255,0.3); }
-        .hijri-date { font-size: 22px; font-weight: bold; }
-        .event-text { background: rgba(255,255,255,0.2); margin-top: 10px; padding: 10px; border-radius: 10px; font-size: 14px; }
+        /* كرت العداد التنازلي */
+        .countdown-card { background: #1c1c1e; color: #fff; padding: 20px; border-radius: 25px; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .next-label { font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
+        .timer-value { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; color: #34C759; }
 
-        .time-row { 
-            background: var(--card-bg); display: flex; justify-content: space-between; align-items: center;
-            padding: 18px 25px; margin-bottom: 12px; border-radius: 15px; border: 0.5px solid #E5E5EA;
-        }
-        .time-label { font-weight: bold; color: #444; }
-        .time-value { font-size: 20px; font-weight: 800; color: var(--ios-blue); }
-        .next-prayer { border: 2px solid var(--ios-blue); background: #E5F1FF; }
+        /* كرت التاريخ والمناسبة */
+        .date-card { background: linear-gradient(135deg, #007AFF, #0055AA); color: white; padding: 20px; border-radius: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,122,255,0.3); }
+        .hijri-date { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .event-text { background: rgba(255,255,255,0.15); padding: 10px; border-radius: 12px; font-size: 14px; margin-top: 10px; border: 1px dashed rgba(255,255,255,0.3); }
+
+        /* تصميم الجدول المطور */
+        .times-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
+        .times-table th { color: var(--ios-blue); font-size: 13px; padding: 10px; }
+        .time-row-card { background: var(--card-bg); border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: 0.3s; }
+        .time-row-card td { padding: 15px 5px; border-bottom: 0.5px solid #f2f2f7; }
+        
+        .prayer-name { font-weight: bold; color: #444; text-align: right; padding-right: 15px !important; border-radius: 15px 0 0 15px; }
+        .ahsa-time { color: var(--ios-blue); font-weight: 800; font-size: 17px; background: #E5F1FF; }
+        .other-time { color: #666; font-size: 14px; font-weight: 600; }
+        
+        .active-prayer { border: 2px solid #34C759 !important; transform: scale(1.02); }
     </style>
 </head>
 <body>
 
+    <div class="countdown-card" id="countdownBox" style="display: none;">
+        <div class="next-label" id="nextPrayerLabel">جاري تحديد الصلاة القادمة...</div>
+        <div class="timer-value" id="timer">00:00:00</div>
+    </div>
+
     <div class="date-card">
-        <div id="hijriDate" class="hijri-date">جاري التحميل...</div>
-        <div id="gregorianDate" style="opacity: 0.8; font-size: 14px;"></div>
+        <div id="hijriDate" class="hijri-date">جاري تحميل التاريخ...</div>
+        <div id="gregorianDate" style="opacity: 0.9; font-size: 13px;"></div>
         <div id="todayEvent" class="event-text">لا توجد مناسبات مسجلة اليوم</div>
     </div>
 
-    <div id="timesContainer">
-        <div class="time-row"><span class="time-label">الإمساك</span> <span id="imsak" class="time-value">--:--</span></div>
-        <div class="time-row"><span class="time-label">الفجر</span> <span id="fajr" class="time-value">--:--</span></div>
-        <div class="time-row"><span class="time-label">الشروق</span> <span id="shuruq" class="time-value">--:--</span></div>
-        <div class="time-row"><span class="time-label">الظهر</span> <span id="dhuhr" class="time-value">--:--</span></div>
-        <div class="time-row"><span class="time-label">المغرب</span> <span id="maghrib" class="time-value">--:--</span></div>
-    </div>
+    <table class="times-table">
+        <thead>
+            <tr>
+                <th style="text-align: right; padding-right: 15px;">الفريضة</th>
+                <th>الأحساء</th>
+                <th>الدمام</th>
+                <th>الرياض</th>
+            </tr>
+        </thead>
+        <tbody id="prayerTableBody"></tbody>
+    </table>
 
-    <button onclick="location.href='news.html'" style="margin-top:20px; border:none; background:none; color:var(--ios-blue); font-weight:bold; cursor:pointer;">🏠 العودة للرئيسية</button>
+    <button onclick="location.href='news.html'" style="margin-top:30px; border:none; background:none; color:var(--ios-blue); font-weight:bold; cursor:pointer; font-size: 16px;">🏠 العودة للرئيسية</button>
 
 <script type="module">
     import { db } from './config.js';
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // جلب التاريخ الهجري (عن طريق مكتبة بسيطة أو Intl)
+    const prayers = [
+        { id: 'Imsak', name: 'الإمساك', base: '04:35', key: 'offsetImsak' },
+        { id: 'Fajr', name: 'الفجر', base: '04:45', key: 'offsetFajr' },
+        { id: 'Shuruq', name: 'الشروق', base: '06:05', key: 'offsetShuruq' },
+        { id: 'Dhuhr', name: 'الظهر', base: '12:05', key: 'offsetDhuhr' },
+        { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
+    ];
+
+    let prayerTimesObjects = [];
+
+    // عرض التاريخ
     const today = new Date();
-    const options = { day: 'numeric', month: 'long', year: 'numeric', calendar: 'islamic-uma' };
-    document.getElementById('hijriDate').innerText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', options).format(today);
-    document.getElementById('gregorianDate').innerText = today.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const hijriOptions = { day: 'numeric', month: 'long', year: 'numeric', calendar: 'islamic-uma' };
+    document.getElementById('hijriDate').innerText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', hijriOptions).format(today);
+    document.getElementById('gregorianDate').innerText = today.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
 
-    // الاستماع لإعدادات المواقيت والمناسبة
     onSnapshot(doc(db, "Settings", "PrayerConfig"), (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            
-            // عرض المناسبة
-            if(data.event) document.getElementById('todayEvent').innerText = data.event;
+        const config = docSnap.exists() ? docSnap.data() : {};
+        if(config.event) document.getElementById('todayEvent').innerText = config.event;
 
-            // عرض التوقيت مع الإزاحة (Offset)
-            displayTime('imsak', "04:30", data.offsetImsak || 0);
-            displayTime('fajr', "04:40", data.offsetFajr || 0);
-            displayTime('shuruq', "06:10", data.offsetShuruq || 0);
-            displayTime('dhuhr', "12:15", data.offsetDhuhr || 0);
-            displayTime('maghrib', "18:20", data.offsetMaghrib || 0);
-        }
+        const tbody = document.getElementById('prayerTableBody');
+        tbody.innerHTML = "";
+        prayerTimesObjects = [];
+
+        prayers.forEach(p => {
+            const offset = config[p.key] || 0;
+            const ahsaDate = getPrayerDate(p.base, offset);
+            
+            prayerTimesObjects.push({ name: p.name, date: ahsaDate });
+
+            const row = document.createElement('tr');
+            row.className = 'time-row-card';
+            row.id = `row-${p.id}`;
+            row.innerHTML = `
+                <td class="prayer-name">${p.name}</td>
+                <td class="ahsa-time">${formatTime(ahsaDate)}</td>
+                <td class="other-time">${formatTime(getPrayerDate(p.base, offset - 3))}</td>
+                <td class="other-time">${formatTime(getPrayerDate(p.base, offset + 12))}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        updateCountdown();
     });
 
-    function displayTime(id, baseTime, offset) {
-        let [hours, minutes] = baseTime.split(':').map(Number);
-        let date = new Date();
-        date.setHours(hours, minutes + offset);
-        
-        let finalTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
-        document.getElementById(id).innerText = finalTime;
+    function getPrayerDate(base, offset) {
+        let [hrs, mins] = base.split(':').map(Number);
+        let d = new Date();
+        d.setHours(hrs, mins + offset, 0, 0);
+        return d;
+    }
+
+    function formatTime(date) {
+        return date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true }).replace("ص", "أ").replace("م", "م");
+    }
+
+    function updateCountdown() {
+        setInterval(() => {
+            const now = new Date();
+            let next = prayerTimesObjects.find(p => p.date > now);
+            
+            // إذا انتهت صلوات اليوم، ابحث عن أول صلاة غداً (الإمساك)
+            if (!next) {
+                const tomorrowImsak = new Date(prayerTimesObjects[0].date);
+                tomorrowImsak.setDate(tomorrowImsak.getDate() + 1);
+                next = { name: prayerTimesObjects[0].name, date: tomorrowImsak };
+            }
+
+            document.getElementById('countdownBox').style.display = 'block';
+            document.getElementById('nextPrayerLabel').innerText = `المتبقي لـ ${next.name} (الأحساء):`;
+            
+            const diff = next.date - now;
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+
+            document.getElementById('timer').innerText = 
+                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            
+            // تغيير اللون للأحمر إذا بقي أقل من 15 دقيقة
+            document.getElementById('timer').style.color = (diff < 900000) ? "#FF3B30" : "#34C759";
+        }, 1000);
     }
 </script>
 </body>
