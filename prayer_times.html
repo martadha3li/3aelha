@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مواقيت الصلاة | العائلة</title>
+    <style>
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
+        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        
+        .date-card { background: var(--ios-blue); color: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,122,255,0.3); }
+        .hijri-date { font-size: 22px; font-weight: bold; }
+        .event-text { background: rgba(255,255,255,0.2); margin-top: 10px; padding: 10px; border-radius: 10px; font-size: 14px; }
+
+        .time-row { 
+            background: var(--card-bg); display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 25px; margin-bottom: 12px; border-radius: 15px; border: 0.5px solid #E5E5EA;
+        }
+        .time-label { font-weight: bold; color: #444; }
+        .time-value { font-size: 20px; font-weight: 800; color: var(--ios-blue); }
+        .next-prayer { border: 2px solid var(--ios-blue); background: #E5F1FF; }
+    </style>
+</head>
+<body>
+
+    <div class="date-card">
+        <div id="hijriDate" class="hijri-date">جاري التحميل...</div>
+        <div id="gregorianDate" style="opacity: 0.8; font-size: 14px;"></div>
+        <div id="todayEvent" class="event-text">لا توجد مناسبات مسجلة اليوم</div>
+    </div>
+
+    <div id="timesContainer">
+        <div class="time-row"><span class="time-label">الإمساك</span> <span id="imsak" class="time-value">--:--</span></div>
+        <div class="time-row"><span class="time-label">الفجر</span> <span id="fajr" class="time-value">--:--</span></div>
+        <div class="time-row"><span class="time-label">الشروق</span> <span id="shuruq" class="time-value">--:--</span></div>
+        <div class="time-row"><span class="time-label">الظهر</span> <span id="dhuhr" class="time-value">--:--</span></div>
+        <div class="time-row"><span class="time-label">المغرب</span> <span id="maghrib" class="time-value">--:--</span></div>
+    </div>
+
+    <button onclick="location.href='news.html'" style="margin-top:20px; border:none; background:none; color:var(--ios-blue); font-weight:bold; cursor:pointer;">🏠 العودة للرئيسية</button>
+
+<script type="module">
+    import { db } from './config.js';
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // جلب التاريخ الهجري (عن طريق مكتبة بسيطة أو Intl)
+    const today = new Date();
+    const options = { day: 'numeric', month: 'long', year: 'numeric', calendar: 'islamic-uma' };
+    document.getElementById('hijriDate').innerText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', options).format(today);
+    document.getElementById('gregorianDate').innerText = today.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // الاستماع لإعدادات المواقيت والمناسبة
+    onSnapshot(doc(db, "Settings", "PrayerConfig"), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            // عرض المناسبة
+            if(data.event) document.getElementById('todayEvent').innerText = data.event;
+
+            // عرض التوقيت مع الإزاحة (Offset)
+            displayTime('imsak', "04:30", data.offsetImsak || 0);
+            displayTime('fajr', "04:40", data.offsetFajr || 0);
+            displayTime('shuruq', "06:10", data.offsetShuruq || 0);
+            displayTime('dhuhr', "12:15", data.offsetDhuhr || 0);
+            displayTime('maghrib', "18:20", data.offsetMaghrib || 0);
+        }
+    });
+
+    function displayTime(id, baseTime, offset) {
+        let [hours, minutes] = baseTime.split(':').map(Number);
+        let date = new Date();
+        date.setHours(hours, minutes + offset);
+        
+        let finalTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', hour12: true });
+        document.getElementById(id).innerText = finalTime;
+    }
+</script>
+</body>
+</html>
