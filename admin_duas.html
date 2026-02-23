@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الأدعية | لوحة التحكم</title>
+    <style>
+        :root {
+            --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF;
+            --ios-green: #34C759; --ios-red: #FF3B30;
+        }
+        body { 
+            background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; padding: 20px; direction: rtl;
+        }
+        .section {
+            background: var(--card-bg); padding: 20px; border-radius: 20px;
+            margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h2 { font-size: 18px; color: var(--ios-blue); margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        input, textarea, select {
+            width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px;
+            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
+        }
+        
+        button {
+            width: 100%; padding: 15px; border-radius: 12px; border: none;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-add { background: var(--ios-blue); color: white; }
+        .btn-save { background: var(--ios-green); color: white; margin-top: 10px; }
+        
+        .list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px;
+        }
+        .delete-btn { color: var(--ios-red); cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button onclick="location.href='duas.html'" style="width: auto; padding: 8px 15px; background: #ddd; border-radius: 8px;">رجوع</button>
+        <h1 style="font-size: 20px; margin: 0;">⚙️ إعدادات الأدعية</h1>
+    </div>
+
+    <div class="section">
+        <h2>1. إدارة التصنيفات (الأقسام)</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="newCategory" placeholder="اسم التصنيف الجديد (مثال: أدعية الشفاء)">
+            <button class="btn-add" onclick="addCategory()" style="width: 80px;">إضافة</button>
+        </div>
+        <div id="categoriesList" style="margin-top: 15px; max-height: 150px; overflow-y: auto;">
+            </div>
+    </div>
+
+    <div class="section">
+        <h2>2. إضافة دعاء جديد</h2>
+        <label>اختر القسم:</label>
+        <select id="duaCategorySelect">
+            <option value="">-- اختر التصنيف --</option>
+        </select>
+        
+        <input type="text" id="duaTitle" placeholder="عنوان الدعاء (مثال: دعاء يوم الجمعة)">
+        <textarea id="duaText" rows="6" placeholder="اكتب نص الدعاء هنا..."></textarea>
+        
+        <button class="btn-save" onclick="saveDua()">نشر الدعاء الآن ✨</button>
+    </div>
+
+<script type="module">
+    import { db, auth } from './config.js';
+    import { collection, addDoc, onSnapshot, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // التحقق من صلاحية المدير
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userSnap = await getDoc(doc(db, "Users", user.uid));
+            const role = (userSnap.data()?.role || "").toLowerCase();
+            if (!role.includes('admin') && !role.includes('مدير')) {
+                alert("هذه الصفحة للمديرين فقط");
+                location.href = "duas.html";
+            }
+        } else { location.href = "login.html"; }
+    });
+
+    // --- إدارة التصنيفات ---
+    const catListDiv = document.getElementById('categoriesList');
+    const catSelect = document.getElementById('duaCategorySelect');
+
+    onSnapshot(collection(db, "DuaCategories"), (snap) => {
+        catListDiv.innerHTML = "";
+        catSelect.innerHTML = '<option value="">-- اختر التصنيف --</option>';
+        
+        snap.forEach(docSnap => {
+            const cat = docSnap.data();
+            const id = docSnap.id;
+
+            // تحديث القائمة (للحذف)
+            catListDiv.innerHTML += `
+                <div class="list-item">
+                    <span>${cat.name}</span>
+                    <span class="delete-btn" onclick="deleteCategory('${id}')">حذف</span>
+                </div>
+            `;
+
+            // تحديث قائمة الاختيار (لإضافة دعاء)
+            const opt = document.createElement('option');
+            opt.value = cat.name;
+            opt.innerText = cat.name;
+            catSelect.appendChild(opt);
+        });
+    });
+
+    window.addCategory = async () => {
+        const name = document.getElementById('newCategory').value.trim();
+        if(!name) return;
+        await addDoc(collection(db, "DuaCategories"), { name: name });
+        document.getElementById('newCategory').value = "";
+    };
+
+    window.deleteCategory = async (id) => {
+        if(confirm("هل تريد حذف هذا التصنيف؟ لن يتم حذف الأدعية المرتبطة به ولكنها ستختفي من القائمة.")) {
+            await deleteDoc(doc(db, "DuaCategories", id));
+        }
+    };
+
+    // --- إضافة الأدعية ---
+    window.saveDua = async () => {
+        const category = catSelect.value;
+        const title = document.getElementById('duaTitle').value.trim();
+        const text = document.getElementById('duaText').value.trim();
+
+        if(!category || !title || !text) {
+            alert("يرجى ملء جميع الحقول");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "Duas"), {
+                category: category,
+                title: title,
+                text: text,
+                createdAt: Date.now()
+            });
+            alert("تم حفظ الدعاء بنجاح!");
+            document.getElementById('duaTitle').value = "";
+            document.getElementById('duaText').value = "";
+        } catch (e) {
+            alert("حدث خطأ أثناء الحفظ");
+        }
+    };
+</script>
+</body>
+</html>
