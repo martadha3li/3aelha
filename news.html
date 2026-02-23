@@ -8,9 +8,7 @@
        <h1>الأخبار</h1>
     <a id="adminLink" href="add_news.html" class="admin-add-btn">⊕</a>
 </div>
-     <div style="display: flex; align-items: center;">
-        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
-    </div>
+
     <style>
         /* زر تثبيت التطبيق */
 .install-btn {
@@ -147,7 +145,9 @@
         <a href="competitions.html" class="nav-item">🏆</a>
         <a href="profile.html" class="nav-item">👤</a>
     </nav>
-
+     <div style="display: flex; align-items: center;">
+        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
+    </div>
 <script type="module">
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -357,6 +357,7 @@
 </script>
 </body>
 </html>
+
 
 
 
