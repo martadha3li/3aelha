@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title><img src='logo.png'>منصة العائلة | التايم لاين</title>
+    <title>منصة العائلة | التايم لاين</title>
 
 
     <style>
@@ -124,7 +124,10 @@
 <body>
 
     <header class="header">
-        <h1>منصة العائلة</h1>
+       <img src='logo.png'> <h1>منصة العائلة</h1>
+               <div style="display: flex; align-items: center;">
+        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
+    </div>
         <div class="header-btns">
             <div id="adminTools">
                 <div class="icon-btn" onclick="location.href='add_news.html'">⊕</div>
@@ -132,9 +135,7 @@
             </div>
             <div class="logout-btn" onclick="handleLogout()">🚪</div>
         </div>
-          <div style="display: flex; align-items: center;">
-        <button id="installApp" class="install-btn">تثبيت التطبيق 📲</button>
-    </div>
+   
     </header>
 
     <div id="newsFeed"></div>
@@ -355,6 +356,7 @@
 </script>
 </body>
 </html>
+
 
 
 
