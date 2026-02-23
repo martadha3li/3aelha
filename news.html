@@ -68,13 +68,13 @@
     <div id="newsFeed"></div>
 
     <nav class="bottom-bar" id="mainNav">
-        <a href="news.html" class="nav-item active">🏠</a>
-        <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
-        <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
-        <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
-        <a href="profile.html" class="nav-item">👤</a>
-        <a href="prayer_times.html" class="nav-item" id="nav-prayer">🕌</a>
-    </nav>
+    <a href="news.html" class="nav-item active">🏠</a>
+    <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
+    <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
+    <a href="prayer_times.html" class="nav-item" id="nav-prayer">🕌</a>
+    <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
+    <a href="profile.html" class="nav-item">👤</a>
+</nav>
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -105,6 +105,7 @@
                 { id: 'nav-chat', visible: config.showChat },
                 { id: 'nav-duas', visible: config.showDuas },
                 { id: 'nav-comps', visible: config.showComps }
+                { id: 'nav-prayer', visible: config.showPrayer } // ربط الحالة الجديدة
             ];
 
             navItems.forEach(item => {
@@ -231,4 +232,5 @@
 </script>
 </body>
 </html>
+
 
