@@ -3,69 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المواقيت</title>
+    <title>إدارة المواقيت والتقويم</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
         body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; padding: 20px; direction: rtl; }
-        .card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        input[type="number"] { width: 60px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; text-align: center; }
-        input[type="text"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-top: 10px; }
-        button { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .card { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; color: var(--ios-blue); font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        input, select { padding: 10px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
+        input[type="number"] { width: 70px; text-align: center; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-save { background: var(--ios-blue); color: white; }
+        .btn-event { background: #34C759; color: white; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">⚙️ إعدادات المواقيت</h2>
-
-    <div class="card">
-        <h3>مناسبة اليوم</h3>
-        <input type="text" id="eventInput" placeholder="مثال: مولد الإمام علي (ع)">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+        <button onclick="location.href='admin.html'" style="width:auto; padding:8px 15px; background:#ddd; color:333;">رجوع</button>
+        <h2 style="margin:0; font-size:18px;">⚙️ إعدادات المواقيت والتقويم</h2>
     </div>
 
     <div class="card">
-        <h3>تعديل الدقائق (زيادة أو نقصان)</h3>
+        <h3>1. تعديل دقائق الأحساء (الزهراء)</h3>
         <div class="row"><span>الإمساك</span> <input type="number" id="offImsak" value="0"></div>
         <div class="row"><span>الفجر</span> <input type="number" id="offFajr" value="0"></div>
         <div class="row"><span>الشروق</span> <input type="number" id="offShuruq" value="0"></div>
         <div class="row"><span>الظهر</span> <input type="number" id="offDhuhr" value="0"></div>
         <div class="row"><span>المغرب</span> <input type="number" id="offMaghrib" value="0"></div>
+        <button class="btn-save" onclick="saveOffsets()">حفظ فروقات الدقائق ✅</button>
     </div>
 
-    <button onclick="saveSettings()">حفظ التعديلات ✅</button>
+    <div class="card">
+        <h3>2. جدولة مناسبة هجرية (سنوية)</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+            <input type="number" id="hDay" placeholder="يوم" min="1" max="30">
+            <select id="hMonth" style="flex:1;">
+                <option value="1">محرم</option><option value="2">صفر</option>
+                <option value="3">ربيع الأول</option><option value="4">ربيع الثاني</option>
+                <option value="5">جمادى الأولى</option><option value="6">جمادى الآخرة</option>
+                <option value="7">رجب</option><option value="8">شعبان</option>
+                <option value="9">رمضان</option><option value="10">شوال</option>
+                <option value="11">ذو القعدة</option><option value="12">ذو الحجة</option>
+            </select>
+        </div>
+        <input type="text" id="hEventTitle" placeholder="اسم المناسبة..." style="width:100%; box-sizing:border-box;">
+        <button class="btn-event" onclick="saveHijriEvent()">إضافة للتقويم السنوي 🗓️</button>
+    </div>
+
+    <div class="card">
+        <h3>3. مناسبة يدوية (لليوم فقط)</h3>
+        <input type="text" id="manualEvent" placeholder="تظهر في حال عدم وجود مناسبة هجرية" style="width:100%; box-sizing:border-box;">
+        <button class="btn-save" style="margin-top:10px; background:#8E8E93;" onclick="saveManualEvent()">تحديث النص الحالي</button>
+    </div>
 
 <script type="module">
     import { db } from './config.js';
-    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // جلب القيم الحالية
-    async function loadCurrent() {
+    // تحميل البيانات الحالية
+    async function loadData() {
         const snap = await getDoc(doc(db, "Settings", "PrayerConfig"));
-        if (snap.exists()) {
+        if(snap.exists()){
             const d = snap.data();
-            document.getElementById('eventInput').value = d.event || "";
             document.getElementById('offImsak').value = d.offsetImsak || 0;
             document.getElementById('offFajr').value = d.offsetFajr || 0;
             document.getElementById('offShuruq').value = d.offsetShuruq || 0;
             document.getElementById('offDhuhr').value = d.offsetDhuhr || 0;
             document.getElementById('offMaghrib').value = d.offsetMaghrib || 0;
+            document.getElementById('manualEvent').value = d.event || "";
         }
     }
 
-    window.saveSettings = async () => {
+    window.saveOffsets = async () => {
         const data = {
-            event: document.getElementById('eventInput').value,
             offsetImsak: parseInt(document.getElementById('offImsak').value),
             offsetFajr: parseInt(document.getElementById('offFajr').value),
             offsetShuruq: parseInt(document.getElementById('offShuruq').value),
             offsetDhuhr: parseInt(document.getElementById('offDhuhr').value),
             offsetMaghrib: parseInt(document.getElementById('offMaghrib').value),
         };
-        await setDoc(doc(db, "Settings", "PrayerConfig"), data);
-        alert("تم التحديث بنجاح!");
+        await setDoc(doc(db, "Settings", "PrayerConfig"), data, {merge:true});
+        alert("تم حفظ الفروقات");
     };
 
-    loadCurrent();
+    window.saveHijriEvent = async () => {
+        const d = document.getElementById('hDay').value;
+        const m = document.getElementById('hMonth').value;
+        const t = document.getElementById('hEventTitle').value;
+        if(!d || !t) return alert("أكمل البيانات");
+        await setDoc(doc(db, "HijriEvents", `${d}-${m}`), { day:parseInt(d), month:parseInt(m), title:t });
+        alert("تمت الجدولة بنجاح!");
+        document.getElementById('hEventTitle').value = "";
+    };
+
+    window.saveManualEvent = async () => {
+        const t = document.getElementById('manualEvent').value;
+        await updateDoc(doc(db, "Settings", "PrayerConfig"), { event: t });
+        alert("تم تحديث المناسبة اليدوية");
+    };
+
+    loadData();
 </script>
 </body>
 </html>
