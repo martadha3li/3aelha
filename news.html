@@ -68,13 +68,13 @@
     <div id="newsFeed"></div>
 
     <nav class="bottom-bar" id="mainNav">
-    <a href="news.html" class="nav-item active">🏠</a>
-    <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
-    <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
-    <a href="prayer_times.html" class="nav-item" id="nav-prayer">🕌</a>
-    <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
-    <a href="profile.html" class="nav-item">👤</a>
-</nav>
+        <a href="news.html" class="nav-item active">🏠</a>
+        <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
+        <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
+        <a href="prayer_times.html" class="nav-item" id="nav-prayer">🕌</a>
+        <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
+        <a href="profile.html" class="nav-item">👤</a>
+    </nav>
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -93,19 +93,18 @@
                 if (isAdmin) document.getElementById('adminTools').style.display = 'flex';
             }
             loadPosts();
-            listenToNavConfig(); // بدء الاستماع لإعدادات الشريط السفلي
+            listenToNavConfig(); 
         } else { window.location.href = "login.html"; }
     });
 
-    // التحكم الديناميكي في الأيقونات (تختفي للعضو / رمادية للمدير)
     function listenToNavConfig() {
         onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
             const config = docSnap.exists() ? docSnap.data() : {};
             const navItems = [
                 { id: 'nav-chat', visible: config.showChat },
                 { id: 'nav-duas', visible: config.showDuas },
-                { id: 'nav-comps', visible: config.showComps }
-                { id: 'nav-prayer', visible: config.showPrayer } // ربط الحالة الجديدة
+                { id: 'nav-comps', visible: config.showComps },
+                { id: 'nav-prayer', visible: config.showPrayer }
             ];
 
             navItems.forEach(item => {
@@ -184,7 +183,6 @@
         });
     }
 
-    // دوال الأكشن
     window.handlePostView = async (id) => {
         const p = document.getElementById(`text-${id}`);
         p.style.display = p.style.display !== 'block' ? 'block' : 'none';
@@ -232,5 +230,3 @@
 </script>
 </body>
 </html>
-
-
