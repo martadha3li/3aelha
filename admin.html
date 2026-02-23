@@ -88,7 +88,65 @@
     </div>
     <div style="color: #FFCC00; font-weight: bold;">←</div>
 </div>
+<div class="card" style="margin-top: 20px; border: 2px solid #FF9500;">
+    <h3 style="color: #FF9500;">🔒 تحكم وصول الأعضاء (توجيه مباشر)</h3>
+    
+    <div class="row" style="margin-bottom: 15px;">
+        <span>تفعيل التوجيه الإجباري:</span>
+        <select id="redirectToggle" style="width: 100px;">
+            <option value="false">تعطيل</option>
+            <option value="true">تفعيل</option>
+        </select>
+    </div>
 
+    <div class="row" style="margin-bottom: 15px;">
+        <span>الصفحة المسموحة للعضو:</span>
+        <select id="targetPage" style="flex: 1; margin-right: 10px;">
+            <option value="prayer_times.html">مواقيت الصلاة</option>
+            <option value="news.html">أخبار العائلة</option>
+            <option value="gallery.html">المعرض</option>
+            <option value="events.html">المناسبات العامة</option>
+        </select>
+    </div>
+
+    <p style="font-size: 11px; color: #888;">* عند التفعيل، سيتم تحويل أي عضو (غير مدير/محرر) لهذه الصفحة فوراً ومنعه من مغادرتها.</p>
+    
+    <button onclick="saveAccessSettings()" style="background: #FF9500; color: white; width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: bold;">حفظ إعدادات الوصول ✅</button>
+</div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // تحميل الإعدادات الحالية عند فتح الصفحة
+    async function loadAccessSettings() {
+        const snap = await getDoc(doc(db, "Settings", "AccessControl"));
+        if (snap.exists()) {
+            const data = snap.data();
+            document.getElementById('redirectToggle').value = data.forcedRedirect || "false";
+            document.getElementById('targetPage').value = data.targetPage || "prayer_times.html";
+        }
+    }
+
+    // حفظ الإعدادات في Firestore
+    window.saveAccessSettings = async () => {
+        const forcedRedirect = document.getElementById('redirectToggle').value;
+        const targetPage = document.getElementById('targetPage').value;
+
+        try {
+            await setDoc(doc(db, "Settings", "AccessControl"), {
+                forcedRedirect: forcedRedirect,
+                targetPage: targetPage,
+                updatedAt: new Date()
+            });
+            alert("تم تحديث قيود الوصول بنجاح!");
+        } catch (error) {
+            alert("خطأ في الحفظ: " + error.message);
+        }
+    };
+
+    loadAccessSettings();
+</script>
 
         <div class="quick-actions">
             <button onclick="location.href='admin_categories.html'" class="btn-quick" style="background: #5856d6;">
