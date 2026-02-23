@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مواقيت الصلاة | الذكاء الجغرافي</title>
+    <title>مواقيت الصلاة | المحرك الفلكي</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
         body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; text-align: center; }
@@ -12,7 +12,7 @@
         .timer-value { font-size: 32px; font-weight: 900; color: #34C759; font-variant-numeric: tabular-nums; }
 
         .date-card { background: linear-gradient(135deg, #007AFF, #0055AA); color: white; padding: 20px; border-radius: 25px; margin-bottom: 20px; }
-        .event-text { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; font-size: 14px; margin-top: 10px; border: 1px dashed rgba(255,255,255,0.3); line-height: 1.4; }
+        .event-text { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; font-size: 14px; margin-top: 10px; border: 1px dashed rgba(255,255,255,0.3); }
 
         .times-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         .times-table th { color: var(--ios-blue); font-size: 11px; padding: 5px; }
@@ -23,31 +23,28 @@
         .ahsa-time { color: var(--ios-blue); font-weight: 800; background: #E5F1FF; }
         .user-loc-time { color: #5856D6; font-weight: 800; background: #F5F5FF; border: 1px solid #5856D6; border-radius: 10px; }
         .other-time { color: #666; font-size: 12px; }
-
-        .gps-status { font-size: 11px; color: #5856D6; margin-bottom: 10px; display: none; font-weight: bold; }
+        
+        .gps-info { font-size: 10px; color: #8E8E93; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div class="countdown-card" id="countdownBox" style="display: none;">
-        <div id="nextPrayerLabel" style="font-size: 13px; opacity: 0.8;">جاري التحديد...</div>
+        <div id="nextPrayerLabel" style="font-size: 13px; opacity: 0.8;">جاري الحساب الفلكي...</div>
         <div class="timer-value" id="timer">00:00:00</div>
     </div>
 
     <div class="date-card">
         <div id="hijriDate" style="font-size: 19px; font-weight: bold;"></div>
-        <div id="gregorianDate" style="opacity: 0.8; font-size: 12px; margin-top: 4px;"></div>
         <div id="todayEvent" class="event-text">تحميل المناسبات...</div>
     </div>
-
-    <div id="gpsStatus" class="gps-status">📍 تم تحديد موقعك: جاري عرض توقيت منطقتك الحالية</div>
 
     <table class="times-table">
         <thead>
             <tr>
                 <th style="text-align: right; padding-right: 12px;">الفريضة</th>
                 <th>الأحساء</th>
-                <th id="userCityHeader" style="display:none; color:#5856D6;">منطقتك</th>
+                <th id="userCityHeader" style="display:none; color:#5856D6;">موقعك الحالي</th>
                 <th>الدمام</th>
                 <th>الرياض</th>
             </tr>
@@ -55,54 +52,55 @@
         <tbody id="prayerTableBody"></tbody>
     </table>
 
+    <div class="gps-info" id="gpsStatus">📍 يتم الآن حساب المواقيت لموقعك الحالي وفق المعايير الجعفرية.</div>
+
     <button onclick="location.href='news.html'" style="margin-top:25px; border:none; background:none; color:var(--ios-blue); font-weight:bold; cursor:pointer;">🏠 العودة للرئيسية</button>
 
 <script type="module">
+    // استيراد المكتبة الفلكية Adhan.js
+    import adhan from 'https://cdn.jsdelivr.net/npm/adhan@4.4.5/+esm';
     import { db } from './config.js';
-    import { doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const AHSA_LONG = 49.598; 
-    let userOffsetFromAhsa = 0; 
-    let prayerTimesObjects = [];
     let currentConfig = {};
+    let userPrayerTimes = null;
+    let prayerTimesObjects = [];
 
     const prayers = [
-        { id: 'Imsak', name: 'الإمساك', base: '04:35', key: 'offsetImsak' },
-        { id: 'Fajr', name: 'الفجر', base: '04:45', key: 'offsetFajr' },
-        { id: 'Shuruq', name: 'الشروق', base: '06:05', key: 'offsetShuruq' },
-        { id: 'Dhuhr', name: 'الظهر', base: '12:05', key: 'offsetDhuhr' },
-        { id: 'Maghrib', name: 'المغرب', base: '18:15', key: 'offsetMaghrib' }
+        { id: 'imsak', name: 'الإمساك', key: 'offsetImsak', base: '04:35' },
+        { id: 'fajr', name: 'الفجر', key: 'offsetFajr', base: '04:45' },
+        { id: 'sunrise', name: 'الشروق', key: 'offsetShuruq', base: '06:05' },
+        { id: 'dhuhr', name: 'الظهر', key: 'offsetDhuhr', base: '12:05' },
+        { id: 'maghrib', name: 'المغرب', key: 'offsetMaghrib', base: '18:15' }
     ];
 
-    // طلب الموقع
+    // 1. حساب المواقيت الفلكية لموقع العضو (مثل النفس الزكية)
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
-            userOffsetFromAhsa = (AHSA_LONG - pos.coords.longitude) * 4;
-            document.getElementById('gpsStatus').style.display = 'block';
+            const coords = new adhan.Coordinates(pos.coords.latitude, pos.coords.longitude);
+            const params = adhan.CalculationMethod.MoonsightingCommittee();
+            params.fajrAngle = 18.0;   // معيار الشيعة للفجر
+            params.maghribAngle = 4.0; // معيار الشيعة للمغرب (ذهاب الحمرة)
+            
+            userPrayerTimes = new adhan.PrayerTimes(coords, new Date(), params);
             document.getElementById('userCityHeader').style.display = 'table-cell';
             renderTable();
         });
     }
 
-    // عرض التاريخ
+    // 2. التاريخ الهجري والمناسبات
     const today = new Date();
-    const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', {day:'numeric', month:'long', year:'numeric'});
     const hijriNumeric = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', {day:'numeric', month:'numeric'});
-    
-    document.getElementById('hijriDate').innerText = hijriFormatter.format(today);
-    document.getElementById('gregorianDate').innerText = today.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+    const hijriFull = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-uma', {day:'numeric', month:'long', year:'numeric'});
+    document.getElementById('hijriDate').innerText = hijriFull.format(today);
 
-    // البحث عن مناسبة اليوم (المجدولة هجرياً)
     const formattedHDate = hijriNumeric.format(today).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace("/", "-");
     
     onSnapshot(doc(db, "HijriEvents", formattedHDate), (eventSnap) => {
         const display = document.getElementById('todayEvent');
         if (eventSnap.exists()) {
             display.innerHTML = `🌟 مناسبة اليوم: <b>${eventSnap.data().title}</b>`;
-            display.style.background = "rgba(255, 215, 0, 0.25)";
-            display.style.color = "#000";
         } else {
-            // العودة للمناسبة اليدوية إذا لم توجد مجدولة
             onSnapshot(doc(db, "Settings", "PrayerConfig"), (docSnap) => {
                 currentConfig = docSnap.exists() ? docSnap.data() : {};
                 display.innerText = currentConfig.event || "لا توجد مناسبات مسجلة اليوم";
@@ -118,27 +116,36 @@
 
         prayers.forEach(p => {
             const ahsaOffset = currentConfig[p.key] || 0;
-            const ahsaDate = getPrayerDate(p.base, ahsaOffset);
+            const ahsaDate = getAhsaDate(p.base, ahsaOffset);
             prayerTimesObjects.push({ name: p.name, date: ahsaDate });
 
             const row = document.createElement('tr');
             row.className = 'time-row-card';
             
-            let userCell = userOffsetFromAhsa !== 0 ? `<td class="user-loc-time">${formatTime(getPrayerDate(p.base, ahsaOffset + userOffsetFromAhsa))}</td>` : "";
+            // جلب الوقت الفلكي للموقع الحالي
+            let userTimeStr = "";
+            if (userPrayerTimes) {
+                let uDate = userPrayerTimes[p.id];
+                if (p.id === 'imsak') {
+                    // حساب الإمساك (عادة قبل الفجر بـ 10 دقائق في النفس الزكية)
+                    uDate = new Date(userPrayerTimes.fajr.getTime() - 10 * 60000);
+                }
+                userTimeStr = `<td class="user-loc-time">${formatTime(uDate)}</td>`;
+            }
 
             row.innerHTML = `
                 <td class="prayer-name">${p.name}</td>
                 <td class="ahsa-time">${formatTime(ahsaDate)}</td>
-                ${userCell}
-                <td class="other-time">${formatTime(getPrayerDate(p.base, ahsaOffset - 3))}</td>
-                <td class="other-time">${formatTime(getPrayerDate(p.base, ahsaOffset + 12))}</td>
+                ${userTimeStr}
+                <td class="other-time">${formatTime(getAhsaDate(p.base, ahsaOffset - 3))}</td>
+                <td class="other-time">${formatTime(getAhsaDate(p.base, ahsaOffset + 12))}</td>
             `;
             tbody.appendChild(row);
         });
         updateCountdown();
     }
 
-    function getPrayerDate(base, offset) {
+    function getAhsaDate(base, offset) {
         let [hrs, mins] = base.split(':').map(Number);
         let d = new Date(); d.setHours(hrs, mins + offset, 0, 0); return d;
     }
