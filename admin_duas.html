@@ -7,148 +7,212 @@
     <style>
         :root {
             --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF;
-            --ios-green: #34C759; --ios-red: #FF3B30;
+            --ios-green: #34C759; --ios-red: #FF3B30; --ios-gray: #8E8E93;
         }
         body { 
             background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding: 20px; direction: rtl;
+            margin: 0; padding: 20px; direction: rtl; padding-bottom: 50px;
         }
         .section {
             background: var(--card-bg); padding: 20px; border-radius: 20px;
             margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        h2 { font-size: 18px; color: var(--ios-blue); margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h2 { font-size: 17px; color: var(--ios-blue); margin-top: 0; border-bottom: 1px solid #f2f2f7; padding-bottom: 10px; margin-bottom: 15px; }
         
         input, textarea, select {
-            width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px;
-            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px;
+            width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px;
+            border: 1px solid #ddd; box-sizing: border-box; font-size: 14px; outline: none;
         }
+        input:focus { border-color: var(--ios-blue); }
         
         button {
-            width: 100%; padding: 15px; border-radius: 12px; border: none;
-            font-weight: bold; cursor: pointer; transition: 0.2s;
+            width: 100%; padding: 14px; border-radius: 12px; border: none;
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px;
         }
         .btn-add { background: var(--ios-blue); color: white; }
         .btn-save { background: var(--ios-green); color: white; margin-top: 10px; }
+        .btn-cancel { background: #eee; color: #333; margin-top: 5px; display: none; }
         
-        .list-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px;
-        }
-        .delete-btn { color: var(--ios-red); cursor: pointer; font-weight: bold; }
+        /* تنسيق الجدول */
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; min-width: 400px; }
+        th { background: #f8f8f8; padding: 12px; text-align: right; font-size: 13px; color: var(--ios-gray); }
+        td { padding: 12px; border-bottom: 1px solid #f2f2f7; font-size: 14px; vertical-align: middle; }
+        
+        .cat-badge { background: #E5F1FF; color: var(--ios-blue); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .action-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
+        
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f9f9f9; }
     </style>
 </head>
 <body>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <button onclick="location.href='duas.html'" style="width: auto; padding: 8px 15px; background: #ddd; border-radius: 8px;">رجوع</button>
-        <h1 style="font-size: 20px; margin: 0;">⚙️ إعدادات الأدعية</h1>
+        <button onclick="location.href='admin.html'" style="width: auto; padding: 8px 15px; background: #ddd; border-radius: 8px; font-size: 13px;">رجوع للوحة التحكم</button>
+        <h1 style="font-size: 19px; margin: 0;">⚙️ إدارة محتوى الأدعية</h1>
     </div>
 
     <div class="section">
-        <h2>1. إدارة التصنيفات (الأقسام)</h2>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="newCategory" placeholder="اسم التصنيف الجديد (مثال: أدعية الشفاء)">
+        <h2>1. أقسام الأدعية</h2>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="newCategory" placeholder="إضافة قسم جديد...">
             <button class="btn-add" onclick="addCategory()" style="width: 80px;">إضافة</button>
         </div>
-        <div id="categoriesList" style="margin-top: 15px; max-height: 150px; overflow-y: auto;">
-            </div>
+        <div id="categoriesList" style="margin-top: 10px; max-height: 120px; overflow-y: auto; border: 1px solid #f2f2f7; border-radius: 10px;"></div>
     </div>
 
     <div class="section">
-        <h2>2. إضافة دعاء جديد</h2>
-        <label>اختر القسم:</label>
-        <select id="duaCategorySelect">
-            <option value="">-- اختر التصنيف --</option>
-        </select>
+        <h2 id="formTitle">2. إضافة دعاء جديد</h2>
+        <select id="duaCategorySelect"><option value="">-- اختر القسم --</option></select>
+        <input type="text" id="duaTitle" placeholder="عنوان الدعاء...">
+        <textarea id="duaText" rows="5" placeholder="نص الدعاء الكامل..."></textarea>
         
-        <input type="text" id="duaTitle" placeholder="عنوان الدعاء (مثال: دعاء يوم الجمعة)">
-        <textarea id="duaText" rows="6" placeholder="اكتب نص الدعاء هنا..."></textarea>
-        
-        <button class="btn-save" onclick="saveDua()">نشر الدعاء الآن ✨</button>
+        <button id="submitDuaBtn" class="btn-save" onclick="saveDua()">نشر الدعاء ✨</button>
+        <button id="cancelEditBtn" class="btn-cancel" onclick="resetForm()">إلغاء التعديل</button>
+    </div>
+
+    <div class="section">
+        <h2>3. قائمة الأدعية المنشورة</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الدعاء</th>
+                        <th>القسم</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="allDuasList">
+                    <tr><td colspan="3" style="text-align:center; color:gray;">جاري تحميل البيانات...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, addDoc, onSnapshot, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, onSnapshot, doc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // التحقق من صلاحية المدير
+    let editModeId = null;
+
+    // التحقق من الصلاحيات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
-            const role = (userSnap.data()?.role || "").toLowerCase();
+            const role = (userSnap.data()?.role || userSnap.data()?.Role || "").toLowerCase();
             if (!role.includes('admin') && !role.includes('مدير')) {
-                alert("هذه الصفحة للمديرين فقط");
+                alert("للأسف، لا تملك صلاحية دخول هذه الصفحة");
                 location.href = "duas.html";
             }
         } else { location.href = "login.html"; }
     });
 
     // --- إدارة التصنيفات ---
-    const catListDiv = document.getElementById('categoriesList');
-    const catSelect = document.getElementById('duaCategorySelect');
-
     onSnapshot(collection(db, "DuaCategories"), (snap) => {
-        catListDiv.innerHTML = "";
-        catSelect.innerHTML = '<option value="">-- اختر التصنيف --</option>';
+        const listDiv = document.getElementById('categoriesList');
+        const select = document.getElementById('duaCategorySelect');
+        listDiv.innerHTML = "";
+        select.innerHTML = '<option value="">-- اختر القسم --</option>';
         
-        snap.forEach(docSnap => {
-            const cat = docSnap.data();
-            const id = docSnap.id;
-
-            // تحديث القائمة (للحذف)
-            catListDiv.innerHTML += `
+        snap.forEach(d => {
+            const cat = d.data();
+            listDiv.innerHTML += `
                 <div class="list-item">
                     <span>${cat.name}</span>
-                    <span class="delete-btn" onclick="deleteCategory('${id}')">حذف</span>
-                </div>
-            `;
-
-            // تحديث قائمة الاختيار (لإضافة دعاء)
-            const opt = document.createElement('option');
-            opt.value = cat.name;
-            opt.innerText = cat.name;
-            catSelect.appendChild(opt);
+                    <span style="color:red; cursor:pointer; font-size:12px;" onclick="deleteCategory('${d.id}')">حذف</span>
+                </div>`;
+            select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
         });
     });
 
     window.addCategory = async () => {
-        const name = document.getElementById('newCategory').value.trim();
-        if(!name) return;
-        await addDoc(collection(db, "DuaCategories"), { name: name });
-        document.getElementById('newCategory').value = "";
+        const val = document.getElementById('newCategory').value.trim();
+        if(val) {
+            await addDoc(collection(db, "DuaCategories"), { name: val });
+            document.getElementById('newCategory').value = "";
+        }
     };
 
     window.deleteCategory = async (id) => {
-        if(confirm("هل تريد حذف هذا التصنيف؟ لن يتم حذف الأدعية المرتبطة به ولكنها ستختفي من القائمة.")) {
-            await deleteDoc(doc(db, "DuaCategories", id));
+        if(confirm("هل تريد حذف القسم؟ (لن تحذف الأدعية المرتبطة به)")) await deleteDoc(doc(db, "DuaCategories", id));
+    };
+
+    // --- إدارة الأدعية (عرض، حذف، تجهيز تعديل) ---
+    const qDuas = query(collection(db, "Duas"), orderBy("createdAt", "desc"));
+    onSnapshot(qDuas, (snap) => {
+        const list = document.getElementById('allDuasList');
+        list.innerHTML = "";
+        if(snap.empty) list.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا توجد أدعية مضافة</td></tr>';
+        
+        snap.forEach(d => {
+            const dua = d.data();
+            list.innerHTML += `
+                <tr>
+                    <td><b>${dua.title}</b></td>
+                    <td><span class="cat-badge">${dua.category}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="prepareEdit('${d.id}')">✏️</button>
+                        <button class="action-btn" onclick="deleteDua('${d.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+        });
+    });
+
+    window.deleteDua = async (id) => {
+        if(confirm("سيتم حذف الدعاء نهائياً، هل أنت متأكد؟")) await deleteDoc(doc(db, "Duas", id));
+    };
+
+    // تجهيز البيانات للتعديل
+    window.prepareEdit = async (id) => {
+        const snap = await getDoc(doc(db, "Duas", id));
+        if(snap.exists()) {
+            const data = snap.data();
+            document.getElementById('duaCategorySelect').value = data.category;
+            document.getElementById('duaTitle').value = data.title;
+            document.getElementById('duaText').value = data.text;
+            
+            editModeId = id;
+            document.getElementById('formTitle').innerText = "✏️ تعديل الدعاء";
+            document.getElementById('submitDuaBtn').innerText = "تحديث البيانات الآن";
+            document.getElementById('cancelEditBtn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // --- إضافة الأدعية ---
+    window.resetForm = () => {
+        editModeId = null;
+        document.getElementById('duaCategorySelect').value = "";
+        document.getElementById('duaTitle').value = "";
+        document.getElementById('duaText').value = "";
+        document.getElementById('formTitle').innerText = "2. إضافة دعاء جديد";
+        document.getElementById('submitDuaBtn').innerText = "نشر الدعاء الآن ✨";
+        document.getElementById('cancelEditBtn').style.display = "none";
+    };
+
+    // حفظ (إضافة أو تحديث)
     window.saveDua = async () => {
-        const category = catSelect.value;
+        const category = document.getElementById('duaCategorySelect').value;
         const title = document.getElementById('duaTitle').value.trim();
         const text = document.getElementById('duaText').value.trim();
 
-        if(!category || !title || !text) {
-            alert("يرجى ملء جميع الحقول");
-            return;
-        }
+        if(!category || !title || !text) return alert("يرجى إكمال جميع الحقول");
 
         try {
-            await addDoc(collection(db, "Duas"), {
-                category: category,
-                title: title,
-                text: text,
-                createdAt: Date.now()
-            });
-            alert("تم حفظ الدعاء بنجاح!");
-            document.getElementById('duaTitle').value = "";
-            document.getElementById('duaText').value = "";
-        } catch (e) {
-            alert("حدث خطأ أثناء الحفظ");
-        }
+            if(editModeId) {
+                // تحديث وثيقة موجودة
+                await updateDoc(doc(db, "Duas", editModeId), {
+                    category, title, text, updatedAt: Date.now()
+                });
+                alert("تم تحديث الدعاء بنجاح");
+            } else {
+                // إضافة وثيقة جديدة
+                await addDoc(collection(db, "Duas"), {
+                    category, title, text, createdAt: Date.now()
+                });
+                alert("تم النشر بنجاح");
+            }
+            resetForm();
+        } catch (e) { alert("خطأ في الاتصال بقاعدة البيانات"); }
     };
 </script>
 </body>
