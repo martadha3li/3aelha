@@ -18,7 +18,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding-bottom: 110px; /* مساحة إضافية للشريط العائم */
+            padding-bottom: 110px;
             direction: rtl;
         }
 
@@ -50,8 +50,8 @@
             color: #1c1c1e;
         }
 
-        /* قائمة الأخبار */
-        .news-container { padding: 15px; }
+        /* حاوية الأخبار */
+        .news-container { padding: 15px; min-height: 200px; }
         
         .news-card {
             background: var(--card-bg);
@@ -62,11 +62,12 @@
             margin-bottom: 15px;
             box-shadow: var(--shadow);
             cursor: pointer;
+            border: 1px solid transparent;
         }
 
         .news-img {
-            width: 100px;
-            height: 100px;
+            width: 90px;
+            height: 90px;
             border-radius: 15px;
             object-fit: cover;
             background: #eee;
@@ -83,13 +84,14 @@
             font-size: 15px;
             font-weight: 800;
             margin: 0;
+            color: var(--text-main);
             line-height: 1.4;
         }
 
         .news-stats { display: flex; gap: 8px; font-size: 11px; color: var(--text-sub); }
-        .stat { background: #F2F2F7; padding: 3px 7px; border-radius: 6px; }
+        .stat { background: #F2F2F7; padding: 4px 8px; border-radius: 8px; }
 
-        /* الشريط السفلي العائم والمحسّن */
+        /* الشريط السفلي العائم */
         .bottom-nav-wrapper {
             position: fixed;
             bottom: 25px;
@@ -101,17 +103,16 @@
         }
 
         .bottom-nav {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(15px);
             display: flex;
             justify-content: space-around;
             align-items: center;
             width: 100%;
             max-width: 500px;
-            height: 68px;
-            border-radius: 22px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            border: 1px solid rgba(255,255,255,0.4);
+            height: 65px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
 
         .nav-item {
@@ -125,20 +126,20 @@
 
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 22px; }
-        .nav-label { font-size: 10px; font-weight: bold; margin-top: 3px; }
+        .nav-label { font-size: 9px; font-weight: bold; margin-top: 2px; }
 
-        /* إخفاء العناصر برمجياً */
         .hidden { display: none !important; }
 
-        /* مودال التعليقات والخبر */
+        /* نافذة الخبر */
         .modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             z-index: 4000;
             align-items: flex-end;
             justify-content: center;
+            backdrop-filter: blur(5px);
         }
 
         .modal-content {
@@ -146,10 +147,12 @@
             width: 100%;
             max-width: 500px;
             border-radius: 30px 30px 0 0;
-            padding: 20px;
-            max-height: 80vh;
+            padding: 25px;
+            max-height: 85vh;
             overflow-y: auto;
+            animation: slideUp 0.3s ease;
         }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -159,39 +162,32 @@
             <a href="add_news.html" class="action-icon">➕</a>
             <a href="admin.html" class="action-icon">⚙️</a>
         </div>
-        <img src="logo.png" style="height: 32px;">
+        <img src="logo.png" style="height: 35px;">
         <div class="header-actions">
             <div class="action-icon" onclick="auth.signOut().then(()=>location.href='index.html')">🚪</div>
         </div>
     </header>
 
-    <main class="news-container" id="newsFeed"></main>
+    <main class="news-container" id="newsFeed">
+        <p style="text-align:center; padding:20px; color:#999;">جاري تحميل الأخبار...</p>
+    </main>
 
     <div class="bottom-nav-wrapper">
         <nav class="bottom-nav">
             <a href="news.html" class="nav-item active">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-label">الرئيسية</span>
+                <span class="nav-icon">🏠</span><span class="nav-label">الرئيسية</span>
             </a>
-            
             <a href="duas.html" id="nav-duas" class="nav-item">
-                <span class="nav-icon">📖</span>
-                <span class="nav-label">الأدعية</span>
+                <span class="nav-icon">📖</span><span class="nav-label">الأدعية</span>
             </a>
-
             <a href="chat.html" id="nav-chat" class="nav-item">
-                <span class="nav-icon">💬</span>
-                <span class="nav-label">الدردشة</span>
+                <span class="nav-icon">💬</span><span class="nav-label">الدردشة</span>
             </a>
-
             <a href="prayer_times.html" id="nav-prayer" class="nav-item">
-                <span class="nav-icon">🕌</span>
-                <span class="nav-label">المواقيت</span>
+                <span class="nav-icon">🕌</span><span class="nav-label">المواقيت</span>
             </a>
-
             <a href="profile.html" class="nav-item">
-                <span class="nav-icon">👤</span>
-                <span class="nav-label">حسابي</span>
+                <span class="nav-icon">👤</span><span class="nav-label">حسابي</span>
             </a>
         </nav>
     </div>
@@ -202,32 +198,41 @@
 
     <script type="module">
         import { db, auth } from './config.js';
-        import { collection, onSnapshot, query, orderBy, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 1. التحكم في ظهور الأيقونات (إعدادات المدير)
-        onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                // إذا كانت القيمة false نخفي العنصر، وإذا كانت true أو غير موجودة نظهره
-                document.getElementById('nav-chat').classList.toggle('hidden', data.showChat === false);
-                document.getElementById('nav-duas').classList.toggle('hidden', data.showDuas === false);
-                document.getElementById('nav-prayer').classList.toggle('hidden', data.showPrayer === false);
+        // 1. التحكم في الأيقونات بناءً على إعدادات المدير
+        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if(document.getElementById('nav-chat')) document.getElementById('nav-chat').classList.toggle('hidden', data.showChat === false);
+                if(document.getElementById('nav-duas')) document.getElementById('nav-duas').classList.toggle('hidden', data.showDuas === false);
+                if(document.getElementById('nav-prayer')) document.getElementById('nav-prayer').classList.toggle('hidden', data.showPrayer === false);
             }
         });
 
-        // 2. جلب الأخبار
-        onSnapshot(query(collection(db, "Posts"), orderBy("timestamp", "desc")), (snap) => {
+        // 2. جلب الأخبار (تم تبسيط الاستعلام لضمان العمل)
+        const postsRef = collection(db, "Posts");
+        const q = query(postsRef, orderBy("timestamp", "desc"));
+
+        onSnapshot(q, (snap) => {
             const feed = document.getElementById('newsFeed');
             feed.innerHTML = "";
-            snap.forEach(postDoc => {
+            
+            if (snap.empty) {
+                feed.innerHTML = "<p style='text-align:center; padding:50px; color:#888;'>لا توجد أخبار منشورة حالياً</p>";
+                return;
+            }
+
+            snap.forEach((postDoc) => {
                 const d = postDoc.data();
                 const card = document.createElement('div');
                 card.className = 'news-card';
                 card.onclick = () => openPost(postDoc.id, d);
+                
                 card.innerHTML = `
-                    <img src="${d.imageUrl || 'placeholder.jpg'}" class="news-img">
+                    <img src="${d.imageUrl || 'https://via.placeholder.com/100'}" class="news-img">
                     <div class="news-info">
-                        <h2 class="news-title">${d.title}</h2>
+                        <h2 class="news-title">${d.title || 'بدون عنوان'}</h2>
                         <div class="news-stats">
                             <span class="stat">❤️ ${d.likes || 0}</span>
                             <span class="stat">💬 ${d.commentsCount || 0}</span>
@@ -237,21 +242,25 @@
                 `;
                 feed.appendChild(card);
             });
+        }, (error) => {
+            console.error("Error fetching posts:", error);
+            document.getElementById('newsFeed').innerHTML = "<p style='text-align:center; color:red;'>خطأ في تحميل البيانات. تأكد من إعدادات Firestore.</p>";
         });
 
-        // 3. فتح الخبر
+        // 3. فتح تفاصيل الخبر
         window.openPost = (id, d) => {
             updateDoc(doc(db, "Posts", id), { views: increment(1) });
             const modal = document.getElementById('postModal');
             document.getElementById('postModalContent').innerHTML = `
-                <img src="${d.imageUrl}" style="width:100%; border-radius:15px; margin-bottom:15px;">
-                <h2>${d.title}</h2>
-                <p style="line-height:1.6; color:#333;">${d.content}</p>
-                <button onclick="location.href='comments.html?id=${id}'" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:bold;">فتح التعليقات 💬</button>
+                <img src="${d.imageUrl}" style="width:100%; border-radius:15px; margin-bottom:15px; max-height:250px; object-fit:cover;">
+                <h2 style="margin-top:0;">${d.title}</h2>
+                <p style="line-height:1.6; color:#444; white-space:pre-wrap;">${d.content}</p>
+                <button onclick="location.href='comments.html?id=${id}'" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:15px; font-weight:bold; cursor:pointer; margin-top:10px;">
+                    انقر لعرض التعليقات 💬
+                </button>
             `;
             modal.style.display = 'flex';
         };
-
     </script>
 </body>
 </html>
