@@ -4,28 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>منصة العائلة | التايم لاين</title>
-    <link rel="manifest" href="manifest.json">
     <style>
         :root {
-            --ios-blue: #007AFF; 
-            --ios-red: #FF3B30; 
-            --ios-bg: #F2F2F7;
-            --card-bg: #FFFFFF; 
-            --text-main: #1c1c1e; 
-            --text-sec: #8E8E93;
+            --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-bg: #F2F2F7;
+            --card-bg: #FFFFFF; --text-main: #1c1c1e; --text-sec: #8E8E93;
             --shadow: 0 8px 20px rgba(0,0,0,0.08);
+            --gold: #D4AF37; --death-gray: #4a4a4a;
         }
 
         body { 
-            background-color: var(--ios-bg); 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; 
-            padding-top: 80px; 
-            padding-bottom: 100px; 
-            direction: rtl;
+            background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; padding-top: 80px; padding-bottom: 100px; direction: rtl;
         }
 
-        /* الهيدر المحسن */
+        /* الهيدر */
         .header { 
             position: fixed; top: 0; width: 100%; height: 70px; 
             background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); 
@@ -34,76 +26,69 @@
         }
 
         .header-btns { display: flex; align-items: center; gap: 12px; }
-        .action-circle {
-            width: 40px; height: 40px; background: #f0f0f5; 
-            border-radius: 12px; display: flex; align-items: center; 
-            justify-content: center; cursor: pointer; font-size: 20px;
-        }
+        .action-circle { width: 40px; height: 40px; background: #f0f0f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
 
-        /* تصميم الكروت العرضية */
+        /* منطقة الإعلانات المثبتة (Pinned Area) */
+        #pinnedArea { padding: 0 15px; margin-bottom: 10px; }
+        
+        /* كرت الزواج المثبت */
+        .pin-card-wedding {
+            background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold);
+            border-radius: 15px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(212,175,55,0.1);
+        }
+        .pin-card-wedding h4 { margin: 0; color: #b8860b; font-size: 14px; }
+        .pin-card-wedding p { margin: 0; font-size: 11px; color: #8b4513; }
+
+        /* كرت الوفاة المثبت */
+        .pin-card-death {
+            background: #f0f0f0; border-right: 5px solid var(--death-gray);
+            border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px; cursor: pointer;
+        }
+        .pin-card-death h4 { margin: 0; color: #000; font-size: 14px; font-weight: 900; }
+        .pin-card-death p { margin: 0; font-size: 11px; color: #555; }
+
+        /* كرت الخبر العادي (أفقي كما طلبت) */
         .post-card { 
             background: var(--card-bg); margin: 12px 15px; border-radius: 20px; 
             display: flex; padding: 12px; gap: 15px; box-shadow: var(--shadow);
             position: relative; border: .5px solid #E5E5EA; transition: 0.2s;
         }
-        .post-card:active { transform: scale(0.98); }
-        .post-card.disabled { opacity: 0.5; filter: grayscale(1); border: 1px dashed var(--ios-red); }
-
-        .post-image-container { width: 100px; height: 100px; flex-shrink: 0; }
+        .post-image-container { width: 90px; height: 90px; flex-shrink: 0; }
         .post-image { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; background: #eee; }
-
         .post-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .post-title { margin: 0; font-size: 16px; font-weight: 800; color: var(--text-main); line-height: 1.3; }
-        
-        .post-meta { display: flex; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--text-sec); }
-        .meta-item { display: flex; align-items: center; gap: 4px; background: #f5f5f7; padding: 4px 8px; border-radius: 8px; }
+        .post-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--text-main); }
+        .post-meta { display: flex; gap: 10px; margin-top: 5px; font-size: 11px; color: var(--text-sec); }
+        .meta-item { background: #f5f5f7; padding: 3px 7px; border-radius: 6px; }
 
-        /* القائمة المنسدلة للخيارات */
-        .options-btn { position: absolute; left: 0; top: 0; color: #ccc; font-size: 20px; cursor: pointer; padding: 5px; }
+        /* القائمة المنسدلة */
+        .options-btn { position: absolute; left: 0; top: 0; color: #ccc; font-size: 20px; cursor: pointer; }
         .dropdown { 
             position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,.15); display: none; flex-direction: column; 
-            z-index: 1000; min-width: 130px; border: 1px solid #eee; overflow: hidden; 
+            box-shadow: 0 8px 25px rgba(0,0,0,.15); display: none; flex-direction: column; z-index: 1000; 
         }
-        .dropdown button { padding: 12px; border: none; background: none; text-align: right; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f9f9f9; width: 100%; font-weight: 600; }
+        .dropdown button { padding: 10px; border: none; background: none; text-align: right; cursor: pointer; font-size: 12px; border-bottom: 1px solid #f2f2f2; }
 
-        /* النوافذ المنسدلة (Modals) */
-        .modal {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
-            z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px);
-        }
-        .modal-content {
-            background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0;
-            padding: 25px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out;
-        }
+        /* المودال */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* التعليقات المطورة */
-        .comment-item { display: flex; gap: 12px; margin-bottom: 15px; padding: 10px; background: #f8f8f8; border-radius: 15px; }
-        .comment-avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--ios-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-        .comment-body { flex: 1; }
-        .comment-user { display: block; font-weight: 800; font-size: 13px; color: var(--ios-blue); margin-bottom: 2px; cursor: pointer; }
-        .comment-text { font-size: 14px; color: #333; margin: 0; }
-
-        /* الشريط السفلي العائم والمطور */
+        /* الناف بار العائم */
         .nav-wrapper { position: fixed; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: center; z-index: 5000; }
-        .bottom-bar { 
-            width: 100%; max-width: 450px; height: 65px; background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; 
-            border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.3);
-        }
-        .nav-item { font-size: 22px; text-decoration: none; color: #8E8E93; transition: 0.3s; padding: 10px; }
-        .nav-item.active { color: var(--ios-blue); transform: translateY(-5px); }
-
+        .bottom-bar { width: 100%; max-width: 450px; height: 65px; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .nav-item { font-size: 22px; text-decoration: none; color: #8E8E93; }
+        .nav-item.active { color: var(--ios-blue); }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <header class="header">
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
             <img src="logo.png" style="height: 38px; border-radius: 8px;">
-            <button id="installApp" class="install-btn">تثبيت 📲</button>
+            <h1 style="font-size: 18px; margin: 0;">2026</h1>
         </div>
         <div class="header-btns">
             <div id="adminTools" style="display:none; align-items: center; gap: 10px;">
@@ -114,21 +99,12 @@
         </div>
     </header>
 
+    <div id="pinnedArea"></div>
+
     <div id="newsFeed"></div>
 
     <div id="postModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
         <div class="modal-content" id="modalBody"></div>
-    </div>
-
-    <div id="commentModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="modal-content">
-            <h3 style="text-align: center; margin-top: 0;">التعليقات 💬</h3>
-            <div id="modalCommentsList"></div>
-            <div style="display:flex; gap:10px; margin-top:20px; background: #fff; position: sticky; bottom: 0; padding: 10px 0;">
-                <input type="text" id="modalCommentInput" style="flex:1; padding:12px; border-radius:20px; border:1px solid #ddd; outline: none;" placeholder="أضف تعليقاً...">
-                <button id="sendCommentBtn" style="background:var(--ios-blue); color:white; border:none; padding:10px 20px; border-radius:20px; font-weight: bold;">نشر</button>
-            </div>
-        </div>
     </div>
 
     <div class="nav-wrapper">
@@ -146,83 +122,84 @@
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let userUID, userData, isAdmin = false;
+    let userUID, isAdmin = false;
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
             const userSnap = await getDoc(doc(db, "Users", userUID));
             if (userSnap.exists()) {
-                userData = userSnap.data();
-                const role = (userData.role || userData.Role || "").toLowerCase();
+                const data = userSnap.data();
+                const role = (data.role || data.Role || "").toLowerCase();
                 isAdmin = role.includes('admin') || role.includes('مدير');
                 if (isAdmin) document.getElementById('adminTools').style.display = 'flex';
             }
             loadPosts();
-            listenToNavConfig(); 
+            listenToNavConfig();
         } else { window.location.href = "login.html"; }
     });
 
-    // مراقبة إعدادات القائمة السفلية
     function listenToNavConfig() {
         onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
             const config = docSnap.exists() ? docSnap.data() : {};
-            const navItems = [
-                { id: 'nav-chat', visible: config.showChat },
-                { id: 'nav-duas', visible: config.showDuas },
-                { id: 'nav-comps', visible: config.showComps },
-                { id: 'nav-prayer', visible: config.showPrayer }
-            ];
-            navItems.forEach(item => {
-                const el = document.getElementById(item.id);
-                if (!el) return;
-                if (item.visible === false) {
-                    if (isAdmin) { el.style.opacity = "0.2"; el.style.filter = "grayscale(1)"; }
-                    else { el.classList.add('hidden'); }
-                } else { el.classList.remove('hidden'); el.style.opacity = "1"; el.style.filter = "none"; }
+            const items = ['nav-chat', 'nav-duas', 'nav-comps', 'nav-prayer'];
+            items.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) config[id.replace('nav-', 'show')] === false ? (isAdmin ? el.style.opacity="0.2" : el.classList.add('hidden')) : el.classList.remove('hidden');
             });
         });
     }
 
-    // تحميل الأخبار بتصميم الكروت العرضية
     function loadPosts() {
         const feed = document.getElementById('newsFeed');
+        const pinned = document.getElementById('pinnedArea');
         const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
 
         onSnapshot(q, (snap) => {
             feed.innerHTML = "";
+            pinned.innerHTML = "";
+            
             snap.forEach((docSnap) => {
                 const post = docSnap.data();
                 const postId = docSnap.id;
-                const hasLiked = post.likedBy?.includes(userUID);
-                const isManager = isAdmin || userUID === post.authorId;
+                const type = post.type || 'normal'; // الحقل الجديد لتحديد نوع الخبر
 
+                // إذا كان الخبر مثبت (زواج أو وفاة)
+                if (type === 'wedding' || type === 'death') {
+                    const pin = document.createElement('div');
+                    pin.className = type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
+                    pin.onclick = () => window.showPostFull(postId);
+                    pin.innerHTML = `
+                        <div style="font-size: 24px;">${type === 'wedding' ? '💍' : '🖤'}</div>
+                        <div>
+                            <h4>${post.title}</h4>
+                            <p>${post.body ? post.body.substring(0, 40) + '...' : 'اضغط للتفاصيل'}</p>
+                        </div>
+                    `;
+                    pinned.appendChild(pin);
+                }
+
+                // الأخبار العادية أو كلها تظهر في التايم لاين
+                const isManager = isAdmin || userUID === post.authorId;
                 if (post.visible === false && !isManager) return;
 
                 const card = document.createElement('div');
-                card.className = `post-card ${post.visible === false ? 'disabled' : ''}`;
+                card.className = `post-card`;
+                card.onclick = () => window.showPostFull(postId);
                 card.innerHTML = `
-                    <div class="post-image-container" onclick="window.zoomImg('${post.img}')">
+                    <div class="post-image-container">
                         <img class="post-image" src="${post.img || 'https://via.placeholder.com/150'}">
                     </div>
                     <div class="post-info">
                         ${isManager ? `<div class="options-btn" onclick="event.stopPropagation(); window.toggleDropdown('${postId}')">⋮</div>` : ''}
                         <div id="dropdown-${postId}" class="dropdown">
-                            <button onclick="window.changeVisibility('${postId}', ${post.visible})">${post.visible !== false ? '🔒 تعطيل' : '🔓 تفعيل'}</button>
-                            <button onclick="location.href='add_news.html?edit=${postId}'">✏️ تحرير</button>
                             <button onclick="window.deleteNews('${postId}')" style="color:red;">🗑️ حذف</button>
                         </div>
-                        
-                        <div onclick="window.showPostFull('${postId}')">
-                            <h2 class="post-title">${post.title}</h2>
-                            <div class="post-meta">
-                                <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
-                                <span class="meta-item" onclick="event.stopPropagation(); window.openComments('${postId}')">💬 ${post.comments?.length || 0}</span>
-                                <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
-                            </div>
-                            <small style="color:gray; font-size:10px; margin-top:5px; display:block;">
-                                ${post.authorName || 'عضو'} • ${post.publishDate ? new Date(post.publishDate).toLocaleDateString('ar-EG') : ''}
-                            </small>
+                        <h2 class="post-title">${post.title}</h2>
+                        <div class="post-meta">
+                            <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
+                            <span class="meta-item">💬 ${post.comments?.length || 0}</span>
+                            <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
                         </div>
                     </div>
                 `;
@@ -231,79 +208,35 @@
         });
     }
 
-    // عرض تفاصيل الخبر في Modal
     window.showPostFull = async (id) => {
         const snap = await getDoc(doc(db, "News", id));
         const post = snap.data();
         const modal = document.getElementById('postModal');
         const body = document.getElementById('modalBody');
+        
+        // تطبيق التصميم داخل المودال حسب النوع
+        let style = "background:white;";
+        if(post.type === 'wedding') style = "background: #fffdf5; border: 2px solid var(--gold); border-radius: 20px; padding: 15px;";
+        if(post.type === 'death') style = "background: #f9f9f9; border-right: 8px solid #000; padding: 15px;";
 
         body.innerHTML = `
-            <img src="${post.img}" style="width:100%; border-radius:20px; margin-bottom:15px; max-height:250px; object-fit:cover;">
-            <h2 style="color:var(--ios-blue);">${post.title}</h2>
-            <p style="line-height:1.6; color:#333; font-size:15px; white-space: pre-wrap;">${post.body || post.content || ''}</p>
-            <div style="display:flex; justify-content:space-around; margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
-                <div onclick="window.doLike('${id}', ${post.likedBy?.includes(userUID)})" style="cursor:pointer; font-size:20px;">
-                    ${post.likedBy?.includes(userUID) ? '❤️' : '🤍'}
-                </div>
-                <div onclick="window.openComments('${id}')" style="cursor:pointer; font-size:20px;">💬</div>
+            <div style="${style}">
+                ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px;">` : ''}
+                <h2 style="margin:0 0 10px 0; color:${post.type === 'wedding' ? 'var(--gold)' : '#000'}">${post.title}</h2>
+                <p style="line-height:1.7; white-space: pre-wrap;">${post.body || post.content || ''}</p>
+                <button onclick="location.href='comments.html?id=${id}'" style="width:100%; margin-top:15px; padding:12px; border:none; background:var(--ios-blue); color:white; border-radius:10px; font-weight:bold;">التعليقات 💬</button>
             </div>
         `;
         modal.style.display = 'flex';
-        if (userUID) await updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
+        updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
     };
 
-    // التعليقات في Modal
-    window.openComments = async (id) => {
-        const modal = document.getElementById('commentModal');
-        modal.style.display = 'flex';
-        window.currentPostId = id;
-        window.loadComments(id);
-        
-        document.getElementById('sendCommentBtn').onclick = () => window.addComment(id);
-    };
-
-    window.loadComments = async (id) => {
-        const list = document.getElementById('modalCommentsList');
-        const snap = await getDoc(doc(db, "News", id));
-        const comments = snap.data().comments || [];
-        list.innerHTML = comments.map(c => `
-            <div class="comment-item">
-                <div class="comment-avatar">${c.name?.charAt(0)}</div>
-                <div class="comment-body">
-                    <b class="comment-user" onclick="location.href='user_profile.html?id=${c.userId}'">${c.name}</b>
-                    <p class="comment-text">${c.text}</p>
-                </div>
-            </div>
-        `).join('') || '<p style="text-align:center; color:gray;">لا توجد تعليقات بعد</p>';
-    };
-
-    window.addComment = async (id) => {
-        const input = document.getElementById('modalCommentInput');
-        if (!input.value.trim()) return;
-        await updateDoc(doc(db, "News", id), { 
-            comments: arrayUnion({ userId: userUID, name: userData?.fullName || "عضو", text: input.value, date: Date.now() }) 
-        });
-        input.value = ""; window.loadComments(id);
-    };
-
-    // الدوال الأساسية (Like, Delete, Toggle)
-    window.doLike = async (id, liked) => { await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) }); };
-    window.changeVisibility = async (id, current) => { await updateDoc(doc(db, "News", id), { visible: current === false }); };
-    window.deleteNews = async (id) => { if (confirm("هل أنت متأكد من الحذف؟")) await deleteDoc(doc(db, "News", id)); };
     window.toggleDropdown = (id) => { 
         document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
         document.getElementById(`dropdown-${id}`).style.display = 'flex'; 
     };
-    window.handleLogout = () => { if(confirm("هل تريد تسجيل الخروج؟")) auth.signOut().then(() => location.reload()); };
-    window.zoomImg = (src) => {
-        const v = document.createElement('div');
-        v.style = "position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;";
-        v.innerHTML = `<img src="${src}" style="max-width:95%; border-radius:10px;">`;
-        v.onclick = () => v.remove();
-        document.body.appendChild(v);
-    };
-
+    window.deleteNews = async (id) => { if (confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
+    window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => location.reload()); };
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
