@@ -1,134 +1,149 @@
 import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-async function createFloatingHeader() {
-    // إزالة أي هيدر قديم لضمان عدم التكرار
-    const oldHeader = document.querySelector('.floating-menu-container');
-    if (oldHeader) oldHeader.remove();
-
+async function createDynamicHeader() {
     const headerHTML = `
     <style>
-        /* أيقونة القائمة العائمة */
-        .floating-menu-btn {
+        .header-wrapper {
             position: fixed;
-            top: 20px;
-            left: 20px; /* تظهر في جهة اليسار كما طلبت */
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
+            top: 15px;
+            left: 0;
+            right: 0;
+            margin: auto;
+            width: 90%;
+            max-width: 400px;
+            z-index: 11000;
+            direction: rtl;
+        }
+
+        /* الكبسولة الرئيسية */
+        .header-capsule {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 22px;
+            padding: 8px 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.12);
+            border: 0.5px solid rgba(0, 122, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        /* الصف العلوي (اللوجو وزر التحكم) */
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 15px;
+            color: #1c1c1e;
+        }
+        .header-logo img { height: 30px; border-radius: 6px; }
+
+        .settings-trigger {
+            width: 35px;
+            height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            z-index: 12000;
-            cursor: pointer;
-            border: 1px solid rgba(0,122,255,0.1);
-            font-size: 22px;
-            transition: transform 0.2s active;
-        }
-        .floating-menu-btn:active { transform: scale(0.9); }
-
-        /* النافذة المنسدلة */
-        .dropdown-menu {
-            position: fixed;
-            top: 75px;
-            left: 20px;
-            width: 220px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            display: none; /* مخفية افتراضياً */
-            flex-direction: column;
-            padding: 8px;
-            z-index: 12000;
-            border: 1px solid #eee;
-            animation: fadeIn 0.2s ease-out;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .dropdown-menu.show { display: flex; }
-
-        .menu-link {
-            padding: 12px 15px;
-            text-decoration: none;
-            color: #1c1c1e;
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            background: #f2f2f7;
             border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
             transition: 0.2s;
         }
-        .menu-link:active { background: #f2f2f7; }
-        .menu-link.admin-only { color: #007AFF; }
-        .menu-link.logout { color: #FF3B30; border-top: 1px solid #f2f2f2; margin-top: 5px; border-radius: 0 0 12px 12px; }
 
-        /* غطاء خلفي لإغلاق القائمة عند الضغط خارجها */
-        .menu-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 11500;
-            display: none;
+        /* قسم الأيقونات المنسدل */
+        .header-dropdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-height: 0; /* مخفي افتراضياً */
+            opacity: 0;
+            transition: all 0.3s ease;
+            padding: 0;
         }
-        .menu-overlay.show { display: block; }
+
+        .header-capsule.open .header-dropdown {
+            max-height: 100px; /* يظهر عند الفتح */
+            opacity: 1;
+            padding: 15px 0 5px 0;
+            margin-top: 5px;
+            border-top: 0.5px solid #eee;
+        }
+
+        /* أيقونات الأزرار داخل المنسدل */
+        .head-nav-item {
+            text-decoration: none;
+            color: #8E8E93;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .head-nav-item i { font-size: 18px; font-style: normal; }
+        .head-nav-item.admin { color: #007AFF; }
+        .head-nav-item.logout { color: #FF3B30; }
+
     </style>
 
-    <div class="floating-menu-container">
-        <div class="floating-menu-btn" id="menuBtn">⚙️</div>
-        
-        <div class="menu-overlay" id="menuOverlay"></div>
-
-        <div class="dropdown-menu" id="dropdownMenu">
-            <a href="profile.html" class="menu-link">👤 ملفي الشخصي</a>
-            
-            <div id="adminSection" style="display:none;">
-                <a href="add_news.html" class="menu-link admin-only">➕ إضافة خبر</a>
-                <a href="admin.html" class="menu-link admin-only">🛠️ لوحة التحكم</a>
-                <a href="admin_config.html" class="menu-link admin-only">⚙️ إعدادات الأزرار</a>
+    <div class="header-wrapper">
+        <div class="header-capsule" id="headerCapsule">
+            <div class="header-top-row">
+                <div class="header-logo">
+                    <img src="logo.png" onerror="this.src='https://via.placeholder.com/30'">
+                    <span>العائلة 2026</span>
+                </div>
+                <div class="settings-trigger" id="headTrigger">⚙️</div>
             </div>
 
-            <a href="#" class="menu-link logout" id="logoutBtn">🚪 تسجيل الخروج</a>
+            <div class="header-dropdown">
+                <div id="adminToolsHead" style="display: contents;">
+                    <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
+                    <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>لوحة التحكم</span></a>
+                </div>
+                <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
+            </div>
         </div>
     </div>
     `;
 
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
-    const btn = document.getElementById('menuBtn');
-    const menu = document.getElementById('dropdownMenu');
-    const overlay = document.getElementById('menuOverlay');
+    const capsule = document.getElementById('headerCapsule');
+    const trigger = document.getElementById('headTrigger');
+    const logout = document.getElementById('logoutHead');
 
-    // فتح وإغلاق القائمة
-    const toggleMenu = () => {
-        const isShow = menu.classList.toggle('show');
-        overlay.classList.toggle('show');
-        btn.innerHTML = isShow ? "✕" : "⚙️"; // تتغير الأيقونة عند الفتح
+    // وظيفة الفتح والإغلاق
+    trigger.onclick = () => {
+        const isOpen = capsule.classList.toggle('open');
+        trigger.innerHTML = isOpen ? "✕" : "⚙️";
     };
 
-    btn.onclick = toggleMenu;
-    overlay.onclick = toggleMenu;
-
-    // التحقق من الصلاحيات
+    // التحقق من الصلاحيات لإظهار أدوات المدير
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
-            if (userSnap.exists()) {
-                const role = (userSnap.data().role || "").toLowerCase();
-                if (role.includes('admin') || role.includes('مدير')) {
-                    document.getElementById('adminSection').style.display = 'block';
-                }
-            }
+            const role = (userSnap.data()?.role || "").toLowerCase();
+            const isAdmin = role.includes('admin') || role.includes('مدير');
+            document.getElementById('adminToolsHead').style.display = isAdmin ? "contents" : "none";
         }
     });
 
-    // تسجيل الخروج
-    document.getElementById('logoutBtn').onclick = () => {
-        if(confirm("هل تريد تسجيل الخروج؟")) auth.signOut().then(() => location.reload());
+    logout.onclick = () => {
+        if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload());
     };
 }
 
-createFloatingHeader();
+createDynamicHeader();
