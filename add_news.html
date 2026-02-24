@@ -3,237 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إضافة خبر جديد</title>
+    <title>إضافة / تثبيت خبر</title>
     <style>
-        :root {
-            --ios-blue: #007AFF;
-            --ios-bg: #F2F2F7;
-            --card-bg: #FFFFFF;
-        }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--ios-bg); margin: 0; padding: 20px; direction: rtl; }
+        
+        .header { display: flex; align-items: center; margin-bottom: 20px; }
+        .back-btn { background: #e5e5ea; color: #000; width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; }
+        .header h1 { font-size: 18px; flex: 1; text-align: center; margin-left: 35px; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--ios-bg);
-            margin: 0;
-            padding: 20px;
-            direction: rtl;
-        }
+        .form-container { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .tab-selector { display: flex; background: #e5e5ea; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+        .tab-item { flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #8e8e93; }
+        .tab-item.active { background: white; color: var(--ios-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        /* الهيدر وزر العودة */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 25px;
-        }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3a3a3c; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none; }
+        
+        /* قائمة الأخبار لاختيار المثبت */
+        .news-picker { max-height: 300px; overflow-y: auto; display: none; }
+        .pick-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .pick-item:hover { background: #f9f9f9; }
+        .pick-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+        .pick-title { font-size: 14px; font-weight: bold; flex: 1; }
+        .pick-radio { accent-color: var(--ios-blue); }
 
-        .back-btn {
-            background: #e5e5ea;
-            color: #1c1c1e;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            margin: 0;
-            flex: 1;
-            text-align: center;
-            margin-right: -40px; /* لموازنة زر العودة */
-        }
-
-        /* الحاوية */
-        .form-container {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #3a3a3c;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 15px;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--ios-blue);
-        }
-
-        .image-preview {
-            width: 100%;
-            height: 180px;
-            background: #f0f0f5;
-            border-radius: 15px;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 2px dashed #ccc;
-            cursor: pointer;
-        }
-
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .publish-btn {
-            width: 100%;
-            padding: 15px;
-            background: var(--ios-blue);
-            color: white;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .publish-btn:disabled {
-            background: #ccc;
-        }
-
-        /* ألوان خاصة للأنواع */
-        select option[value="wedding"] { color: #b8860b; }
-        select option[value="death"] { color: #000; font-weight: bold; }
+        .hidden { display: none !important; }
+        .publish-btn { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <a href="news.html" class="back-btn">✕</a>
-        <h1>إنشاء منشور</h1>
+        <h1>إضافة خبر أو تثبيته</h1>
     </div>
 
     <div class="form-container">
-        <div class="input-group">
-            <label>تصنيف المنشور</label>
-            <select id="postType">
-                <option value="normal">خبر عادي 📄</option>
-                <option value="wedding">دعوة زواج 💍</option>
-                <option value="death">إعلان وفاة 🖤</option>
-            </select>
+        <div class="tab-selector">
+            <div class="tab-item active" id="tabNormal" onclick="switchTab('normal')">خبر عادي</div>
+            <div class="tab-item" id="tabPinned" onclick="switchTab('pinned')">خبر علوي ثابت</div>
         </div>
 
-        <div class="input-group">
-            <label>العنوان</label>
-            <input type="text" id="postTitle" placeholder="اكتب عنواناً جذاباً...">
-        </div>
-
-        <div class="input-group">
-            <label>رابط الصورة (Image URL)</label>
-            <input type="text" id="postImg" placeholder="https://example.com/image.jpg">
-            <div class="image-preview" onclick="document.getElementById('postImg').focus()">
-                <span id="placeholderText">سيظهر عرض الصورة هنا</span>
-                <img id="previewImg" style="display:none;">
+        <div id="normalForm">
+            <div class="input-group">
+                <label>نوع الخبر</label>
+                <select id="postType" onchange="updateDefaultTitle()">
+                    <option value="normal">خبر عام 📄</option>
+                    <option value="wedding">دعوة زواج 💍</option>
+                    <option value="death">إعلان وفاة 🖤</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>العنوان</label>
+                <input type="text" id="postTitle" placeholder="عنوان الخبر...">
+            </div>
+            <div class="input-group">
+                <label>صورة الخبر (من الجهاز)</label>
+                <input type="file" id="postFile" accept="image/*">
+            </div>
+            <div class="input-group">
+                <label>نص الخبر</label>
+                <textarea id="postBody" rows="5" placeholder="التفاصيل..."></textarea>
             </div>
         </div>
 
-        <div class="input-group">
-            <label>التفاصيل</label>
-            <textarea id="postBody" rows="6" placeholder="اكتب تفاصيل الخبر هنا..."></textarea>
+        <div id="pinnedForm" class="hidden">
+            <p style="font-size: 12px; color: #8e8e93; margin-bottom: 10px;">اختر من الأخبار المنشورة لتظهر في الشريط العلوي:</p>
+            <div id="newsPicker" class="news-picker" style="display: block;">
+                جاري تحميل الأخبار...
+            </div>
+            <div class="input-group" style="margin-top: 15px;">
+                <label>تصنيف التثبيت العلوي</label>
+                <select id="pinType">
+                    <option value="wedding">كرت زواج ذهبي 💍</option>
+                    <option value="death">كرت وفاة رمادي 🖤</option>
+                </select>
+            </div>
         </div>
 
-        <button id="publishBtn" class="publish-btn">نشر الآن</button>
+        <button id="mainBtn" class="publish-btn">نشر الخبر</button>
     </div>
 
     <script type="module">
         import { db, auth } from './config.js';
-        import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const previewImg = document.getElementById('previewImg');
-        const postImgInput = document.getElementById('postImg');
-        const placeholderText = document.getElementById('placeholderText');
+        let currentMode = 'normal';
+        let selectedNewsId = null;
 
-        // تحديث عرض الصورة عند وضع الرابط
-        postImgInput.addEventListener('input', () => {
-            if (postImgInput.value) {
-                previewImg.src = postImgInput.value;
-                previewImg.style.display = 'block';
-                placeholderText.style.display = 'none';
-            } else {
-                previewImg.style.display = 'none';
-                placeholderText.style.display = 'block';
-            }
-        });
+        // تبديل الأوضاع
+        window.switchTab = (mode) => {
+            currentMode = mode;
+            document.getElementById('tabNormal').classList.toggle('active', mode === 'normal');
+            document.getElementById('tabPinned').classList.toggle('active', mode === 'pinned');
+            document.getElementById('normalForm').classList.toggle('hidden', mode !== 'normal');
+            document.getElementById('pinnedForm').classList.toggle('hidden', mode !== 'pinned');
+            document.getElementById('mainBtn').innerText = mode === 'normal' ? 'نشر الخبر' : 'تثبيت كإعلان علوي';
+            if(mode === 'pinned') loadNewsForPicker();
+        };
 
-        document.getElementById('publishBtn').onclick = async () => {
-            const title = document.getElementById('postTitle').value.trim();
-            const body = document.getElementById('postBody').value.trim();
-            const img = document.getElementById('postImg').value.trim();
+        // تحديث العنوان الافتراضي بناءً على النوع
+        window.updateDefaultTitle = () => {
             const type = document.getElementById('postType').value;
+            const titleInput = document.getElementById('postTitle');
+            if(type === 'wedding') titleInput.value = "دعوة زواج: ";
+            else if(type === 'death') titleInput.value = "إنا لله وإنا إليه راجعون: ";
+            else titleInput.value = "";
+        };
 
-            if (!title || !body) {
-                alert("يرجى ملء العنوان والتفاصيل");
-                return;
-            }
+        // تحميل الأخبار للاختيار منها
+        async function loadNewsForPicker() {
+            const picker = document.getElementById('newsPicker');
+            picker.innerHTML = "جاري التحميل...";
+            const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
+            const snap = await getDocs(q);
+            picker.innerHTML = "";
+            snap.forEach(d => {
+                const data = d.data();
+                const div = document.createElement('div');
+                div.className = 'pick-item';
+                div.onclick = () => { selectedNewsId = d.id; div.querySelector('input').checked = true; };
+                div.innerHTML = `
+                    <input type="radio" name="pick" class="pick-radio">
+                    <img src="${data.img || 'https://via.placeholder.com/50'}" class="pick-img">
+                    <span class="pick-title">${data.title}</span>
+                `;
+                picker.appendChild(div);
+            });
+        }
 
-            const btn = document.getElementById('publishBtn');
-            btn.disabled = true;
-            btn.innerText = "جاري النشر...";
+        // معالجة الضغط على الزر الرئيسي
+        document.getElementById('mainBtn').onclick = async () => {
+            if(currentMode === 'normal') {
+                const title = document.getElementById('postTitle').value;
+                const body = document.getElementById('postBody').value;
+                const type = document.getElementById('postType').value;
+                const file = document.getElementById('postFile').files[0];
 
-            try {
-                const user = auth.currentUser;
-                let authorName = "عضو";
-                
-                if (user) {
-                    const userSnap = await getDoc(doc(db, "Users", user.uid));
-                    if (userSnap.exists()) {
-                        authorName = userSnap.data().fullName || userSnap.data().name || "عضو";
-                    }
+                if(!title || !body) return alert("أكمل البيانات");
 
-                    await addDoc(collection(db, "News"), {
-                        title: title,
-                        body: body,
-                        img: img || "https://via.placeholder.com/500x300",
-                        type: type, // الحقل الجديد
-                        authorId: user.uid,
-                        authorName: authorName,
-                        publishDate: Date.now(),
-                        visible: true,
-                        likedBy: [],
-                        viewedBy: [],
-                        comments: []
-                    });
-
-                    alert("تم النشر بنجاح!");
-                    window.location.href = "news.html";
+                // ملاحظة: هنا يجب رفع الصورة لـ Storage أو استخدام Base64 للتبسيط
+                let imgUrl = "https://via.placeholder.com/500";
+                if(file) {
+                    // كود مبسط لتحويل الصورة لـ Base64 لغرض التجربة
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = async () => {
+                        await saveToFirebase(title, body, reader.result, type);
+                    };
+                } else {
+                    await saveToFirebase(title, body, imgUrl, type);
                 }
-            } catch (error) {
-                console.error("Error:", error);
-                alert("حدث خطأ أثناء النشر");
-                btn.disabled = false;
-                btn.innerText = "نشر الآن";
+            } else {
+                if(!selectedNewsId) return alert("اختر خبراً أولاً");
+                const pinType = document.getElementById('pinType').value;
+                await updateDoc(doc(db, "News", selectedNewsId), { type: pinType });
+                alert("تم التثبيت في الشريط العلوي!");
+                window.location.href = "news.html";
             }
         };
+
+        async function saveToFirebase(title, body, img, type) {
+            try {
+                await addDoc(collection(db, "News"), {
+                    title, body, img, type,
+                    publishDate: Date.now(),
+                    authorId: auth.currentUser.uid,
+                    visible: true,
+                    likedBy: [], viewedBy: [], comments: []
+                });
+                alert("تم النشر!");
+                window.location.href = "news.html";
+            } catch(e) { alert("خطأ في النشر"); }
+        }
     </script>
 </body>
 </html>
