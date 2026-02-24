@@ -17,7 +17,6 @@
             margin: 0; padding-top: 80px; padding-bottom: 100px; direction: rtl;
         }
 
-        /* الهيدر */
         .header { 
             position: fixed; top: 0; width: 100%; height: 70px; 
             background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); 
@@ -28,54 +27,37 @@
         .header-btns { display: flex; align-items: center; gap: 12px; }
         .action-circle { width: 40px; height: 40px; background: #f0f0f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
 
-        /* منطقة الإعلانات المثبتة (Pinned Area) */
+        /* منطقة الإعلانات المثبتة */
         #pinnedArea { padding: 0 15px; margin-bottom: 10px; }
-        
-        /* كرت الزواج المثبت */
-        .pin-card-wedding {
-            background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold);
-            border-radius: 15px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
-            margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(212,175,55,0.1);
-        }
-        .pin-card-wedding h4 { margin: 0; color: #b8860b; font-size: 14px; }
-        .pin-card-wedding p { margin: 0; font-size: 11px; color: #8b4513; }
+        .pin-card-wedding { background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold); border-radius: 15px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; }
+        .pin-card-death { background: #f0f0f0; border-right: 5px solid var(--death-gray); border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; }
 
-        /* كرت الوفاة المثبت */
-        .pin-card-death {
-            background: #f0f0f0; border-right: 5px solid var(--death-gray);
-            border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
-            margin-bottom: 10px; cursor: pointer;
-        }
-        .pin-card-death h4 { margin: 0; color: #000; font-size: 14px; font-weight: 900; }
-        .pin-card-death p { margin: 0; font-size: 11px; color: #555; }
-
-        /* كرت الخبر العادي (أفقي كما طلبت) */
-        .post-card { 
-            background: var(--card-bg); margin: 12px 15px; border-radius: 20px; 
-            display: flex; padding: 12px; gap: 15px; box-shadow: var(--shadow);
-            position: relative; border: .5px solid #E5E5EA; transition: 0.2s;
-        }
+        /* كروت الأخبار */
+        .post-card { background: var(--card-bg); margin: 12px 15px; border-radius: 20px; display: flex; padding: 12px; gap: 15px; box-shadow: var(--shadow); position: relative; border: .5px solid #E5E5EA; transition: 0.2s; }
         .post-image-container { width: 90px; height: 90px; flex-shrink: 0; }
         .post-image { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; background: #eee; }
         .post-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .post-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--text-main); }
-        .post-meta { display: flex; gap: 10px; margin-top: 5px; font-size: 11px; color: var(--text-sec); }
-        .meta-item { background: #f5f5f7; padding: 3px 7px; border-radius: 6px; }
+        .post-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--text-main); padding-left: 20px; }
+        
+        .post-meta { display: flex; gap: 8px; margin-top: 5px; font-size: 11px; }
+        .meta-item { background: #f5f5f7; padding: 4px 8px; border-radius: 8px; color: var(--text-sec); cursor: pointer; }
+        .meta-item:active { background: #e5e5ea; }
 
-        /* القائمة المنسدلة */
-        .options-btn { position: absolute; left: 0; top: 0; color: #ccc; font-size: 20px; cursor: pointer; }
-        .dropdown { 
-            position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,.15); display: none; flex-direction: column; z-index: 1000; 
-        }
-        .dropdown button { padding: 10px; border: none; background: none; text-align: right; cursor: pointer; font-size: 12px; border-bottom: 1px solid #f2f2f2; }
+        /* القائمة المنسدلة للمدير */
+        .options-btn { position: absolute; left: -5px; top: -5px; color: #ccc; font-size: 22px; cursor: pointer; padding: 5px; z-index: 10; }
+        .dropdown { position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; z-index: 1000; min-width: 140px; border: 1px solid #eee; overflow: hidden; }
+        .dropdown button { padding: 12px; border: none; background: none; text-align: right; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f9f9f9; width: 100%; }
+        .dropdown button:last-child { border-bottom: none; }
 
-        /* المودال */
+        /* المودال المنسدل */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
-        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; box-sizing: border-box; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* الناف بار العائم */
+        .modal-actions { display: flex; justify-content: space-around; margin-top: 20px; padding: 15px 0; border-top: 1px solid #eee; }
+        .mod-btn { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 14px; cursor: pointer; color: var(--text-sec); }
+        .mod-btn.active { color: var(--ios-red); }
+
         .nav-wrapper { position: fixed; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: center; z-index: 5000; }
         .bottom-bar { width: 100%; max-width: 450px; height: 65px; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         .nav-item { font-size: 22px; text-decoration: none; color: #8E8E93; }
@@ -100,7 +82,6 @@
     </header>
 
     <div id="pinnedArea"></div>
-
     <div id="newsFeed"></div>
 
     <div id="postModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
@@ -129,8 +110,7 @@
             userUID = user.uid;
             const userSnap = await getDoc(doc(db, "Users", userUID));
             if (userSnap.exists()) {
-                const data = userSnap.data();
-                const role = (data.role || data.Role || "").toLowerCase();
+                const role = (userSnap.data().role || userSnap.data().Role || "").toLowerCase();
                 isAdmin = role.includes('admin') || role.includes('مدير');
                 if (isAdmin) document.getElementById('adminTools').style.display = 'flex';
             }
@@ -142,8 +122,7 @@
     function listenToNavConfig() {
         onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
             const config = docSnap.exists() ? docSnap.data() : {};
-            const items = ['nav-chat', 'nav-duas', 'nav-comps', 'nav-prayer'];
-            items.forEach(id => {
+            ['nav-chat', 'nav-duas', 'nav-comps', 'nav-prayer'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) config[id.replace('nav-', 'show')] === false ? (isAdmin ? el.style.opacity="0.2" : el.classList.add('hidden')) : el.classList.remove('hidden');
             });
@@ -156,50 +135,46 @@
         const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
 
         onSnapshot(q, (snap) => {
-            feed.innerHTML = "";
-            pinned.innerHTML = "";
-            
+            feed.innerHTML = ""; pinned.innerHTML = "";
             snap.forEach((docSnap) => {
                 const post = docSnap.data();
                 const postId = docSnap.id;
-                const type = post.type || 'normal'; // الحقل الجديد لتحديد نوع الخبر
+                const type = post.type || 'normal';
+                const isPinned = (type === 'wedding' || type === 'death');
+                const isManager = isAdmin || userUID === post.authorId;
 
-                // إذا كان الخبر مثبت (زواج أو وفاة)
-                if (type === 'wedding' || type === 'death') {
+                // إنشاء الكرت المثبت
+                if (isPinned) {
                     const pin = document.createElement('div');
                     pin.className = type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
                     pin.onclick = () => window.showPostFull(postId);
-                    pin.innerHTML = `
-                        <div style="font-size: 24px;">${type === 'wedding' ? '💍' : '🖤'}</div>
-                        <div>
-                            <h4>${post.title}</h4>
-                            <p>${post.body ? post.body.substring(0, 40) + '...' : 'اضغط للتفاصيل'}</p>
-                        </div>
-                    `;
+                    pin.innerHTML = `<b>${type === 'wedding' ? '💍' : '🖤'}</b> <div style="flex:1;"><h4>${post.title}</h4></div>`;
                     pinned.appendChild(pin);
                 }
 
-                // الأخبار العادية أو كلها تظهر في التايم لاين
-                const isManager = isAdmin || userUID === post.authorId;
                 if (post.visible === false && !isManager) return;
 
+                // إنشاء كرت الخبر العادي
                 const card = document.createElement('div');
-                card.className = `post-card`;
-                card.onclick = () => window.showPostFull(postId);
+                card.className = "post-card";
                 card.innerHTML = `
-                    <div class="post-image-container">
+                    <div class="post-image-container" onclick="window.showPostFull('${postId}')">
                         <img class="post-image" src="${post.img || 'https://via.placeholder.com/150'}">
                     </div>
                     <div class="post-info">
                         ${isManager ? `<div class="options-btn" onclick="event.stopPropagation(); window.toggleDropdown('${postId}')">⋮</div>` : ''}
                         <div id="dropdown-${postId}" class="dropdown">
+                            <button onclick="location.href='add_news.html?edit=${postId}'">✏️ تعديل</button>
+                            <button onclick="window.quickPin('${postId}', '${type}')">${isPinned ? '📍 إلغاء التثبيت' : '📌 تثبيت سريع'}</button>
                             <button onclick="window.deleteNews('${postId}')" style="color:red;">🗑️ حذف</button>
                         </div>
-                        <h2 class="post-title">${post.title}</h2>
-                        <div class="post-meta">
-                            <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
-                            <span class="meta-item">💬 ${post.comments?.length || 0}</span>
-                            <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
+                        <div onclick="window.showPostFull('${postId}')">
+                            <h2 class="post-title">${post.title}</h2>
+                            <div class="post-meta">
+                                <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
+                                <span class="meta-item">💬 ${post.comments?.length || 0}</span>
+                                <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -211,31 +186,41 @@
     window.showPostFull = async (id) => {
         const snap = await getDoc(doc(db, "News", id));
         const post = snap.data();
-        const modal = document.getElementById('postModal');
-        const body = document.getElementById('modalBody');
+        const hasLiked = post.likedBy?.includes(userUID);
         
-        // تطبيق التصميم داخل المودال حسب النوع
-        let style = "background:white;";
-        if(post.type === 'wedding') style = "background: #fffdf5; border: 2px solid var(--gold); border-radius: 20px; padding: 15px;";
-        if(post.type === 'death') style = "background: #f9f9f9; border-right: 8px solid #000; padding: 15px;";
+        await updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
-        body.innerHTML = `
-            <div style="${style}">
+        document.getElementById('modalBody').innerHTML = `
+            <div style="${post.type === 'wedding' ? 'border:2px solid var(--gold); background:#fffdf5; border-radius:20px; padding:15px;' : post.type === 'death' ? 'border-right:8px solid #000; background:#f9f9f9; padding:15px;' : ''}">
                 ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px;">` : ''}
-                <h2 style="margin:0 0 10px 0; color:${post.type === 'wedding' ? 'var(--gold)' : '#000'}">${post.title}</h2>
-                <p style="line-height:1.7; white-space: pre-wrap;">${post.body || post.content || ''}</p>
-                <button onclick="location.href='comments.html?id=${id}'" style="width:100%; margin-top:15px; padding:12px; border:none; background:var(--ios-blue); color:white; border-radius:10px; font-weight:bold;">التعليقات 💬</button>
+                <h2 style="margin:0;">${post.title}</h2>
+                <small style="color:gray;">👁️ شاهدها ${post.viewedBy?.length || 0} عضو</small>
+                <p style="line-height:1.7; white-space:pre-wrap; margin-top:15px;">${post.body || post.content || ''}</p>
+                <div class="modal-actions">
+                    <div class="mod-btn ${hasLiked ? 'active' : ''}" onclick="window.doLike('${id}', ${hasLiked})">❤️ إعجاب (${post.likedBy?.length || 0})</div>
+                    <div class="mod-btn" onclick="location.href='comments.html?id=${id}'">💬 تعليق (${post.comments?.length || 0})</div>
+                </div>
             </div>
         `;
-        modal.style.display = 'flex';
-        updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
+        document.getElementById('postModal').style.display = 'flex';
     };
 
-    window.toggleDropdown = (id) => { 
-        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-        document.getElementById(`dropdown-${id}`).style.display = 'flex'; 
+    window.doLike = async (id, liked) => {
+        await updateDoc(doc(db, "News", id), { likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) });
+        window.showPostFull(id);
     };
-    window.deleteNews = async (id) => { if (confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
+
+    window.quickPin = async (id, currentType) => {
+        const newType = (currentType === 'wedding' || currentType === 'death') ? 'normal' : prompt("نوع التثبيت؟ (wedding / death)", "wedding");
+        if (newType) await updateDoc(doc(db, "News", id), { type: newType });
+    };
+
+    window.toggleDropdown = (id) => {
+        document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
+        document.getElementById(`dropdown-${id}`).style.display = 'flex';
+    };
+
+    window.deleteNews = async (id) => { if (confirm("حذف الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id)); };
     window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => location.reload()); };
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
