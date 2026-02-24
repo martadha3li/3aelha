@@ -65,16 +65,8 @@
 </head>
 <body>
 
-    <header class="header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="logo.png" style="height: 35px; border-radius: 8px;">
-            <h1 style="font-size: 17px; margin: 0;">2026</h1>
-        </div>
-        <div class="header-btns">
-            <div id="adminTools" style="display:none;"><div class="action-circle" onclick="location.href='add_news.html'">⊕</div></div>
-            <div class="action-circle" onclick="handleLogout()" style="color:var(--ios-red)">🚪</div>
-        </div>
-    </header>
+ <script type="module" src="header.js"></script>
+<script type="module" src="navbar.js"></script>
 
     <div id="pinnedArea"></div>
     <div id="newsFeed"></div>
@@ -199,4 +191,5 @@
     <script type="module" src="navbar.js"></script>
 </body>
 </html>
+
 
