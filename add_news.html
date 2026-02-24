@@ -3,190 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدارة الأخبار والتثبيت</title>
+    <title>منصة العائلة | التايم لاين</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; --ios-red: #FF3B30; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--ios-bg); margin: 0; padding: 20px; direction: rtl; }
+        :root {
+            --ios-blue: #007AFF; --ios-red: #FF3B30; --ios-bg: #F2F2F7;
+            --card-bg: #FFFFFF; --text-main: #1c1c1e; --text-sec: #8E8E93;
+            --shadow: 0 8px 20px rgba(0,0,0,0.08);
+            --gold: #D4AF37; --death-gray: #4a4a4a;
+        }
+
+        body { 
+            background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 0; padding-top: 80px; padding-bottom: 100px; direction: rtl;
+        }
+
+        /* الهيدر */
+        .header { 
+            position: fixed; top: 0; width: 100%; height: 70px; 
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 20px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000; 
+        }
+
+        .header-btns { display: flex; align-items: center; gap: 12px; }
+        .action-circle { width: 40px; height: 40px; background: #f0f0f5; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
+
+        /* منطقة الإعلانات المثبتة */
+        #pinnedArea { padding: 0 15px; margin-bottom: 10px; }
         
-        .header { display: flex; align-items: center; margin-bottom: 20px; }
-        .back-btn { background: #e5e5ea; color: #000; width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; }
-        .header h1 { font-size: 18px; flex: 1; text-align: center; margin-left: 35px; }
-
-        .form-container { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .tab-selector { display: flex; background: #e5e5ea; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
-        .tab-item { flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #8e8e93; }
-        .tab-item.active { background: white; color: var(--ios-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3a3a3c; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none; }
+        .pin-card-wedding {
+            background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold);
+            border-radius: 15px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(212,175,55,0.1);
+        }
+        .pin-card-wedding h4 { margin: 0; color: #b8860b; font-size: 14px; }
         
-        .news-picker { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; }
-        .pick-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f2f2f2; cursor: pointer; transition: 0.2s; }
-        .pick-item:last-child { border-bottom: none; }
-        .pick-item:active { background: #f0f0f5; }
-        .pick-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; background: #eee; }
-        .pick-title { font-size: 13px; font-weight: bold; flex: 1; color: #1c1c1e; }
-        .pick-badge { font-size: 10px; padding: 2px 6px; border-radius: 5px; background: #eee; color: #666; }
-        .pick-radio { accent-color: var(--ios-blue); width: 18px; height: 18px; }
+        .pin-card-death {
+            background: #f0f0f0; border-right: 5px solid var(--death-gray);
+            border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px; cursor: pointer;
+        }
+        .pin-card-death h4 { margin: 0; color: #000; font-size: 14px; font-weight: 900; }
 
+        /* كرت الخبر العادي */
+        .post-card { 
+            background: var(--card-bg); margin: 12px 15px; border-radius: 20px; 
+            display: flex; padding: 12px; gap: 15px; box-shadow: var(--shadow);
+            position: relative; border: .5px solid #E5E5EA; transition: 0.2s;
+        }
+        .post-image-container { width: 90px; height: 90px; flex-shrink: 0; }
+        .post-image { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; background: #eee; }
+        .post-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .post-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--text-main); }
+        .post-meta { display: flex; gap: 10px; margin-top: 5px; font-size: 11px; color: var(--text-sec); }
+        .meta-item { background: #f5f5f7; padding: 3px 7px; border-radius: 6px; }
+
+        /* المودال */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; box-sizing: border-box; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* أزرار الإجراءات داخل الخبر */
+        .modal-actions { display: flex; justify-content: space-around; margin-top: 20px; padding: 15px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .mod-btn { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 14px; cursor: pointer; color: var(--text-sec); }
+        .mod-btn.active { color: var(--ios-red); }
+
+        /* الناف بار */
+        .nav-wrapper { position: fixed; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: center; z-index: 5000; }
+        .bottom-bar { width: 100%; max-width: 450px; height: 65px; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .nav-item { font-size: 22px; text-decoration: none; color: #8E8E93; }
+        .nav-item.active { color: var(--ios-blue); }
         .hidden { display: none !important; }
-        .publish-btn { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .remove-pin-btn { width: 100%; padding: 12px; background: #fff; color: var(--ios-red); border: 1.5px solid var(--ios-red); border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <a href="news.html" class="back-btn">✕</a>
-        <h1>إدارة الأخبار</h1>
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="logo.png" style="height: 38px; border-radius: 8px;">
+            <h1 style="font-size: 18px; margin: 0;">2026</h1>
+        </div>
+        <div class="header-btns">
+            <div id="adminTools" style="display:none; align-items: center; gap: 10px;">
+                <div class="action-circle" onclick="location.href='add_news.html'">⊕</div>
+                <div class="action-circle" onclick="location.href='admin.html'">⚙️</div>
+            </div>
+            <div class="action-circle" onclick="handleLogout()" style="color:var(--ios-red)">🚪</div>
+        </div>
+    </header>
+
+    <div id="pinnedArea"></div>
+    <div id="newsFeed"></div>
+
+    <div id="postModal" class="modal" onclick="if(event.target==this)this.style.display='none'">
+        <div class="modal-content" id="modalBody"></div>
     </div>
 
-    <div class="form-container">
-        <div class="tab-selector">
-            <div class="tab-item active" id="tabNormal" onclick="switchTab('normal')">إضافة خبر</div>
-            <div class="tab-item" id="tabPinned" onclick="switchTab('pinned')">تثبيت / إلغاء</div>
-        </div>
-
-        <div id="normalForm">
-            <div class="input-group">
-                <label>تصنيف الخبر</label>
-                <select id="postType" onchange="updateDefaultTitle()">
-                    <option value="normal">خبر عام 📄</option>
-                    <option value="wedding">دعوة زواج 💍</option>
-                    <option value="death">إعلان وفاة 🖤</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>العنوان</label>
-                <input type="text" id="postTitle" placeholder="اكتب العنوان هنا...">
-            </div>
-            <div class="input-group">
-                <label>صورة الخبر</label>
-                <input type="file" id="postFile" accept="image/*">
-            </div>
-            <div class="input-group">
-                <label>التفاصيل</label>
-                <textarea id="postBody" rows="5" placeholder="اكتب تفاصيل المنشور..."></textarea>
-            </div>
-            <button id="mainBtn" class="publish-btn">نشر الآن</button>
-        </div>
-
-        <div id="pinnedForm" class="hidden">
-            <label>اختر المنشور من القائمة:</label>
-            <div id="newsPicker" class="news-picker">جاري التحميل...</div>
-            
-            <div id="pinActions">
-                <div class="input-group">
-                    <label>تثبيت كـ:</label>
-                    <select id="pinType">
-                        <option value="wedding">كرت زواج ذهبي 💍</option>
-                        <option value="death">كرت وفاة رمادي 🖤</option>
-                    </select>
-                </div>
-                <button onclick="handlePinAction('pin')" class="publish-btn">تفعيل التثبيت العلوي</button>
-                <button onclick="handlePinAction('unpin')" class="remove-pin-btn">إلغاء التثبيت من الأعلى</button>
-            </div>
-        </div>
+    <div class="nav-wrapper">
+        <nav class="bottom-bar">
+            <a href="news.html" class="nav-item active">🏠</a>
+            <a href="chat.html" class="nav-item" id="nav-chat">💬</a>
+            <a href="duas.html" class="nav-item" id="nav-duas">📖</a>
+            <a href="prayer_times.html" class="nav-item" id="nav-prayer">🕌</a>
+            <a href="competitions.html" class="nav-item" id="nav-comps">🏆</a>
+            <a href="profile.html" class="nav-item">👤</a>
+        </nav>
     </div>
 
-    <script type="module">
-        import { db, auth } from './config.js';
-        import { collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { auth, db } from './config.js';
+    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let currentMode = 'normal';
-        let selectedNewsId = null;
+    let userUID, isAdmin = false;
 
-        window.switchTab = (mode) => {
-            currentMode = mode;
-            document.getElementById('tabNormal').classList.toggle('active', mode === 'normal');
-            document.getElementById('tabPinned').classList.toggle('active', mode === 'pinned');
-            document.getElementById('normalForm').classList.toggle('hidden', mode !== 'normal');
-            document.getElementById('pinnedForm').classList.toggle('hidden', mode !== 'pinned');
-            if(mode === 'pinned') loadNewsForPicker();
-        };
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            userUID = user.uid;
+            const userSnap = await getDoc(doc(db, "Users", userUID));
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                const role = (data.role || data.Role || "").toLowerCase();
+                isAdmin = role.includes('admin') || role.includes('مدير');
+                if (isAdmin) document.getElementById('adminTools').style.display = 'flex';
+            }
+            loadPosts();
+            listenToNavConfig();
+        } else { window.location.href = "login.html"; }
+    });
 
-        window.updateDefaultTitle = () => {
-            const type = document.getElementById('postType').value;
-            const titleInput = document.getElementById('postTitle');
-            if(type === 'wedding') titleInput.value = "دعوة زواج: ";
-            else if(type === 'death') titleInput.value = "إنا لله وإنا إليه راجعون: ";
-            else titleInput.value = "";
-        };
+    function listenToNavConfig() {
+        onSnapshot(doc(db, "Settings", "AppConfig"), (docSnap) => {
+            const config = docSnap.exists() ? docSnap.data() : {};
+            const items = ['nav-chat', 'nav-duas', 'nav-comps', 'nav-prayer'];
+            items.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) config[id.replace('nav-', 'show')] === false ? (isAdmin ? el.style.opacity="0.2" : el.classList.add('hidden')) : el.classList.remove('hidden');
+            });
+        });
+    }
 
-        async function loadNewsForPicker() {
-            const picker = document.getElementById('newsPicker');
-            picker.innerHTML = "<p style='text-align:center; padding:20px; font-size:12px; color:#888;'>جاري جلب الأخبار...</p>";
-            try {
-                const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
-                const snap = await getDocs(q);
-                picker.innerHTML = "";
-                snap.forEach(d => {
-                    const data = d.data();
-                    const isPinned = (data.type === 'wedding' || data.type === 'death');
-                    const div = document.createElement('div');
-                    div.className = 'pick-item';
-                    div.onclick = () => { selectedNewsId = d.id; div.querySelector('input').checked = true; };
-                    div.innerHTML = `
-                        <input type="radio" name="pick" class="pick-radio">
-                        <img src="${data.img || 'https://via.placeholder.com/50'}" class="pick-img">
-                        <div class="pick-title">
-                            ${data.title}
-                            ${isPinned ? `<span class="pick-badge">مثبت حالياً</span>` : ''}
+    function loadPosts() {
+        const feed = document.getElementById('newsFeed');
+        const pinned = document.getElementById('pinnedArea');
+        const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
+
+        onSnapshot(q, (snap) => {
+            feed.innerHTML = ""; pinned.innerHTML = "";
+            snap.forEach((docSnap) => {
+                const post = docSnap.data();
+                const postId = docSnap.id;
+                const type = post.type || 'normal';
+
+                if (type === 'wedding' || type === 'death') {
+                    const pin = document.createElement('div');
+                    pin.className = type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
+                    pin.onclick = () => window.showPostFull(postId);
+                    pin.innerHTML = `
+                        <div style="font-size: 24px;">${type === 'wedding' ? '💍' : '🖤'}</div>
+                        <div style="flex:1;">
+                            <h4>${post.title}</h4>
+                            <p style="font-size:10px; color:#666;">اضغط للتفاصيل والتعليق</p>
                         </div>
                     `;
-                    picker.appendChild(div);
-                });
-            } catch(e) { picker.innerHTML = "فشل تحميل البيانات"; }
-        }
+                    pinned.appendChild(pin);
+                }
 
-        // زر النشر للخبر العادي
-        document.getElementById('mainBtn').onclick = async () => {
-            const title = document.getElementById('postTitle').value;
-            const body = document.getElementById('postBody').value;
-            const type = document.getElementById('postType').value;
-            const file = document.getElementById('postFile').files[0];
+                if (post.visible !== false || isAdmin || userUID === post.authorId) {
+                    const card = document.createElement('div');
+                    card.className = `post-card`;
+                    card.onclick = () => window.showPostFull(postId);
+                    card.innerHTML = `
+                        <div class="post-image-container"><img class="post-image" src="${post.img || 'https://via.placeholder.com/150'}"></div>
+                        <div class="post-info">
+                            <h2 class="post-title">${post.title}</h2>
+                            <div class="post-meta">
+                                <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
+                                <span class="meta-item">💬 ${post.comments?.length || 0}</span>
+                                <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
+                            </div>
+                        </div>
+                    `;
+                    feed.appendChild(card);
+                }
+            });
+        });
+    }
 
-            if(!title || !body) return alert("يرجى إكمال العنوان والنص");
+    window.showPostFull = async (id) => {
+        const snap = await getDoc(doc(db, "News", id));
+        if (!snap.exists()) return;
+        const post = snap.data();
+        const modal = document.getElementById('postModal');
+        const body = document.getElementById('modalBody');
+        const hasLiked = post.likedBy?.includes(userUID);
 
-            let imgUrl = "https://via.placeholder.com/500x300";
-            if(file) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => saveToFirebase(title, body, reader.result, type);
-            } else {
-                saveToFirebase(title, body, imgUrl, type);
-            }
-        };
+        // زيادة عدد المشاهدات
+        await updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
-        async function saveToFirebase(title, body, img, type) {
-            try {
-                await addDoc(collection(db, "News"), {
-                    title, body, img, type,
-                    publishDate: Date.now(),
-                    authorId: auth.currentUser.uid,
-                    visible: true,
-                    likedBy: [], viewedBy: [], comments: []
-                });
-                alert("تم نشر الخبر بنجاح");
-                window.location.href = "news.html";
-            } catch(e) { alert("حدث خطأ أثناء النشر"); }
-        }
+        let cardStyle = "background:white;";
+        if(post.type === 'wedding') cardStyle = "border: 2px solid var(--gold); border-radius: 20px; padding: 15px; background: #fffdf5;";
+        if(post.type === 'death') cardStyle = "border-right: 8px solid #000; padding: 15px; background: #f9f9f9;";
 
-        // التعامل مع التثبيت أو الإلغاء
-        window.handlePinAction = async (action) => {
-            if(!selectedNewsId) return alert("يرجى اختيار منشور من القائمة أولاً");
-            
-            try {
-                const newType = (action === 'pin') ? document.getElementById('pinType').value : 'normal';
-                await updateDoc(doc(db, "News", selectedNewsId), { type: newType });
+        body.innerHTML = `
+            <div style="${cardStyle}">
+                ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px; max-height:300px; object-fit:cover;">` : ''}
+                <h2 style="margin:0; color:${post.type === 'wedding' ? 'var(--gold)' : '#000'}">${post.title}</h2>
+                <div style="font-size:11px; color:gray; margin: 5px 0 15px 0;">👁️ تمت المشاهدة من قبل ${post.viewedBy?.length || 0} شخص</div>
+                <p style="line-height:1.7; white-space: pre-wrap; color:#333;">${post.body || post.content || ''}</p>
                 
-                alert(action === 'pin' ? "تم التثبيت في الأعلى" : "تم إلغاء التثبيت بنجاح");
-                window.location.href = "news.html";
-            } catch(e) {
-                alert("حدث خطأ في تحديث الحالة");
-            }
-        };
-    </script>
+                <div class="modal-actions">
+                    <div class="mod-btn ${hasLiked ? 'active' : ''}" onclick="window.doLikeInModal('${id}', ${hasLiked})">
+                        ${hasLiked ? '❤️ أعجبني' : '🤍 إعجاب'} <span>(${post.likedBy?.length || 0})</span>
+                    </div>
+                    <div class="mod-btn" onclick="location.href='comments.html?id=${id}'">
+                        💬 التعليقات <span>(${post.comments?.length || 0})</span>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('postModal').style.display='none'" style="width:100%; margin-top:15px; padding:12px; border:none; background:#eee; border-radius:10px; font-weight:bold;">إغلاق</button>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.doLikeInModal = async (id, liked) => {
+        await updateDoc(doc(db, "News", id), { 
+            likedBy: liked ? arrayRemove(userUID) : arrayUnion(userUID) 
+        });
+        window.showPostFull(id); // تحديث العرض في المودال فوراً
+    };
+
+    window.handleLogout = () => { if(confirm("خروج؟")) auth.signOut().then(() => location.reload()); };
+</script>
 </body>
 </html>
