@@ -110,10 +110,11 @@ async function createDynamicHeader() {
 
             <div class="header-dropdown">
                 <div id="adminToolsHead" style="display: contents;">
+                 <a href="admin_config.html" class="menu-link admin-only">⚙️ إعدادات الأزرار</a>
                     <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
                     <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>لوحة التحكم</span></a>
                 </div>
-                                    <a href="admin_config.html" class="menu-link admin-only">⚙️ إعدادات الأزرار</a>
+                                   
 
                 <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
             </div>
