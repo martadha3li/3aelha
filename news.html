@@ -83,14 +83,7 @@
         <div class="modal-content" id="modalBody"></div>
     </div>
 
-    <div class="nav-wrapper">
-        <nav class="bottom-bar">
-            <a href="news.html" class="nav-item active">🏠</a>
-            <a href="chat.html" class="nav-item">💬</a>
-            <a href="duas.html" class="nav-item">📖</a>
-            <a href="profile.html" class="nav-item">👤</a>
-        </nav>
-    </div>
+  
 
 <script type="module">
     import { auth, db } from './config.js';
@@ -203,5 +196,7 @@
     window.handleLogout = () => auth.signOut().then(() => location.reload());
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
+    <script type="module" src="navbar.js"></script>
 </body>
 </html>
+
