@@ -1,248 +1,239 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
-    });
-
-    // حفظ معرف المستخدم في Firestore لربطه بالدردشة
-    OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
-        const subscriptionId = event.current.id;
-        if (subscriptionId && auth.currentUser) {
-            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const { db } = await import("./config.js");
-            await updateDoc(doc(db, "Users", auth.currentUser.uid), {
-                onesignalId: subscriptionId
-            });
-        }
-    });
-  });
-</script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحرير الخبر | منصة العائلة</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إضافة خبر جديد</title>
     <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; }
-        body { background: var(--bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; font-size: 15px; }
-        .preview-img { width: 100%; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #eee; }
-        .btn-save { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; }
+        :root {
+            --ios-blue: #007AFF;
+            --ios-bg: #F2F2F7;
+            --card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--ios-bg);
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        /* الهيدر وزر العودة */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .back-btn {
+            background: #e5e5ea;
+            color: #1c1c1e;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin: 0;
+            flex: 1;
+            text-align: center;
+            margin-right: -40px; /* لموازنة زر العودة */
+        }
+
+        /* الحاوية */
+        .form-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #3a3a3c;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--ios-blue);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 180px;
+            background: #f0f0f5;
+            border-radius: 15px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px dashed #ccc;
+            cursor: pointer;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .publish-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--ios-blue);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .publish-btn:disabled {
+            background: #ccc;
+        }
+
+        /* ألوان خاصة للأنواع */
+        select option[value="wedding"] { color: #b8860b; }
+        select option[value="death"] { color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="loading" class="loading-overlay">
-    <div style="font-size: 40px;">⏳</div>
-    <p>جاري معالجة البيانات...</p>
-</div>
-
-<div class="container">
-    <div class="card">
-        <h2 id="pageTitle" style="text-align:center; color:var(--primary); margin-top:0;">إضافة خبر جديد</h2>
-        
-        <input type="text" id="newsTitle" placeholder="عنوان الخبر" class="form-input">
-        
-        <select id="newsCat" class="form-input">
-            <option value="عام">عام</option>
-            </select>
-
-        <textarea id="newsBody" placeholder="اكتب تفاصيل الخبر هنا..." class="form-input" style="height: 150px; resize: none;"></textarea>
-        
-        <label style="display: block; text-align: center; background: #f0f0f7; padding: 15px; border-radius: 12px; cursor: pointer; margin-bottom: 15px; color: var(--primary); font-weight: bold;">
-            📸 ارفق أو غير صورة الخبر
-            <input type="file" id="imgInput" accept="image/*" style="display: none;" onchange="handleImage(this)">
-        </label>
-        
-        <img id="imgPreview" class="preview-img">
-        
-        <button id="submitBtn" onclick="saveNews()" class="btn-save">نشر الخبر</button>
+    <div class="header">
+        <a href="news.html" class="back-btn">✕</a>
+        <h1>إنشاء منشور</h1>
     </div>
-</div>
 
-<script type="module">
-    import { db, auth } from './config.js';
-    import { collection, doc, getDoc, getDocs, addDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div class="form-container">
+        <div class="input-group">
+            <label>تصنيف المنشور</label>
+            <select id="postType">
+                <option value="normal">خبر عادي 📄</option>
+                <option value="wedding">دعوة زواج 💍</option>
+                <option value="death">إعلان وفاة 🖤</option>
+            </select>
+        </div>
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const editId = urlParams.get('edit'); // جلب ID الخبر من الرابط
-    let compressedBase64 = "";
+        <div class="input-group">
+            <label>العنوان</label>
+            <input type="text" id="postTitle" placeholder="اكتب عنواناً جذاباً...">
+        </div>
 
-    // 1. عند تشغيل الصفحة
-    window.onload = async () => {
-        loadCategories();
-        if (editId) {
-            document.getElementById('pageTitle').innerText = "تعديل الخبر";
-            document.getElementById('submitBtn').innerText = "حفظ التغييرات";
-            fillData(editId);
-        }
-    };
+        <div class="input-group">
+            <label>رابط الصورة (Image URL)</label>
+            <input type="text" id="postImg" placeholder="https://example.com/image.jpg">
+            <div class="image-preview" onclick="document.getElementById('postImg').focus()">
+                <span id="placeholderText">سيظهر عرض الصورة هنا</span>
+                <img id="previewImg" style="display:none;">
+            </div>
+        </div>
 
-    // 2. تحميل التصنيفات من قاعدة البيانات
-    async function loadCategories() {
-        const snap = await getDocs(collection(db, "Categories"));
-        const select = document.getElementById('newsCat');
-        snap.forEach(c => {
-            const name = c.data().name;
-            const opt = document.createElement('option');
-            opt.value = name; opt.innerText = name;
-            select.appendChild(opt);
-        });
-    }
+        <div class="input-group">
+            <label>التفاصيل</label>
+            <textarea id="postBody" rows="6" placeholder="اكتب تفاصيل الخبر هنا..."></textarea>
+        </div>
 
-    // 3. جلب بيانات الخبر في حالة "التعديل"
-    async function fillData(id) {
-        const s = await getDoc(doc(db, "News", id));
-        if (s.exists()) {
-            const n = s.data();
-            document.getElementById('newsTitle').value = n.title;
-            document.getElementById('newsBody').value = n.body;
-            document.getElementById('newsCat').value = n.category || "عام";
-            if (n.img) {
-                compressedBase64 = n.img;
-                const preview = document.getElementById('imgPreview');
-                preview.src = n.img;
-                preview.style.display = 'block';
-            }
-        }
-    }
+        <button id="publishBtn" class="publish-btn">نشر الآن</button>
+    </div>
 
-    // 4. معالجة وضغط الصورة
-    window.handleImage = (input) => {
-        const file = input.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const maxWidth = 800;
-                    const scale = maxWidth / img.width;
-                    canvas.width = maxWidth;
-                    canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    
-                    const preview = document.getElementById('imgPreview');
-                    preview.src = compressedBase64;
-                    preview.style.display = 'block';
-                };
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    <script type="module">
+        import { db, auth } from './config.js';
+        import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 5. وظيفة الحفظ (إضافة أو تعديل)
-    window.saveNews = async () => {
-        const title = document.getElementById('newsTitle').value;
-        const body = document.getElementById('newsBody').value;
-        const cat = document.getElementById('newsCat').value;
-        const loader = document.getElementById('loading');
+        const previewImg = document.getElementById('previewImg');
+        const postImgInput = document.getElementById('postImg');
+        const placeholderText = document.getElementById('placeholderText');
 
-        if (!title || !body) return alert("يرجى تعبئة الحقول الأساسية");
-
-        loader.style.display = 'flex';
-
-        try {
-            const newsData = {
-                title: title,
-                body: body,
-                category: cat,
-                img: compressedBase64,
-                visible: true,
-                publishDate: Date.now() // للترتيب
-            };
-
-            if (editId) {
-                // تحديث خبر موجود
-                await updateDoc(doc(db, "News", editId), newsData);
-                alert("تم تحديث الخبر بنجاح ✅");
+        // تحديث عرض الصورة عند وضع الرابط
+        postImgInput.addEventListener('input', () => {
+            if (postImgInput.value) {
+                previewImg.src = postImgInput.value;
+                previewImg.style.display = 'block';
+                placeholderText.style.display = 'none';
             } else {
-                // إضافة خبر جديد
-                newsData.authorId = auth.currentUser.uid;
-                newsData.likedBy = [];
-                newsData.createdAt = serverTimestamp();
-                await addDoc(collection(db, "News"), newsData);
-                alert("تم نشر الخبر بنجاح 🎉");
+                previewImg.style.display = 'none';
+                placeholderText.style.display = 'block';
             }
-            async function sendNotificationToAll(title, message) {
-    const REST_API_KEY = "ضعه_هنا_من_اعدادات_اون_سيجنال"; // مهم جداً للإرسال التلقائي
-    
-    const data = {
-        app_id: "a96c2d21-5d88-40fb-8c60-4c0911e9be15",
-        included_segments: ["All"],
-        headings: {"ar": title},
-        contents: {"ar": message},
-        url: "https://رابط-موقعك.com/news.html"
-    };
-
-    try {
-        await fetch("https://onesignal.com/api/v1/notifications", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": `Basic ${REST_API_KEY}`
-            },
-            body: JSON.stringify(data)
         });
-    } catch (e) { console.error("Error sending notification:", e); }
-}
 
-// استدعاء الدالة بعد نجاح addDoc في saveNews
-// await sendNotificationToAll("خبر عائلي جديد 📰", title);
-            location.href = "news.html";
-        } catch (e) {
-            console.error(e);
-            alert("حدث خطأ، حاول مرة أخرى.");
-        } finally {
-            loader.style.display = 'none';
-        }
-    };
+        document.getElementById('publishBtn').onclick = async () => {
+            const title = document.getElementById('postTitle').value.trim();
+            const body = document.getElementById('postBody').value.trim();
+            const img = document.getElementById('postImg').value.trim();
+            const type = document.getElementById('postType').value;
 
-async function sendFamilyPush(title, message, targetUserId = null) {
-    const APP_ID = "a96c2d21-5d88-40fb-8c60-4c0911e9be15";
-    const API_KEY = "os_v2_app_vfwc2ik5rbapxddajqerd2n6cvtafaovwwiuf2nkps4g2bz22qnrja5xrna73qgctjxpea6lenhvmrk3hlrsepe7zarj7anqawvd7wy";
+            if (!title || !body) {
+                alert("يرجى ملء العنوان والتفاصيل");
+                return;
+            }
 
-    let body = {
-        app_id: APP_ID,
-        headings: { "ar": title },
-        contents: { "ar": message },
-        url: "https://your-site-url.com/news.html" // غير الرابط لرابط موقعك
-    };
+            const btn = document.getElementById('publishBtn');
+            btn.disabled = true;
+            btn.innerText = "جاري النشر...";
 
-    if (targetUserId) {
-        // إرسال لشخص محدد (للدردشة)
-        body.include_subscription_ids = [targetUserId];
-    } else {
-        // إرسال للكل (للأخبار والمسابقات)
-        body.included_segments = ["All"];
-    }
+            try {
+                const user = auth.currentUser;
+                let authorName = "عضو";
+                
+                if (user) {
+                    const userSnap = await getDoc(doc(db, "Users", user.uid));
+                    if (userSnap.exists()) {
+                        authorName = userSnap.data().fullName || userSnap.data().name || "عضو";
+                    }
 
-    try {
-        await fetch("https://onesignal.com/api/v1/notifications", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Authorization": `Basic ${API_KEY}`
-            },
-            body: JSON.stringify(body)
-        });
-        console.log("تم إرسال الإشعار بنجاح");
-    } catch (error) {
-        console.error("خطأ في إرسال الإشعار:", error);
-    }
-}
-    
-</script>
-  
+                    await addDoc(collection(db, "News"), {
+                        title: title,
+                        body: body,
+                        img: img || "https://via.placeholder.com/500x300",
+                        type: type, // الحقل الجديد
+                        authorId: user.uid,
+                        authorName: authorName,
+                        publishDate: Date.now(),
+                        visible: true,
+                        likedBy: [],
+                        viewedBy: [],
+                        comments: []
+                    });
+
+                    alert("تم النشر بنجاح!");
+                    window.location.href = "news.html";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("حدث خطأ أثناء النشر");
+                btn.disabled = false;
+                btn.innerText = "نشر الآن";
+            }
+        };
+    </script>
 </body>
 </html>
