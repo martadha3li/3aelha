@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الشريط السفلي</title>
+    <style>
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--ios-bg); padding: 20px; direction: rtl; }
+        
+        .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .setting-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 0; border-bottom: 1px solid #eee; 
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-info b { font-size: 16px; display: block; }
+        .setting-info span { font-size: 12px; color: #888; }
+
+        /* ستايل مفتاح التبديل iOS */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+            position: absolute; cursor: pointer; inset: 0; background-color: #ccc; 
+            transition: .4s; border-radius: 34px; 
+        }
+        .slider:before { 
+            position: absolute; content: ""; height: 22px; width: 22px; 
+            left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; 
+        }
+        input:checked + .slider { background-color: var(--ios-blue); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .back-btn { display: inline-block; margin-bottom: 15px; text-decoration: none; color: var(--ios-blue); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <a href="admin.html" class="back-btn">← العودة للوحة الإدارة</a>
+    <h2>إدارة أزرار المنصة</h2>
+    <p style="color:#666; font-size: 14px; margin-bottom: 20px;">تحكم في الأقسام التي تظهر للأعضاء في شريط التنقل السفلي:</p>
+
+    <div class="card">
+        <div class="setting-item">
+            <div class="setting-info">
+                <b>قسم الدردشة 💬</b>
+                <span>تفعيل أو تعطيل محادثات العائلة</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="showChat" onchange="updateConfig('showChat', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <b>قسم الأدعية 📖</b>
+                <span>عرض أو إخفاء حصن المسلم والأدعية</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="showDuas" onchange="updateConfig('showDuas', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <b>مواقيت الصلاة 🕌</b>
+                <span>إظهار جدول أوقات الصلاة</span>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="showPrayer" onchange="updateConfig('showPrayer', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <b>المسابقات 🏆</b>
+                    <span>تفعيل قسم التحديات والجوائز</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="showComps" onchange="updateConfig('showComps', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './config.js';
+        import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const configDoc = doc(db, "Settings", "AppConfig");
+
+        // جلب الإعدادات الحالية عند فتح الصفحة
+        async function loadSettings() {
+            const snap = await getDoc(configDoc);
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('showChat').checked = data.showChat !== false;
+                document.getElementById('showDuas').checked = data.showDuas !== false;
+                document.getElementById('showPrayer').checked = data.showPrayer !== false;
+                document.getElementById('showComps').checked = data.showComps !== false;
+            } else {
+                // إنشاء ملف إعدادات افتراضي إذا لم يكن موجوداً
+                await setDoc(configDoc, { showChat: true, showDuas: true, showPrayer: true, showComps: true });
+            }
+        }
+
+        // تحديث Firestore عند تغيير أي مفتاح
+        window.updateConfig = async (field, value) => {
+            try {
+                await updateDoc(configDoc, { [field]: value });
+                console.log(`${field} updated to ${value}`);
+            } catch (e) {
+                alert("حدث خطأ في الحفظ");
+            }
+        };
+
+        loadSettings();
+    </script>
+</body>
+</html>
