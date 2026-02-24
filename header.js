@@ -1,99 +1,125 @@
 import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-async function createHeader() {
-    // إزاحة محتوى الصفحة للأسفل لكي لا يختفي خلف الهيدر
-    document.body.style.paddingTop = "70px";
+async function createFloatingHeader() {
+    // إزالة أي هيدر قديم لضمان عدم التكرار
+    const oldHeader = document.querySelector('.floating-menu-container');
+    if (oldHeader) oldHeader.remove();
 
     const headerHTML = `
     <style>
-        .main-header {
-            position: fixed; top: 0; left: 0; right: 0; height: 65px;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; z-index: 11000; border-bottom: 0.5px solid #E5E5EA;
+        /* أيقونة القائمة العائمة */
+        .floating-menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px; /* تظهر في جهة اليسار كما طلبت */
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 12000;
+            cursor: pointer;
+            border: 1px solid rgba(0,122,255,0.1);
+            font-size: 22px;
+            transition: transform 0.2s active;
         }
-        .header-logo { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 18px; color: #1c1c1e; }
-        .header-logo img { height: 35px; border-radius: 8px; }
-        
-        .menu-trigger { 
-            width: 40px; height: 40px; background: #f2f2f7; border-radius: 12px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px;
-        }
+        .floating-menu-btn:active { transform: scale(0.9); }
 
-        /* القائمة الجانبية (Side Menu) */
-        .side-menu {
-            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
-            background: white; z-index: 12000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.1); padding: 30px 20px;
-            display: flex; flex-direction: column; gap: 15px;
+        /* النافذة المنسدلة */
+        .dropdown-menu {
+            position: fixed;
+            top: 75px;
+            left: 20px;
+            width: 220px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: none; /* مخفية افتراضياً */
+            flex-direction: column;
+            padding: 8px;
+            z-index: 12000;
+            border: 1px solid #eee;
+            animation: fadeIn 0.2s ease-out;
         }
-        .side-menu.active { left: 0; }
-        
-        .overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.3); 
-            z-index: 11500; display: none; backdrop-filter: blur(2px);
-        }
-        .overlay.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .menu-item {
-            padding: 15px; border-radius: 12px; background: #f9f9fb;
-            text-decoration: none; color: #1c1c1e; font-weight: 600;
-            display: flex; align-items: center; gap: 10px; font-size: 15px;
+        .dropdown-menu.show { display: flex; }
+
+        .menu-link {
+            padding: 12px 15px;
+            text-decoration: none;
+            color: #1c1c1e;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 12px;
+            transition: 0.2s;
         }
-        .menu-item:active { background: #e5e5ea; }
-        .logout-btn { color: #FF3B30; margin-top: auto; background: #fff1f0; }
+        .menu-link:active { background: #f2f2f7; }
+        .menu-link.admin-only { color: #007AFF; }
+        .menu-link.logout { color: #FF3B30; border-top: 1px solid #f2f2f2; margin-top: 5px; border-radius: 0 0 12px 12px; }
+
+        /* غطاء خلفي لإغلاق القائمة عند الضغط خارجها */
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 11500;
+            display: none;
+        }
+        .menu-overlay.show { display: block; }
     </style>
 
-    <header class="main-header">
-        <div class="header-logo">
-            <img src="logo.png" onerror="this.src='https://via.placeholder.com/35'">
-            <span>العائلة 2026</span>
-        </div>
-        <div class="menu-trigger" id="openMenu">⚙️</div>
-    </header>
-
-    <div class="overlay" id="menuOverlay"></div>
-
-    <div class="side-menu" id="sideMenu">
-        <h3 style="margin-bottom:20px;">القائمة</h3>
+    <div class="floating-menu-container">
+        <div class="floating-menu-btn" id="menuBtn">⚙️</div>
         
-        <a href="profile.html" class="menu-item">👤 ملفي الشخصي</a>
-        
-        <div id="adminMenu" style="display:none; flex-direction: column; gap: 15px;">
-            <a href="add_news.html" class="menu-item">➕ إضافة خبر جديد</a>
-            <a href="admin.html" class="menu-item">🛠️ لوحة التحكم</a>
-            <a href="admin_config.html" class="menu-item">⚙️ إعدادات الأزرار</a>
-        </div>
+        <div class="menu-overlay" id="menuOverlay"></div>
 
-        <a href="#" class="menu-item logout-btn" id="logoutBtn">🚪 تسجيل الخروج</a>
+        <div class="dropdown-menu" id="dropdownMenu">
+            <a href="profile.html" class="menu-link">👤 ملفي الشخصي</a>
+            
+            <div id="adminSection" style="display:none;">
+                <a href="add_news.html" class="menu-link admin-only">➕ إضافة خبر</a>
+                <a href="admin.html" class="menu-link admin-only">🛠️ لوحة التحكم</a>
+                <a href="admin_config.html" class="menu-link admin-only">⚙️ إعدادات الأزرار</a>
+            </div>
+
+            <a href="#" class="menu-link logout" id="logoutBtn">🚪 تسجيل الخروج</a>
+        </div>
     </div>
     `;
 
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
-    // منطق فتح وإغلاق القائمة
-    const menu = document.getElementById('sideMenu');
+    const btn = document.getElementById('menuBtn');
+    const menu = document.getElementById('dropdownMenu');
     const overlay = document.getElementById('menuOverlay');
-    const trigger = document.getElementById('openMenu');
 
+    // فتح وإغلاق القائمة
     const toggleMenu = () => {
-        menu.classList.toggle('active');
-        overlay.classList.toggle('active');
+        const isShow = menu.classList.toggle('show');
+        overlay.classList.toggle('show');
+        btn.innerHTML = isShow ? "✕" : "⚙️"; // تتغير الأيقونة عند الفتح
     };
 
-    trigger.onclick = toggleMenu;
+    btn.onclick = toggleMenu;
     overlay.onclick = toggleMenu;
 
-    // التحقق من الصلاحيات لإظهار أزرار الإدارة
+    // التحقق من الصلاحيات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
             if (userSnap.exists()) {
                 const role = (userSnap.data().role || "").toLowerCase();
                 if (role.includes('admin') || role.includes('مدير')) {
-                    document.getElementById('adminMenu').style.display = 'flex';
+                    document.getElementById('adminSection').style.display = 'block';
                 }
             }
         }
@@ -105,4 +131,4 @@ async function createHeader() {
     };
 }
 
-createHeader();
+createFloatingHeader();
