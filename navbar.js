@@ -7,16 +7,20 @@ function createNavbar() {
     if (oldNav) oldNav.remove();
 
     const navHTML = `
-    <style>
+   <style>
         .nav-wrapper {
             position: fixed;
-            bottom: 20px;
+            bottom: 25px;
+            /* استخدام left و right مع auto يضمن التوسط في جميع المتصفحات */
             left: 0;
             right: 0;
-            display: flex;
-            justify-content: center;
-            z-index: 9999;
-            pointer-events: none; /* لضمان عدم حجب اللمس عن الزوايا */
+            margin-left: auto;
+            margin-right: auto;
+            width: 88%;
+            max-width: 400px;
+            z-index: 10000; /* قيمة عالية جداً ليتفوق على أي مودال */
+            display: block;
+            direction: rtl; /* لضمان ترتيب الأيقونات من اليمين لليسار */
         }
         .bottom-bar {
             background: rgba(255, 255, 255, 0.92);
@@ -25,13 +29,10 @@ function createNavbar() {
             display: flex;
             justify-content: space-around;
             align-items: center;
-            width: 88%; /* تم تصغير العرض قليلاً */
-            max-width: 400px; /* سقف العرض ليكون رشيقاً */
             padding: 10px 5px;
-            border-radius: 22px; /* أطراف منحنية */
-            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.12); /* بروز أزرق باهت وناعم */
+            border-radius: 22px;
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.15); /* بروز أزرق باهت */
             border: 0.5px solid rgba(0, 122, 255, 0.1);
-            pointer-events: auto; /* إعادة تفعيل اللمس للشريط فقط */
         }
         .nav-item {
             text-decoration: none;
@@ -43,18 +44,16 @@ function createNavbar() {
             flex: 1;
             transition: all 0.2s ease;
         }
-        .nav-item i, .nav-item .icon {
-            font-size: 20px; /* تصغير حجم الأيقونات */
+        .nav-item i {
+            font-size: 20px;
             margin-bottom: 2px;
+            font-style: normal;
         }
         .nav-item span {
-            font-size: 9px; /* تصغير حجم النص */
+            font-size: 9px;
             font-weight: 600;
         }
         .nav-item.active {
-            color: #007AFF;
-        }
-        .nav-item.active span {
             color: #007AFF;
         }
         .hidden { display: none !important; }
