@@ -8,6 +8,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>دردشة العائلة</title>
     <style>
+
+/* نافذة اختيار الأشخاص لإعادة التوجيه */
+.forward-modal {
+    display: none; position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.5); z-index: 20000;
+    align-items: center; justify-content: center;
+}
+.forward-content {
+    background: white; width: 85%; max-width: 350px;
+    border-radius: 20px; padding: 20px; max-height: 70vh; overflow-y: auto;
+}
+.user-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; border-bottom: 0.5px solid #eee; cursor: pointer;
+}
+.user-row.disabled { opacity: 0.5; pointer-events: none; background: #f9f9f9; }
+.fwd-name { font-weight: 600; font-size: 14px; }
+.fwd-gender { font-size: 10px; color: #8e8e93; }
+        
         :root {
             --ios-blue: #007AFF; --ios-bg: #F2F2F7;
             --card-bg: #FFFFFF; --text-sec: #8E8E93;
