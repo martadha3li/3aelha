@@ -21,8 +21,8 @@ function createNavbar() {
 
         /* أيقونة التشغيل العائمة */
         .nav-trigger-btn {
-            width: 50px;
-            height: 50px;
+            width: 30px;
+            height: 30px;
             background: #007AFF;
             color: white;
             border-radius: 50%;
@@ -31,7 +31,7 @@ function createNavbar() {
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
-            font-size: 24px;
+            font-size: 20px;
             z-index: 10001;
             transition: transform 0.3s ease;
         }
