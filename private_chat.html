@@ -5,56 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>محادثة خاصة</title>
     <style>
-        /* استخدم نفس تنسيقات CSS الموجودة في الصفحة السابقة لتوحيد الشكل */
-        :root { --ios-blue: #007AFF; --ios-bg: #E5DDD5; --msg-in: #ffffff; --msg-out: #E1FEC6; }
+        :root { --ios-blue: #007AFF; --ios-bg: #E5DDD5; }
         body { background: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        #messagesArea { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; padding-top: 80px; }
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg.sent { align-self: flex-start; background: var(--msg-out); border-top-left-radius: 2px; }
-        .msg.received { align-self: flex-end; background: var(--msg-in); border-top-right-radius: 2px; }
-        .input-area { background: #f6f6f6; padding: 10px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #ddd; }
-        .input-box { flex: 1; background: white; border-radius: 20px; padding: 10px 15px; border: 1px solid #ddd; outline: none; }
+        .header { background: #f6f6f6; padding: 45px 15px 10px; display: flex; align-items: center; border-bottom: 0.5px solid #ccc; position: fixed; top: 0; width: 100%; z-index: 1000; box-sizing: border-box; }
+        #messagesArea { flex: 1; padding: 100px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 75%; padding: 10px; border-radius: 15px; font-size: 15px; }
+        .msg.sent { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 2px; }
+        .msg.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
+        .input-area { background: #f6f6f6; padding: 10px; display: flex; gap: 10px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .input-box { flex: 1; border-radius: 20px; border: 1px solid #ccc; padding: 10px 15px; outline: none; }
     </style>
 </head>
 <body>
-    <script type="module" src="header.js"></script>
-    <div id="messagesArea"></div>
-    <div class="input-area">
-        <input type="text" id="msgInput" class="input-box" placeholder="اكتب رسالة خاصة...">
-        <button id="sendBtn" style="border:none; background:none; font-size: 24px;">🕊️</button>
-    </div>
+
+<div class="header">
+    <div style="color:var(--ios-blue); cursor:pointer;" onclick="history.back()">❮ عودة</div>
+    <div id="chatWith" style="flex:1; text-align:center; font-weight:bold;">جاري التحميل...</div>
+</div>
+
+<div id="messagesArea"></div>
+
+<div class="input-area">
+    <input type="text" id="msgInput" class="input-box" placeholder="اكتب رسالتك...">
+    <button id="sendBtn" style="border:none; background:none; font-size:24px;">🕊️</button>
+</div>
 
 <script type="module">
     import { db, auth } from './config.js';
     import { collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetUserId = urlParams.get('id'); // المعرف الذي نرسل له
-    let currentUser = null;
+    const targetId = new URLSearchParams(window.location.search).get('id');
+    let user = null;
+    let userData = null;
+    let targetData = null;
 
-    auth.onAuthStateChanged(async user => {
-        if(user) {
-            currentUser = user;
-            loadPrivateMessages();
-        } else location.href='login.html';
+    auth.onAuthStateChanged(async u => {
+        if(u) {
+            user = u;
+            const [uSnap, tSnap] = await Promise.all([getDoc(doc(db, "Users", u.uid)), getDoc(doc(db, "Users", targetId))]);
+            userData = uSnap.data();
+            targetData = tSnap.data();
+            document.getElementById('chatWith').innerText = targetData.fullName;
+            loadMsgs();
+        } else { location.href='login.html'; }
     });
 
-    async function loadPrivateMessages() {
-        // جلب الرسائل المتبادلة بين الطرفين فقط
-        onSnapshot(query(collection(db, "PrivateMessages"), orderBy("timestamp", "asc")), (snap) => {
+    function loadMsgs() {
+        const q = query(collection(db, "PrivateMessages"), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snap) => {
             const area = document.getElementById('messagesArea');
             area.innerHTML = "";
-            snap.forEach(docSnap => {
-                const m = docSnap.data();
-                // فلترة الرسائل لتظهر فقط ما يخص المستخدم الحالي والمستهدف
-                const isBetween = (m.senderId === currentUser.uid && m.receiverId === targetUserId) || 
-                                  (m.senderId === targetUserId && m.receiverId === currentUser.uid);
-                
-                if (isBetween) {
-                    const isMe = m.senderId === currentUser.uid;
+            snap.forEach(d => {
+                const m = d.data();
+                if((m.senderId === user.uid && m.receiverId === targetId) || (m.senderId === targetId && m.receiverId === user.uid)) {
                     const div = document.createElement('div');
-                    div.className = `msg ${isMe ? 'sent' : 'received'}`;
-                    div.innerHTML = `<span>${m.text}</span>`;
+                    div.className = `msg ${m.senderId === user.uid ? 'sent' : 'received'}`;
+                    div.innerText = m.text;
                     area.appendChild(div);
                 }
             });
@@ -63,12 +69,19 @@
     }
 
     document.getElementById('sendBtn').onclick = async () => {
-        const text = document.getElementById('msgInput').value;
-        if(!text) return;
-        await addDoc(collection(db, "PrivateMessages"), {
-            text, senderId: currentUser.uid, receiverId: targetUserId, timestamp: serverTimestamp()
-        });
+        const config = (await getDoc(doc(db, "Settings", "AppConfig"))).data();
+        const isAdmin = userData?.role === 'admin';
+
+        if(!config.privateChatEnabled && !isAdmin) return alert("المراسلة الخاصة معطلة.");
+        if(config.genderRestriction && !isAdmin && userData.gender !== targetData.gender) 
+            return alert("سياسة العائلة تمنع المراسلة بين الجنسين.");
+
+        const txt = document.getElementById('msgInput').value;
+        if(!txt.trim()) return;
         document.getElementById('msgInput').value = "";
+        await addDoc(collection(db, "PrivateMessages"), {
+            text: txt, senderId: user.uid, receiverId: targetId, timestamp: serverTimestamp()
+        });
     };
 </script>
 </body>
