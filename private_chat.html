@@ -5,25 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>محادثة خاصة</title>
     <style>
-        body { background: #FFFFFF; margin: 0; padding-top: 80px; padding-bottom: 80px; }
+        /* استخدم نفس تنسيقات CSS الموجودة في الصفحة السابقة لتوحيد الشكل */
+        :root { --ios-blue: #007AFF; --ios-bg: #E5DDD5; --msg-in: #ffffff; --msg-out: #E1FEC6; }
+        body { background: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #messagesArea { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; padding-top: 80px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .msg.sent { align-self: flex-start; background: var(--msg-out); border-top-left-radius: 2px; }
+        .msg.received { align-self: flex-end; background: var(--msg-in); border-top-right-radius: 2px; }
+        .input-area { background: #f6f6f6; padding: 10px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #ddd; }
+        .input-box { flex: 1; background: white; border-radius: 20px; padding: 10px 15px; border: 1px solid #ddd; outline: none; }
     </style>
 </head>
 <body>
     <script type="module" src="header.js"></script>
-    <script type="module" src="navbar.js"></script>
-
-    <div style="padding: 20px; text-align: center;">
-        <h2>💬 محادثة خاصة</h2>
-        <p id="chatStatus">جاري بدء التشفير والاتصال...</p>
+    <div id="messagesArea"></div>
+    <div class="input-area">
+        <input type="text" id="msgInput" class="input-box" placeholder="اكتب رسالة خاصة...">
+        <button id="sendBtn" style="border:none; background:none; font-size: 24px;">🕊️</button>
     </div>
 
-    <script type="module">
-        // كود استقبال الـ ID من الرابط وبدء المحادثة
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetId = urlParams.get('id') || urlParams.get('chatId');
-        if(targetId) {
-            console.log("سيتم بدء المحادثة مع المعرف:", targetId);
-        }
-    </script>
+<script type="module">
+    import { db, auth } from './config.js';
+    import { collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUserId = urlParams.get('id'); // المعرف الذي نرسل له
+    let currentUser = null;
+
+    auth.onAuthStateChanged(async user => {
+        if(user) {
+            currentUser = user;
+            loadPrivateMessages();
+        } else location.href='login.html';
+    });
+
+    async function loadPrivateMessages() {
+        // جلب الرسائل المتبادلة بين الطرفين فقط
+        onSnapshot(query(collection(db, "PrivateMessages"), orderBy("timestamp", "asc")), (snap) => {
+            const area = document.getElementById('messagesArea');
+            area.innerHTML = "";
+            snap.forEach(docSnap => {
+                const m = docSnap.data();
+                // فلترة الرسائل لتظهر فقط ما يخص المستخدم الحالي والمستهدف
+                const isBetween = (m.senderId === currentUser.uid && m.receiverId === targetUserId) || 
+                                  (m.senderId === targetUserId && m.receiverId === currentUser.uid);
+                
+                if (isBetween) {
+                    const isMe = m.senderId === currentUser.uid;
+                    const div = document.createElement('div');
+                    div.className = `msg ${isMe ? 'sent' : 'received'}`;
+                    div.innerHTML = `<span>${m.text}</span>`;
+                    area.appendChild(div);
+                }
+            });
+            area.scrollTop = area.scrollHeight;
+        });
+    }
+
+    document.getElementById('sendBtn').onclick = async () => {
+        const text = document.getElementById('msgInput').value;
+        if(!text) return;
+        await addDoc(collection(db, "PrivateMessages"), {
+            text, senderId: currentUser.uid, receiverId: targetUserId, timestamp: serverTimestamp()
+        });
+        document.getElementById('msgInput').value = "";
+    };
+</script>
 </body>
 </html>
