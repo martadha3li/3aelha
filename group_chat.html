@@ -11,32 +11,33 @@
         /* الهيدر */
         .header { 
             background: rgba(246, 246, 246, 0.9); backdrop-filter: blur(10px);
-            padding: 40px 15px 10px; display: flex; align-items: center; gap: 10px;
+            padding: 45px 15px 10px; display: flex; align-items: center; gap: 10px;
             border-bottom: 0.5px solid #ccc; position: fixed; top: 0; width: 100%; z-index: 1000;
         }
-        .back-btn { color: var(--ios-blue); text-decoration: none; font-size: 17px; font-weight: 500; cursor: pointer; }
-        .group-info { flex: 1; text-align: center; }
-        .group-name { font-weight: bold; font-size: 16px; display: block; }
+        .back-btn { color: var(--ios-blue); text-decoration: none; font-size: 16px; font-weight: 500; cursor: pointer; flex-shrink: 0; }
+        .group-info { flex: 1; text-align: center; overflow: hidden; }
+        .group-name { font-weight: bold; font-size: 16px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .group-status { font-size: 11px; color: #8E8E93; }
-        .admin-tools { color: var(--ios-blue); font-size: 20px; cursor: pointer; padding: 5px; }
+        .admin-tools { color: var(--ios-blue); font-size: 20px; cursor: pointer; padding: 5px; flex-shrink: 0; }
 
         /* منطقة الرسائل */
-        #chatBox { flex: 1; padding: 100px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        #chatBox { flex: 1; padding: 110px 15px 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .msg.sent { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 2px; }
         .msg.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
         .sender-name { font-size: 11px; font-weight: bold; color: var(--ios-blue); display: block; margin-bottom: 3px; }
         .msg-time { font-size: 9px; color: #999; display: block; text-align: left; margin-top: 4px; }
 
         /* شريط الإدخال */
-        .input-area { background: #f6f6f6; padding: 10px 15px 30px; display: flex; align-items: center; gap: 10px; border-top: 0.5px solid #ccc; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        .msg-input { flex: 1; border: 0.5px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; }
-        .send-btn { background: var(--ios-blue); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
+        .input-area { background: #f6f6f6; padding: 10px 15px 25px; display: flex; align-items: center; gap: 10px; border-top: 0.5px solid #ccc; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .msg-input { flex: 1; border: 0.5px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 15px; }
+        .send-btn { background: var(--ios-blue); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
 
-        /* نافذة التحكم (Action Sheet) */
+        /* مودال الإدارة */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; }
-        .modal-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; }
+        .modal-content { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 25px; box-sizing: border-box; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; margin-bottom: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
         .delete-btn { color: var(--ios-red); background: #fff1f0; }
         .add-btn { background: var(--ios-blue); color: white; }
     </style>
@@ -44,7 +45,7 @@
 <body>
 
 <div class="header">
-    <div class="back-btn" onclick="location.href='chat.html'">❮ عودة</div>
+    <div class="back-btn" onclick="location.href='chat.html'">❮ الدردشات</div>
     <div class="group-info">
         <span class="group-name" id="topGroupName">المجموعة</span>
         <span class="group-status" id="membersCount">...</span>
@@ -61,62 +62,84 @@
 
 <div id="adminModal" class="modal" onclick="if(event.target==this) toggleModal()">
     <div class="modal-content">
-        <h3 style="text-align:center; margin-top:0;">إدارة المجموعة</h3>
-        <input type="text" id="newMemberPhone" placeholder="أدخل رقم جوال العضو لإضافته" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;">
-        <button class="modal-btn add-btn" onclick="addNewMember()">+ إضافة عضو للمجموعة</button>
-        <button class="modal-btn delete-btn" onclick="deleteGroup()">❌ حذف المجموعة نهائياً</button>
-        <button class="modal-btn" style="background:#eee;" onclick="toggleModal()">إلغاء</button>
+        <h3 style="text-align:center; margin-top:0; margin-bottom:20px;">إدارة المجموعة المؤقتة</h3>
+        <input type="text" id="newMemberPhone" placeholder="أدخل رقم جوال العضو لإضافته" style="width:100%; padding:14px; margin-bottom:15px; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; outline:none; text-align:center; font-size:16px;">
+        <button class="modal-btn add-btn" id="addMemberBtn">+ إضافة عضو للمجموعة</button>
+        <button class="modal-btn delete-btn" id="deleteGroupBtn">❌ حذف المجموعة نهائياً</button>
+        <button class="modal-btn" style="background:#f2f2f7; color:#333;" onclick="toggleModal()">إلغاء</button>
     </div>
 </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, doc, getDoc, getDocs, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, updateDoc, arrayUnion, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, doc, getDoc, getDocs, addDoc, onSnapshot, query, where, serverTimestamp, updateDoc, arrayUnion, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get('id');
     let currentUser = null;
-    let groupData = null;
 
     auth.onAuthStateChanged(async (user) => {
         if (user && groupId) {
             currentUser = user;
-            // فحص هل المستخدم مدير (لتفعيل أيقونة الإعدادات)
+            // فحص رتبة المستخدم لإظهار أيقونة الإدارة
             const userSnap = await getDoc(doc(db, "Users", user.uid));
-            if(userSnap.data().role === 'admin') document.getElementById('adminIcon').style.display = 'block';
-            
-            checkAccess();
+            if (userSnap.exists() && userSnap.data().role === 'admin') {
+                document.getElementById('adminIcon').style.display = 'block';
+            }
+            checkAccessAndLoad();
         } else {
             window.location.href = "chat.html";
         }
     });
 
-    async function checkAccess() {
-        const groupSnap = await getDoc(doc(db, "TemporaryGroups", groupId));
+    // التحقق من صلاحية الدخول وتحميل البيانات
+    async function checkAccessAndLoad() {
+        const groupRef = doc(db, "TemporaryGroups", groupId);
+        const groupSnap = await getDoc(groupRef);
+        
         if (groupSnap.exists()) {
-            groupData = groupSnap.data();
+            const groupData = groupSnap.data();
+            // التأكد أن المستخدم عضو في المجموعة
             if (groupData.members.includes(currentUser.uid)) {
                 document.getElementById('topGroupName').innerText = groupData.groupName;
                 document.getElementById('membersCount').innerText = `${groupData.members.length} عضو`;
                 loadMessages();
-            } else { location.href = "chat.html"; }
+            } else {
+                alert("عذراً، لست عضواً في هذه المجموعة.");
+                location.href = "chat.html";
+            }
+        } else {
+            alert("المجموعة لم تعد موجودة.");
+            location.href = "chat.html";
         }
     }
 
+    // تحميل الرسائل مع الترتيب البرمجي (لحل مشكلة عدم الظهور)
     function loadMessages() {
-        const q = query(collection(db, "GroupMessages"), where("groupId", "==", groupId), orderBy("timestamp", "asc"));
+        const q = query(collection(db, "GroupMessages"), where("groupId", "==", groupId));
+        
         onSnapshot(q, (snapshot) => {
             const chatBox = document.getElementById('chatBox');
+            let messages = [];
+            
+            snapshot.forEach(doc => {
+                messages.push({ id: doc.id, ...doc.data() });
+            });
+
+            // ترتيب الرسائل من الأقدم للأحدث
+            messages.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+
             chatBox.innerHTML = "";
-            snapshot.forEach(d => {
-                const m = d.data();
+            messages.forEach(m => {
                 const isMe = m.senderId === currentUser.uid;
+                const timeStr = m.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "";
+                
                 const div = document.createElement('div');
                 div.className = `msg ${isMe ? 'sent' : 'received'}`;
                 div.innerHTML = `
-                    ${!isMe ? `<span class="sender-name">${m.senderName}</span>` : ''}
+                    ${!isMe ? `<span class="sender-name">${m.senderName || 'عضو'}</span>` : ''}
                     <div>${m.text}</div>
-                    <span class="msg-time">${m.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || ''}</span>
+                    <span class="msg-time">${timeStr}</span>
                 `;
                 chatBox.appendChild(div);
             });
@@ -125,52 +148,59 @@
     }
 
     // إرسال رسالة
-    window.sendMessage = async () => {
-        const text = document.getElementById('msgInput').value.trim();
+    const sendMessage = async () => {
+        const input = document.getElementById('msgInput');
+        const text = input.value.trim();
         if (!text) return;
+
         const userSnap = await getDoc(doc(db, "Users", currentUser.uid));
-        const senderName = userSnap.data().fullName;
-        document.getElementById('msgInput').value = "";
-        await addDoc(collection(db, "GroupMessages"), { groupId, senderId: currentUser.uid, senderName, text, timestamp: serverTimestamp() });
+        const senderName = userSnap.exists() ? userSnap.data().fullName : "عضو";
+        
+        input.value = "";
+        await addDoc(collection(db, "GroupMessages"), {
+            groupId: groupId,
+            senderId: currentUser.uid,
+            senderName: senderName,
+            text: text,
+            timestamp: serverTimestamp()
+        });
     };
 
     document.getElementById('sendBtn').onclick = sendMessage;
+    document.getElementById('msgInput').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 
-    // --- وظائف الإدارة ---
+    // وظائف الإدارة
     window.toggleModal = () => {
         const m = document.getElementById('adminModal');
         m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
     };
 
-    window.addNewMember = async () => {
+    document.getElementById('addMemberBtn').onclick = async () => {
         const phone = document.getElementById('newMemberPhone').value.trim();
-        if(!phone) return alert("أدخل رقم الجوال أولاً");
+        if(!phone) return alert("يرجى إدخال الرقم");
 
-        const uSnap = await getDocs(query(collection(db, "Users"), where("phone", "==", phone)));
-        if(!uSnap.empty) {
-            const newUserId = uSnap.docs[0].id;
+        const q = query(collection(db, "Users"), where("phone", "==", phone));
+        const snap = await getDocs(q);
+        
+        if(!snap.empty) {
+            const newId = snap.docs[0].id;
             await updateDoc(doc(db, "TemporaryGroups", groupId), {
-                members: arrayUnion(newUserId)
+                members: arrayUnion(newId)
             });
             alert("تمت إضافة العضو بنجاح ✅");
-            toggleModal();
             location.reload();
         } else {
-            alert("العضو غير موجود، تأكد من الرقم");
+            alert("رقم الجوال غير مسجل في العائلة");
         }
     };
 
-    window.deleteGroup = async () => {
-        if(confirm("هل أنت متأكد من حذف المجموعة وجميع رسائلها؟ لا يمكن التراجع!")) {
-            // 1. حذف مستند المجموعة
+    document.getElementById('deleteGroupBtn').onclick = async () => {
+        if(confirm("سيتم حذف المجموعة وجميع محادثاتها نهائياً، هل أنت متأكد؟")) {
             await deleteDoc(doc(db, "TemporaryGroups", groupId));
-            // 2. حذف جميع الرسائل المرتبطة بها
             const msgs = await getDocs(query(collection(db, "GroupMessages"), where("groupId", "==", groupId)));
             const batch = writeBatch(db);
             msgs.forEach(d => batch.delete(d.ref));
             await batch.commit();
-            
-            alert("تم حذف المجموعة بنجاح");
             location.href = "chat.html";
         }
     };
