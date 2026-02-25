@@ -11,7 +11,7 @@ function createNavbar() {
         .nav-container-fixed {
             position: fixed;
             bottom: 25px;
-            right: 20px; /* مكان الأيقونة العائمة */
+            right: 27px; /* مكان الأيقونة العائمة */
             display: flex;
             align-items: center;
             flex-direction: row-reverse; /* لفتح الشريط من اليمين إلى اليسار */
