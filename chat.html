@@ -23,7 +23,6 @@
 
         .section-title { font-size: 13px; color: var(--text-sec); margin: 20px 5px 10px; font-weight: 600; text-transform: uppercase; }
         
-        /* كرت الدردشة (الستايل الموحد) */
         .chat-card {
             background: white; border-radius: 18px; padding: 12px 15px;
             display: flex; align-items: center; gap: 12px;
@@ -65,7 +64,7 @@
 
     <div class="container">
         <div class="search-box">
-            <input type="text" id="userSearch" class="search-input" placeholder="بحث عن فرد من العائلة لمراسلته...">
+            <input type="text" id="userSearch" class="search-input" placeholder="بحث بالاسم أو رقم الجوال...">
             <div id="searchResults"></div>
         </div>
 
@@ -87,7 +86,7 @@
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, query, where, getDocs, doc, onSnapshot, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, getDocs, doc, onSnapshot, getDoc, orderBy, or } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let currentUserData = null;
 
@@ -102,7 +101,7 @@
         }
     });
 
-    // --- 1. البحث عن أعضاء مع تطبيق القيود وحالة الاتصال ---
+    // --- تحديث: البحث بالاسم أو رقم الجوال ---
     const searchInput = document.getElementById('userSearch');
     const searchResDiv = document.getElementById('searchResults');
 
@@ -113,10 +112,18 @@
         const configSnap = await getDoc(doc(db, "Settings", "AppConfig"));
         const config = configSnap.data();
 
-        const q = query(collection(db, "Users"), where("fullName", ">=", term), where("fullName", "<=", term + '\uf8ff'));
+        let q;
+        // إذا كان المدخل رقمياً بالكامل، يبحث في حقل الجوال
+        if (/^\d+$/.test(term)) {
+            q = query(collection(db, "Users"), where("phone", "==", term));
+        } else {
+            // وإلا يبحث في حقل الاسم
+            q = query(collection(db, "Users"), where("fullName", ">=", term), where("fullName", "<=", term + '\uf8ff'));
+        }
+
         const snap = await getDocs(q);
-        
         searchResDiv.innerHTML = "";
+        
         snap.forEach(uDoc => {
             if (uDoc.id === auth.currentUser.uid) return;
             const u = uDoc.data();
@@ -130,16 +137,23 @@
                     <div class="avatar" style="width:35px; height:35px; background:#007AFF; font-size:14px;">
                         ${u.fullName.charAt(0)} ${isOnline ? '<div class="online-dot" style="width:8px; height:8px;"></div>' : ''}
                     </div>
-                    <span style="font-size:14px; font-weight:500;">${u.fullName}</span>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-size:14px; font-weight:500;">${u.fullName}</span>
+                        <small style="font-size:10px; color:#999;">${u.phone || ''}</small>
+                    </div>
                 </div>
                 ${isRestricted ? '<span style="font-size:10px; color:#FF3B30;">⚠️ قيود</span>' : '<span style="color:#007AFF; font-size:12px; font-weight:bold;">مراسلة</span>'}
             `;
             if(!isRestricted) div.onclick = () => location.href = `private_chat.html?id=${uDoc.id}`;
             searchResDiv.appendChild(div);
         });
+
+        if (snap.empty) {
+            searchResDiv.innerHTML = "<div class='loading-text'>لا توجد نتائج مطابقة</div>";
+        }
     });
 
-    // --- 2. جلب المجموعات المؤقتة ---
+    // --- جلب المجموعات المؤقتة ---
     function loadTemporaryGroups(uid) {
         const q = query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid));
         onSnapshot(q, snap => {
@@ -156,7 +170,7 @@
         });
     }
 
-    // --- 3. جلب السجل الأخير مع العداد والوقت ---
+    // --- جلب السجل الأخير مع العداد والوقت ---
     function loadRecentChats(uid) {
         const q = query(collection(db, "PrivateMessages"));
         onSnapshot(q, async snap => {
@@ -168,7 +182,8 @@
                 const otherId = m.senderId === uid ? m.receiverId : m.receiverId === uid ? m.senderId : null;
                 if (otherId) {
                     const existing = lastMsgs.get(otherId);
-                    if (!existing || (m.timestamp?.toMillis() || 0) > (existing.timestamp?.toMillis() || 0)) {
+                    const mTime = m.timestamp?.toMillis() || 0;
+                    if (!existing || mTime > (existing.timestamp?.toMillis() || 0)) {
                         lastMsgs.set(otherId, m);
                     }
                     if (m.receiverId === uid && m.isRead === false) {
@@ -211,7 +226,6 @@
         });
     }
 
-    // إغلاق نتائج البحث عند الضغط خارجها
     document.addEventListener('click', (e) => { if(!searchInput.contains(e.target)) searchResDiv.innerHTML = ""; });
 </script>
 </body>
