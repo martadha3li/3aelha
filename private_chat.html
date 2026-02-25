@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>محادثة خاصة</title>
+    <style>
+        body { background: #FFFFFF; margin: 0; padding-top: 80px; padding-bottom: 80px; }
+    </style>
+</head>
+<body>
+    <script type="module" src="header.js"></script>
+    <script type="module" src="navbar.js"></script>
+
+    <div style="padding: 20px; text-align: center;">
+        <h2>💬 محادثة خاصة</h2>
+        <p id="chatStatus">جاري بدء التشفير والاتصال...</p>
+    </div>
+
+    <script type="module">
+        // كود استقبال الـ ID من الرابط وبدء المحادثة
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id') || urlParams.get('chatId');
+        if(targetId) {
+            console.log("سيتم بدء المحادثة مع المعرف:", targetId);
+        }
+    </script>
+</body>
+</html>
