@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>المجموعة المؤقتة</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --ios-red: #FF3B30; }
         body { background: #E5DDD5; font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         
         /* الهيدر */
@@ -15,111 +15,108 @@
             border-bottom: 0.5px solid #ccc; position: fixed; top: 0; width: 100%; z-index: 1000;
         }
         .back-btn { color: var(--ios-blue); text-decoration: none; font-size: 17px; font-weight: 500; cursor: pointer; }
-        .group-info { flex: 1; }
+        .group-info { flex: 1; text-align: center; }
         .group-name { font-weight: bold; font-size: 16px; display: block; }
         .group-status { font-size: 11px; color: #8E8E93; }
+        .admin-tools { color: var(--ios-blue); font-size: 20px; cursor: pointer; padding: 5px; }
 
         /* منطقة الرسائل */
-        #chatBox { flex: 1; padding: 80px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; line-height: 1.4; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        #chatBox { flex: 1; padding: 100px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 75%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .msg.sent { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 2px; }
         .msg.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
-        
         .sender-name { font-size: 11px; font-weight: bold; color: var(--ios-blue); display: block; margin-bottom: 3px; }
         .msg-time { font-size: 9px; color: #999; display: block; text-align: left; margin-top: 4px; }
 
         /* شريط الإدخال */
-        .input-area { 
-            background: #f6f6f6; padding: 10px 15px 30px; display: flex; align-items: center; gap: 10px;
-            border-top: 0.5px solid #ccc; position: fixed; bottom: 0; width: 100%; box-sizing: border-box;
-        }
-        .msg-input { flex: 1; background: white; border: 0.5px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 15px; }
-        .send-btn { background: var(--ios-blue); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        
-        #loading { position: fixed; inset: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .input-area { background: #f6f6f6; padding: 10px 15px 30px; display: flex; align-items: center; gap: 10px; border-top: 0.5px solid #ccc; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        .msg-input { flex: 1; border: 0.5px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; }
+        .send-btn { background: var(--ios-blue); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
+
+        /* نافذة التحكم (Action Sheet) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .modal-content { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; }
+        .modal-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; }
+        .delete-btn { color: var(--ios-red); background: #fff1f0; }
+        .add-btn { background: var(--ios-blue); color: white; }
     </style>
 </head>
 <body>
 
-<div id="loading">جاري دخول المجموعة...</div>
-
 <div class="header">
-    <div class="back-btn" onclick="history.back()">❮ عودة</div>
+    <div class="back-btn" onclick="location.href='chat.html'">❮ عودة</div>
     <div class="group-info">
         <span class="group-name" id="topGroupName">المجموعة</span>
-        <span class="group-status" id="membersCount">جاري التحقق...</span>
+        <span class="group-status" id="membersCount">...</span>
     </div>
+    <div id="adminIcon" class="admin-tools" style="display:none;" onclick="toggleModal()">⚙️</div>
 </div>
 
 <div id="chatBox"></div>
 
 <div class="input-area">
-    <button id="imgBtn" style="border:none; background:none; font-size:24px; cursor:pointer;">📷</button>
-    <input type="text" id="msgInput" class="msg-input" placeholder="رسالة المجموعه...">
+    <input type="text" id="msgInput" class="msg-input" placeholder="رسالة المجموعة...">
     <button id="sendBtn" class="send-btn">▲</button>
+</div>
+
+<div id="adminModal" class="modal" onclick="if(event.target==this) toggleModal()">
+    <div class="modal-content">
+        <h3 style="text-align:center; margin-top:0;">إدارة المجموعة</h3>
+        <input type="text" id="newMemberPhone" placeholder="أدخل رقم جوال العضو لإضافته" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;">
+        <button class="modal-btn add-btn" onclick="addNewMember()">+ إضافة عضو للمجموعة</button>
+        <button class="modal-btn delete-btn" onclick="deleteGroup()">❌ حذف المجموعة نهائياً</button>
+        <button class="modal-btn" style="background:#eee;" onclick="toggleModal()">إلغاء</button>
+    </div>
 </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, doc, getDoc, addDoc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, doc, getDoc, getDocs, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, updateDoc, arrayUnion, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get('id');
     let currentUser = null;
+    let groupData = null;
 
     auth.onAuthStateChanged(async (user) => {
         if (user && groupId) {
             currentUser = user;
+            // فحص هل المستخدم مدير (لتفعيل أيقونة الإعدادات)
+            const userSnap = await getDoc(doc(db, "Users", user.uid));
+            if(userSnap.data().role === 'admin') document.getElementById('adminIcon').style.display = 'block';
+            
             checkAccess();
         } else {
             window.location.href = "chat.html";
         }
     });
 
-    // 1. التحقق من صلاحية الدخول للمجموعة المؤقتة
     async function checkAccess() {
         const groupSnap = await getDoc(doc(db, "TemporaryGroups", groupId));
         if (groupSnap.exists()) {
-            const data = groupSnap.data();
-            if (data.members.includes(currentUser.uid)) {
-                document.getElementById('topGroupName').innerText = data.groupName;
-                document.getElementById('membersCount').innerText = `${data.members.length} عضو في المجموعة`;
-                document.getElementById('loading').style.display = 'none';
+            groupData = groupSnap.data();
+            if (groupData.members.includes(currentUser.uid)) {
+                document.getElementById('topGroupName').innerText = groupData.groupName;
+                document.getElementById('membersCount').innerText = `${groupData.members.length} عضو`;
                 loadMessages();
-            } else {
-                alert("عذراً، لست عضواً في هذه المجموعة المؤقتة.");
-                window.location.href = "chat.html";
-            }
-        } else {
-            alert("المجموعة غير موجودة أو تم حذفها.");
-            window.location.href = "chat.html";
+            } else { location.href = "chat.html"; }
         }
     }
 
-    // 2. تحميل الرسائل
     function loadMessages() {
-        const q = query(
-            collection(db, "GroupMessages"),
-            where("groupId", "==", groupId),
-            orderBy("timestamp", "asc")
-        );
-
+        const q = query(collection(db, "GroupMessages"), where("groupId", "==", groupId), orderBy("timestamp", "asc"));
         onSnapshot(q, (snapshot) => {
             const chatBox = document.getElementById('chatBox');
             chatBox.innerHTML = "";
             snapshot.forEach(d => {
                 const m = d.data();
                 const isMe = m.senderId === currentUser.uid;
-                const time = m.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || "";
-
                 const div = document.createElement('div');
                 div.className = `msg ${isMe ? 'sent' : 'received'}`;
                 div.innerHTML = `
                     ${!isMe ? `<span class="sender-name">${m.senderName}</span>` : ''}
-                    ${m.text ? `<div>${m.text}</div>` : ''}
-                    ${m.image ? `<img src="${m.image}" style="max-width:100%; border-radius:10px; margin-top:5px;">` : ''}
-                    <span class="msg-time">${time}</span>
+                    <div>${m.text}</div>
+                    <span class="msg-time">${m.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || ''}</span>
                 `;
                 chatBox.appendChild(div);
             });
@@ -127,28 +124,56 @@
         });
     }
 
-    // 3. إرسال الرسالة
-    async function sendMessage() {
+    // إرسال رسالة
+    window.sendMessage = async () => {
         const text = document.getElementById('msgInput').value.trim();
         if (!text) return;
-
-        // جلب اسم المرسل الحالي
         const userSnap = await getDoc(doc(db, "Users", currentUser.uid));
         const senderName = userSnap.data().fullName;
-
         document.getElementById('msgInput').value = "";
-        await addDoc(collection(db, "GroupMessages"), {
-            groupId: groupId,
-            senderId: currentUser.uid,
-            senderName: senderName,
-            text: text,
-            timestamp: serverTimestamp()
-        });
-    }
+        await addDoc(collection(db, "GroupMessages"), { groupId, senderId: currentUser.uid, senderName, text, timestamp: serverTimestamp() });
+    };
 
     document.getElementById('sendBtn').onclick = sendMessage;
-    document.getElementById('msgInput').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 
+    // --- وظائف الإدارة ---
+    window.toggleModal = () => {
+        const m = document.getElementById('adminModal');
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+    };
+
+    window.addNewMember = async () => {
+        const phone = document.getElementById('newMemberPhone').value.trim();
+        if(!phone) return alert("أدخل رقم الجوال أولاً");
+
+        const uSnap = await getDocs(query(collection(db, "Users"), where("phone", "==", phone)));
+        if(!uSnap.empty) {
+            const newUserId = uSnap.docs[0].id;
+            await updateDoc(doc(db, "TemporaryGroups", groupId), {
+                members: arrayUnion(newUserId)
+            });
+            alert("تمت إضافة العضو بنجاح ✅");
+            toggleModal();
+            location.reload();
+        } else {
+            alert("العضو غير موجود، تأكد من الرقم");
+        }
+    };
+
+    window.deleteGroup = async () => {
+        if(confirm("هل أنت متأكد من حذف المجموعة وجميع رسائلها؟ لا يمكن التراجع!")) {
+            // 1. حذف مستند المجموعة
+            await deleteDoc(doc(db, "TemporaryGroups", groupId));
+            // 2. حذف جميع الرسائل المرتبطة بها
+            const msgs = await getDocs(query(collection(db, "GroupMessages"), where("groupId", "==", groupId)));
+            const batch = writeBatch(db);
+            msgs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            
+            alert("تم حذف المجموعة بنجاح");
+            location.href = "chat.html";
+        }
+    };
 </script>
 </body>
 </html>
