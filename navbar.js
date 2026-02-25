@@ -108,7 +108,7 @@ function createNavbar() {
     // وظيفة الفتح والإغلاق
     trigger.onclick = () => {
         const isOpen = container.classList.toggle('open');
-        trigger.innerHTML = isOpen ? "✕" : "📱";
+        trigger.innerHTML = isOpen ? "✕" : "::";
         // تغيير لون الزر عند الفتح
         trigger.style.background = isOpen ? "#FF3B30" : "#007AFF"; 
     };
