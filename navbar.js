@@ -88,7 +88,7 @@ function createNavbar() {
     </style>
     
     <div class="nav-container-fixed" id="navContainer">
-        <div class="nav-trigger-btn" id="mainTrigger">📱</div>
+        <div class="nav-trigger-btn" id="mainTrigger">::</div>
 
         <nav class="bottom-capsule-bar" id="actualNav">
             <a href="news.html" id="nav-home" class="nav-item-link"><i>🏠</i><span>الرئيسية</span></a>
