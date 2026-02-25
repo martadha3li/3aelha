@@ -63,12 +63,20 @@
     </div>
 
 <script type="module">
+
+    
     import { db, auth } from './config.js';
     import { collection, query, where, getDocs, doc, onSnapshot, getDoc, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let currentUserData = null;
     let appConfig = { publicChatEnabled: true, privateChatEnabled: true, genderRestriction: false };
 
+ import { initNotifications } from './notifications.js';
+    
+    // استدعاء نظام الإشعارات والصوت في هذه الصفحة
+    initNotifications();
+
+    
     // 1. مراقبة حالة تسجيل الدخول
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -230,6 +238,12 @@
     document.addEventListener('click', (e) => {
         if(!searchInput.contains(e.target)) searchResDiv.style.display = "none";
     });
+
+
+   
+
+
+    
 </script>
 
 </body>
