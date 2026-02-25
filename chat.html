@@ -74,29 +74,44 @@
         }
     });
 
-    // --- ميزة التحكم في الدردشة العامة ---
-    function initPublicChatControl() {
-        const publicCard = document.getElementById('publicChatCard');
-        const publicStatus = document.getElementById('publicStatus');
+   // --- ميزة التحكم في الدردشة العامة المصلحة ---
+function initPublicChatControl() {
+    const publicCard = document.getElementById('publicChatCard');
+    const publicStatus = document.getElementById('publicStatus');
 
-        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+    // 1. وضع حالة افتراضية فورية لتجنب تعليق "جاري التحقق"
+    publicStatus.innerHTML = "دردشة جماعية لكل أفراد العائلة";
+
+    // 2. المراقبة الحية للإعدادات
+    onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+        if (snap.exists()) {
             const config = snap.data();
             const isPublicEnabled = config.publicChatEnabled;
-            const isAdmin = currentUserData.role === 'admin';
+            // التأكد من وجود currentUserData قبل الفحص
+            const isAdmin = currentUserData && currentUserData.role === 'admin';
 
-            if (!isPublicEnabled && !isAdmin) {
+            if (isPublicEnabled === false && !isAdmin) {
                 // معطلة للعضو العادي
                 publicCard.classList.add('disabled');
                 publicStatus.innerHTML = "🔒 مغلقة حالياً من قِبل الإدارة";
-                publicCard.onclick = () => alert("عذراً، الدردشة العامة مغلقة حالياً.");
+                publicCard.onclick = () => alert("عذراً، الدردشة العامة مغلقة حالياً بقرار إداري.");
             } else {
-                // مفتوحة أو المستخدم مدير
+                // مفتوحة للكل أو المستخدم مدير
                 publicCard.classList.remove('disabled');
                 publicStatus.innerHTML = isPublicEnabled ? "دردشة جماعية لكل أفراد العائلة" : "🛠 (أنت مدير) الدردشة معطلة للجمهور";
                 publicCard.onclick = () => location.href = 'public_chat.html';
             }
-        });
-    }
+        } else {
+            // في حال عدم وجود مستند الإعدادات أصلاً في Firestore
+            console.warn("مستند AppConfig غير موجود، سيتم السماح بالدخول افتراضياً.");
+            publicCard.onclick = () => location.href = 'public_chat.html';
+        }
+    }, (error) => {
+        console.error("خطأ في جلب الإعدادات:", error);
+        // في حال وجود خطأ في الصلاحيات (Permission error)، نسمح بالدخول لكي لا يتعطل المستخدم
+        publicCard.onclick = () => location.href = 'public_chat.html';
+    });
+}
 
     // --- محرك البحث (اسم + جوال) ---
     const searchInput = document.getElementById('userSearch');
