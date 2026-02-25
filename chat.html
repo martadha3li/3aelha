@@ -2,99 +2,217 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>مركز الدردشة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مركز الدردشة - العائلة</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --text-sec: #8E8E93; }
         body { background: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding-top: 80px; padding-bottom: 100px; }
-        .section-title { font-size: 13px; color: #8E8E93; margin: 20px 15px 10px; font-weight: 600; text-transform: uppercase; }
-        .chat-card { background: white; border-radius: 15px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin: 0 15px 8px; cursor: pointer; border: 0.5px solid #E5E5EA; position: relative; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; position: relative; flex-shrink: 0; }
-        .online-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #34C759; border: 2px solid white; border-radius: 50%; }
+        
+        .container { padding: 0 15px; }
+
+        /* ستايل البحث المطور */
+        .search-box { margin-bottom: 20px; position: relative; z-index: 100; }
+        .search-input { 
+            width: 100%; padding: 12px 15px; border-radius: 12px; border: none; 
+            background: #E5E5EA; outline: none; box-sizing: border-box; font-size: 15px;
+        }
+        #searchResults { 
+            background: white; border-radius: 0 0 15px 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+            max-height: 250px; overflow-y: auto; position: absolute; width: 100%; top: 45px;
+        }
+
+        .section-title { font-size: 13px; color: var(--text-sec); margin: 20px 5px 10px; font-weight: 600; text-transform: uppercase; }
+        
+        /* كرت الدردشة (الستايل الموحد) */
+        .chat-card {
+            background: white; border-radius: 18px; padding: 12px 15px;
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 8px; cursor: pointer; transition: 0.2s;
+            border: 0.5px solid rgba(0,0,0,0.05); position: relative;
+        }
+        .chat-card:active { transform: scale(0.98); }
+
+        .avatar { 
+            width: 52px; height: 52px; border-radius: 50%; 
+            background: #eee; color: white; display: flex; 
+            align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 20px; flex-shrink: 0; position: relative;
+        }
+        .online-dot { 
+            position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; 
+            background: #34C759; border: 2.5px solid white; border-radius: 50%; 
+        }
+
         .chat-info { flex: 1; overflow: hidden; }
         .chat-header { display: flex; justify-content: space-between; align-items: center; }
-        .chat-name { font-weight: bold; font-size: 16px; color: #1c1c1e; }
-        .chat-time { font-size: 11px; color: #8E8E93; }
+        .chat-name { font-weight: bold; color: #1c1c1e; font-size: 16px; }
+        .chat-time { font-size: 11px; color: var(--text-sec); }
         .chat-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-        .chat-last-msg { font-size: 13px; color: #8E8E93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .unread-badge { background: #FF3B30; color: white; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
-        .search-box { margin: 0 15px 15px; }
-        .search-input { width: 100%; padding: 10px 15px; border-radius: 10px; border: none; background: #E5E5EA; outline: none; box-sizing: border-box; }
+        .chat-last-msg { font-size: 13px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .unread-badge { 
+            background: #FF3B30; color: white; font-size: 10px; 
+            padding: 2px 7px; border-radius: 10px; font-weight: bold; 
+        }
+
+        .loading-text { text-align: center; color: #999; font-size: 12px; padding: 20px; }
     </style>
 </head>
 <body>
+
     <script type="module" src="header.js"></script>
     <script type="module" src="navbar.js"></script>
 
-    <div class="search-box">
-        <input type="text" id="userSearch" class="search-input" placeholder="بحث عن عضو لمراسلته...">
-        <div id="searchResults"></div>
-    </div>
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="userSearch" class="search-input" placeholder="بحث عن فرد من العائلة لمراسلته...">
+            <div id="searchResults"></div>
+        </div>
 
-    <div class="section-title">الغرف والمجموعات</div>
-    <div class="chat-card" onclick="location.href='public_chat.html'">
-        <div class="avatar" style="background: linear-gradient(45deg, #007AFF, #5856D6);">🏠</div>
-        <div class="chat-info"><span class="chat-name">المجلس العام للعائلة</span><br><small>دردشة عامة للجميع</small></div>
-    </div>
-    <div id="tempGroupsList"></div>
+        <div class="section-title">الغرف والمجموعات</div>
+        <div class="chat-card" onclick="location.href='public_chat.html'">
+            <div class="avatar" style="background: linear-gradient(45deg, #007AFF, #5856D6);">🏠</div>
+            <div class="chat-info">
+                <span class="chat-name">المجلس العام للعائلة</span>
+                <span class="chat-last-msg">دردشة جماعية لكل أفراد العائلة</span>
+            </div>
+        </div>
+        <div id="tempGroupsList"></div>
 
-    <div class="section-title">المحادثات الأخيرة</div>
-    <div id="recentPrivateList"></div>
+        <div class="section-title">المحادثات الأخيرة</div>
+        <div id="recentPrivateList">
+            <div class="loading-text">جاري جلب المحادثات...</div>
+        </div>
+    </div>
 
 <script type="module">
     import { db, auth } from './config.js';
     import { collection, query, where, getDocs, doc, onSnapshot, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    auth.onAuthStateChanged(user => { if(user) { loadData(user.uid); } else location.href='login.html'; });
+    let currentUserData = null;
 
-    function loadData(uid) {
-        // 1. المجموعات المؤقتة
-        onSnapshot(query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid)), snap => {
-            const list = document.getElementById('tempGroupsList'); list.innerHTML = "";
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const userSnap = await getDoc(doc(db, "Users", user.uid));
+            currentUserData = userSnap.data();
+            loadTemporaryGroups(user.uid);
+            loadRecentChats(user.uid);
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    // --- 1. البحث عن أعضاء مع تطبيق القيود وحالة الاتصال ---
+    const searchInput = document.getElementById('userSearch');
+    const searchResDiv = document.getElementById('searchResults');
+
+    searchInput.addEventListener('input', async (e) => {
+        const term = e.target.value.trim();
+        if (term.length < 1) { searchResDiv.innerHTML = ""; return; }
+
+        const configSnap = await getDoc(doc(db, "Settings", "AppConfig"));
+        const config = configSnap.data();
+
+        const q = query(collection(db, "Users"), where("fullName", ">=", term), where("fullName", "<=", term + '\uf8ff'));
+        const snap = await getDocs(q);
+        
+        searchResDiv.innerHTML = "";
+        snap.forEach(uDoc => {
+            if (uDoc.id === auth.currentUser.uid) return;
+            const u = uDoc.data();
+            const isRestricted = config.genderRestriction && u.gender !== currentUserData.gender;
+            const isOnline = u.lastSeen && (new Date().getTime() - u.lastSeen.toMillis()) < 300000;
+
+            const div = document.createElement('div');
+            div.style.cssText = "padding:12px; border-bottom:0.5px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="avatar" style="width:35px; height:35px; background:#007AFF; font-size:14px;">
+                        ${u.fullName.charAt(0)} ${isOnline ? '<div class="online-dot" style="width:8px; height:8px;"></div>' : ''}
+                    </div>
+                    <span style="font-size:14px; font-weight:500;">${u.fullName}</span>
+                </div>
+                ${isRestricted ? '<span style="font-size:10px; color:#FF3B30;">⚠️ قيود</span>' : '<span style="color:#007AFF; font-size:12px; font-weight:bold;">مراسلة</span>'}
+            `;
+            if(!isRestricted) div.onclick = () => location.href = `private_chat.html?id=${uDoc.id}`;
+            searchResDiv.appendChild(div);
+        });
+    });
+
+    // --- 2. جلب المجموعات المؤقتة ---
+    function loadTemporaryGroups(uid) {
+        const q = query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid));
+        onSnapshot(q, snap => {
+            const list = document.getElementById('tempGroupsList');
+            list.innerHTML = "";
             snap.forEach(d => {
                 const g = d.data();
-                list.innerHTML += `<div class="chat-card" onclick="location.href='group_chat.html?id=${d.id}'">
-                    <div class="avatar" style="background: #FF9500;">⏳</div>
-                    <div class="chat-info"><span class="chat-name">${g.groupName}</span><br><small>مجموعة خاصة مؤقتة</small></div>
-                </div>`;
+                list.innerHTML += `
+                    <div class="chat-card" onclick="location.href='group_chat.html?id=${d.id}'">
+                        <div class="avatar" style="background:#FF9500;">⏳</div>
+                        <div class="chat-info"><span class="chat-name">${g.groupName}</span><br><small>مجموعة خاصة مؤقتة</small></div>
+                    </div>`;
             });
         });
+    }
 
-        // 2. المحادثات الأخيرة + العداد + حالة الاتصال
-        onSnapshot(query(collection(db, "PrivateMessages")), async snap => {
-            const lastMsgs = new Map(); const unread = new Map();
+    // --- 3. جلب السجل الأخير مع العداد والوقت ---
+    function loadRecentChats(uid) {
+        const q = query(collection(db, "PrivateMessages"));
+        onSnapshot(q, async snap => {
+            const lastMsgs = new Map();
+            const unreadCounts = new Map();
+
             snap.forEach(d => {
-                const m = d.data(); const otherId = m.senderId === uid ? m.receiverId : m.receiverId === uid ? m.senderId : null;
-                if(otherId) {
+                const m = d.data();
+                const otherId = m.senderId === uid ? m.receiverId : m.receiverId === uid ? m.senderId : null;
+                if (otherId) {
                     const existing = lastMsgs.get(otherId);
-                    if(!existing || (m.timestamp?.toMillis() || 0) > (existing.timestamp?.toMillis() || 0)) lastMsgs.set(otherId, m);
-                    if(m.receiverId === uid && !m.isRead) unread.set(otherId, (unread.get(otherId) || 0) + 1);
+                    if (!existing || (m.timestamp?.toMillis() || 0) > (existing.timestamp?.toMillis() || 0)) {
+                        lastMsgs.set(otherId, m);
+                    }
+                    if (m.receiverId === uid && m.isRead === false) {
+                        unreadCounts.set(otherId, (unreadCounts.get(otherId) || 0) + 1);
+                    }
                 }
             });
 
-            const sorted = Array.from(lastMsgs.entries()).sort((a,b) => (b[1].timestamp?.toMillis() || 0) - (a[1].timestamp?.toMillis() || 0));
-            const recentDiv = document.getElementById('recentPrivateList'); recentDiv.innerHTML = "";
-            
-            for(let [otherId, m] of sorted) {
-                const uDoc = await getDoc(doc(db, "Users", otherId));
-                if(uDoc.exists()) {
-                    const u = uDoc.data(); const count = unread.get(otherId) || 0;
+            const sorted = Array.from(lastMsgs.entries()).sort((a, b) => (b[1].timestamp?.toMillis() || 0) - (a[1].timestamp?.toMillis() || 0));
+            const recentDiv = document.getElementById('recentPrivateList');
+            recentDiv.innerHTML = sorted.length === 0 ? "<div class='loading-text'>لا توجد محادثات سابقة</div>" : "";
+
+            for (let [otherId, m] of sorted) {
+                const uSnap = await getDoc(doc(db, "Users", otherId));
+                if (uSnap.exists()) {
+                    const u = uSnap.data();
+                    const count = unreadCounts.get(otherId) || 0;
                     const isOnline = u.lastSeen && (new Date().getTime() - u.lastSeen.toMillis()) < 300000;
+                    const timeStr = m.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "";
+
                     recentDiv.innerHTML += `
-                    <div class="chat-card" onclick="location.href='private_chat.html?id=${otherId}'">
-                        <div class="avatar" style="background:#007AFF">${u.fullName.charAt(0)} ${isOnline ? '<div class="online-dot"></div>' : ''}</div>
-                        <div class="chat-info">
-                            <div class="chat-header"><span class="chat-name">${u.fullName}</span><span class="chat-time">${m.timestamp?.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) || ''}</span></div>
-                            <div class="chat-sub">
-                                <span class="chat-last-msg" style="${count > 0 ? 'color:#000; font-weight:bold;' : ''}">${m.image ? '📷 صورة' : m.text}</span>
-                                ${count > 0 ? `<span class="unread-badge">${count}</span>` : ''}
+                        <div class="chat-card" onclick="location.href='private_chat.html?id=${otherId}'">
+                            <div class="avatar" style="background:var(--ios-blue);">
+                                ${u.fullName.charAt(0)}
+                                ${isOnline ? '<div class="online-dot"></div>' : ''}
                             </div>
-                        </div>
-                    </div>`;
+                            <div class="chat-info">
+                                <div class="chat-header">
+                                    <span class="chat-name">${u.fullName}</span>
+                                    <span class="chat-time" style="${count > 0 ? 'color:var(--ios-blue); font-weight:bold;' : ''}">${timeStr}</span>
+                                </div>
+                                <div class="chat-sub">
+                                    <span class="chat-last-msg" style="${count > 0 ? 'color:#000; font-weight:500;' : ''}">${m.image ? '📷 صورة' : m.text}</span>
+                                    ${count > 0 ? `<span class="unread-badge">${count}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>`;
                 }
             }
         });
     }
+
+    // إغلاق نتائج البحث عند الضغط خارجها
+    document.addEventListener('click', (e) => { if(!searchInput.contains(e.target)) searchResDiv.innerHTML = ""; });
 </script>
 </body>
 </html>
