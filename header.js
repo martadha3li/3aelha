@@ -55,7 +55,7 @@ async function createDynamicHeader() {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f2f2f7;
+            background: #c6d9e4;
             border-radius: 12px;
             cursor: pointer;
             font-size: 18px;
