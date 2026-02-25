@@ -3,187 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - إدارة الدردشة</title>
+    <title>لوحة التحكم</title>
     <style>
-        :root {
-            --ios-blue: #007AFF; --ios-bg: #F2F2F7;
-            --ios-green: #34C759; --ios-red: #FF3B30; --text-sec: #8E8E93;
-        }
-        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; padding-top: 80px; padding-bottom: 120px; }
-        
-        h2 { margin: 25px 10px 10px; font-size: 20px; color: #1c1c1e; }
-
-        .settings-group { background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 0.5px solid #E5E5EA; }
-        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 0.5px solid #E5E5EA; }
-        .setting-item:last-child { border-bottom: none; }
-        
-        .label-container { display: flex; flex-direction: column; gap: 2px; }
-        .label-title { font-weight: 600; font-size: 16px; color: #1c1c1e; }
-        .label-desc { font-size: 12px; color: var(--text-sec); }
-
-        /* Switch Style */
-        .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        body { background: #f4f4f4; font-family: sans-serif; padding: 20px; }
+        .admin-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 500px; margin: 0 auto; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #e9e9eb; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-        input:checked + .slider { background-color: var(--ios-green); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        /* ستايل إدارة المجموعات */
-        .input-text { width: 100%; padding: 12px; border: none; font-size: 16px; outline: none; }
-        .users-checklist { max-height: 200px; overflow-y: auto; background: #fff; }
-        .user-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 0.5px solid #eee; font-size: 14px; }
-        
-        .btn-create { width: calc(100% - 32px); margin: 16px; background: var(--ios-blue); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        
-        .active-group-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-bottom: 0.5px solid #eee; }
-        .btn-del-group { color: var(--ios-red); border: none; background: none; font-weight: 600; cursor: pointer; }
-
-        .save-banner { position: fixed; bottom: 30px; left: 0; right: 0; display: flex; justify-content: center; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000; }
-        .save-banner.show { opacity: 1; pointer-events: auto; }
-        .btn-save { background: var(--ios-blue); color: white; border: none; padding: 12px 60px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,122,255,0.4); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        input:checked + .slider { background-color: #2481cc; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider:before { transform: translateX(24px); }
     </style>
 </head>
 <body>
-
-<script type="module" src="header.js"></script>
-<script type="module" src="navbar.js"></script>
-
-<h2>إعدادات السياسات</h2>
-<div class="settings-group">
-    <div class="setting-item">
-        <div class="label-container">
-            <span class="label-title">الدردشة العامة</span>
-            <span class="label-desc">تفعيل أو تعطيل مجلس العائلة العام</span>
+    <div class="admin-card">
+        <h2>إعدادات المجلس</h2>
+        <div class="toggle-row">
+            <span>تفعيل الدردشة العامة</span>
+            <label class="switch">
+                <input type="checkbox" id="publicToggle">
+                <span class="slider"></span>
+            </label>
         </div>
-        <label class="switch">
-            <input type="checkbox" id="publicChatEnabled">
-            <span class="slider"></span>
-        </label>
-    </div>
-    <div class="setting-item">
-        <div class="label-container">
-            <span class="label-title">الدردشة الخاصة</span>
-            <span class="label-desc">السماح بالأعضاء بمراسلة بعضهم البعض</span>
+        <div class="toggle-row">
+            <span>تفعيل المراسلات الخاصة</span>
+            <label class="switch">
+                <input type="checkbox" id="privateToggle">
+                <span class="slider"></span>
+            </label>
         </div>
-        <label class="switch">
-            <input type="checkbox" id="privateChatEnabled">
-            <span class="slider"></span>
-        </label>
-    </div>
-    <div class="setting-item">
-        <div class="label-container">
-            <span class="label-title">فصل الجنسين</span>
-            <span class="label-desc">منع مراسلة الجنس المختلف (ذكر/أنثى)</span>
+        <div class="toggle-row">
+            <span>منع الاختلاط (بين الجنسين)</span>
+            <label class="switch">
+                <input type="checkbox" id="genderToggle">
+                <span class="slider"></span>
+            </label>
         </div>
-        <label class="switch">
-            <input type="checkbox" id="genderRestriction">
-            <span class="slider"></span>
-        </label>
     </div>
-</div>
-
-<h2>إنشاء مجموعة مؤقتة</h2>
-<div class="settings-group">
-    <input type="text" id="groupName" class="input-text" placeholder="اسم المجموعة (مثلاً: لجنة العيد)">
-    <div class="users-checklist" id="usersList">
-        <p style="padding:15px; font-size:12px; color:gray;">جاري تحميل الأعضاء...</p>
-    </div>
-    <button class="btn-create" id="createGroupBtn">إنشاء المجموعة وحفظها</button>
-</div>
-
-<h2>المجموعات الحالية</h2>
-<div class="settings-group" id="activeGroupsContainer">
-    </div>
-
-<div class="save-banner" id="saveBanner">
-    <button class="btn-save" id="saveBtn">حفظ سياسات التواصل</button>
-</div>
 
 <script type="module">
     import { db } from './config.js';
-    import { doc, getDoc, updateDoc, onSnapshot, collection, getDocs, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const configDoc = doc(db, "Settings", "AppConfig");
-    const switches = {
-        publicChatEnabled: document.getElementById('publicChatEnabled'),
-        privateChatEnabled: document.getElementById('privateChatEnabled'),
-        genderRestriction: document.getElementById('genderRestriction')
-    };
 
-    // --- 1. إدارة السياسات (Switches) ---
-    onSnapshot(configDoc, (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            for (let key in switches) {
-                if (data[key] !== undefined) switches[key].checked = data[key];
-            }
-        }
+    onSnapshot(configDoc, snap => {
+        const data = snap.data();
+        document.getElementById('publicToggle').checked = data.publicChatEnabled;
+        document.getElementById('privateToggle').checked = data.privateChatEnabled;
+        document.getElementById('genderToggle').checked = data.genderRestriction;
     });
 
-    for (let key in switches) {
-        switches[key].onchange = () => document.getElementById('saveBanner').classList.add('show');
+    async function toggle(field, value) {
+        await updateDoc(configDoc, { [field]: value });
     }
 
-    document.getElementById('saveBtn').onclick = async () => {
-        const updates = {};
-        for (let key in switches) updates[key] = switches[key].checked;
-        await updateDoc(configDoc, updates);
-        alert("تم حفظ السياسات بنجاح ✅");
-        document.getElementById('saveBanner').classList.remove('show');
-    };
-
-    // --- 2. إدارة المجموعات والأعضاء ---
-    async function loadUsers() {
-        const snap = await getDocs(collection(db, "Users"));
-        const container = document.getElementById('usersList');
-        container.innerHTML = "";
-        snap.forEach(uDoc => {
-            const u = uDoc.data();
-            container.innerHTML += `
-                <label class="user-row">
-                    <input type="checkbox" class="user-select" value="${uDoc.id}">
-                    <span>${u.fullName} (${u.gender})</span>
-                </label>
-            `;
-        });
-    }
-
-    document.getElementById('createGroupBtn').onclick = async () => {
-        const name = document.getElementById('groupName').value.trim();
-        const selected = Array.from(document.querySelectorAll('.user-select:checked')).map(c => c.value);
-        
-        if(!name || selected.length === 0) return alert("أكمل البيانات أولاً");
-
-        await addDoc(collection(db, "TemporaryGroups"), {
-            groupName: name,
-            members: selected,
-            createdAt: serverTimestamp()
-        });
-        alert("تم إنشاء المجموعة ✅");
-        document.getElementById('groupName').value = "";
-    };
-
-    onSnapshot(collection(db, "TemporaryGroups"), (snap) => {
-        const container = document.getElementById('activeGroupsContainer');
-        container.innerHTML = "";
-        snap.forEach(gDoc => {
-            const g = gDoc.data();
-            const div = document.createElement('div');
-            div.className = "active-group-card";
-            div.innerHTML = `
-                <span>${g.groupName} (${g.members.length} عضو)</span>
-                <button class="btn-del-group" onclick="deleteG('${gDoc.id}')">حذف</button>
-            `;
-            container.appendChild(div);
-        });
-    });
-
-    window.deleteG = async (id) => {
-        if(confirm("حذف المجموعة نهائياً؟")) await deleteDoc(doc(db, "TemporaryGroups", id));
-    };
-
-    loadUsers();
+    document.getElementById('publicToggle').onchange = (e) => toggle('publicChatEnabled', e.target.checked);
+    document.getElementById('privateToggle').onchange = (e) => toggle('privateChatEnabled', e.target.checked);
+    document.getElementById('genderToggle').onchange = (e) => toggle('genderRestriction', e.target.checked);
 </script>
 </body>
 </html>
