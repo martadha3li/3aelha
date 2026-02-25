@@ -19,8 +19,8 @@
         .group-name { font-weight: bold; font-size: 16px; display: block; }
 
         /* منطقة الرسائل */
-        #chatBox { flex: 1; padding: 100px 15px 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        #chatBox { flex: 1; padding: 110px 15px 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 15px; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
         .msg.sent { align-self: flex-end; background: #DCF8C6; border-bottom-right-radius: 2px; }
         .msg.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
         .sender-name { font-size: 11px; font-weight: bold; color: var(--ios-blue); display: block; margin-bottom: 3px; }
@@ -32,8 +32,8 @@
             border-top: 0.5px solid #ccc; position: fixed; bottom: 0; width: 100%; box-sizing: border-box;
         }
         .msg-input { flex: 1; border: 0.5px solid #ccc; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 15px; }
-        .send-btn { background: var(--ios-blue); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .send-btn { background: var(--ios-blue); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .send-btn:disabled { background: #ccc; cursor: not-allowed; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -48,8 +48,8 @@
 <div id="chatBox"></div>
 
 <div class="input-area" id="inputContainer">
-    <input type="text" id="msgInput" class="msg-input" placeholder="اكتب رسالتك هنا...">
-    <button id="sendBtn" class="send-btn">▲</button>
+    <input type="text" id="msgInput" class="msg-input" placeholder="جاري التحقق من الصلاحيات...">
+    <button id="sendBtn" class="send-btn" disabled>▲</button>
 </div>
 
 <script type="module">
@@ -57,42 +57,61 @@
     import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let currentUser = null;
-    let isAdmin = false;
+    let currentUserData = null;
 
+    // 1. مراقبة حالة المصادقة وجودة المستخدم
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             currentUser = user;
             const userSnap = await getDoc(doc(db, "Users", user.uid));
-            isAdmin = userSnap.data().role === 'admin';
-            checkChatPolicy();
-            loadMessages();
+            currentUserData = userSnap.data();
+            
+            watchChatStatus(); // تشغيل الرقابة الحية فوراً
+            loadMessages();    // تحميل الرسائل
         } else {
             window.location.href = "login.html";
         }
     });
 
-    // 1. التحقق من سياسة الدردشة (هل مسموح للعضو بالإرسال؟)
-    function checkChatPolicy() {
-        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
-            const config = snap.data();
-            const inputField = document.getElementById('msgInput');
-            const sendBtn = document.getElementById('sendBtn');
+    // 2. الرقابة الحية على حالة الدردشة (تغيير فوري عند تحديث المدير)
+    function watchChatStatus() {
+        const configRef = doc(db, "Settings", "AppConfig");
+        
+        onSnapshot(configRef, (snap) => {
+            if (snap.exists()) {
+                const config = snap.data();
+                const isPublicEnabled = config.publicChatEnabled;
+                const isAdmin = currentUserData && currentUserData.role === 'admin';
 
-            if (!config.publicChatEnabled && !isAdmin) {
-                inputField.disabled = true;
-                inputField.placeholder = "تم إغلاق الدردشة من قِبل الإدارة";
-                sendBtn.disabled = true;
-            } else {
-                inputField.disabled = false;
-                inputField.placeholder = "اكتب رسالتك هنا...";
-                sendBtn.disabled = false;
+                const inputField = document.getElementById('msgInput');
+                const sendBtn = document.getElementById('sendBtn');
+
+                if (!isPublicEnabled && !isAdmin) {
+                    // إذا تم التعطيل والعضو بالداخل
+                    inputField.disabled = true;
+                    inputField.placeholder = "🔒 مغلقة حالياً من قبل الإدارة";
+                    sendBtn.disabled = true;
+                    
+                    // تنبيه العضو (اختياري)
+                    setTimeout(() => {
+                        if (window.location.pathname.includes('public_chat.html')) {
+                           alert("عذراً، قام المسؤول بإغلاق الدردشة العامة.");
+                           window.location.href = 'chat.html';
+                        }
+                    }, 500);
+                } else {
+                    // الدردشة مفتوحة أو المستخدم مدير
+                    inputField.disabled = false;
+                    inputField.placeholder = "اكتب رسالة للمجلس...";
+                    sendBtn.disabled = false;
+                }
             }
         });
     }
 
-    // 2. تحميل الرسائل وترتيبها برمجياً لضمان السرعة والظهور
+    // 3. تحميل الرسائل مع الترتيب البرمجي لضمان السرعة
     function loadMessages() {
-        const q = query(collection(db, "PublicMessages")); // سنرتبها يدوياً لتجنب مشاكل الـ Index
+        const q = query(collection(db, "PublicMessages"));
         
         onSnapshot(q, (snapshot) => {
             const chatBox = document.getElementById('chatBox');
@@ -102,7 +121,7 @@
                 messages.push({ id: doc.id, ...doc.data() });
             });
 
-            // الترتيب حسب الوقت
+            // ترتيب زمني (من الأقدم للأحدث)
             messages.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
 
             chatBox.innerHTML = "";
@@ -113,7 +132,7 @@
                 const div = document.createElement('div');
                 div.className = `msg ${isMe ? 'sent' : 'received'}`;
                 div.innerHTML = `
-                    ${!isMe ? `<span class="sender-name">${m.senderName}</span>` : ''}
+                    ${!isMe ? `<span class="sender-name">${m.senderName || 'عضو'}</span>` : ''}
                     <div>${m.text}</div>
                     <span class="msg-time">${time}</span>
                 `;
@@ -123,7 +142,7 @@
         });
     }
 
-    // 3. وظيفة الإرسال (تم التأكد من عملها للعضو والمدير)
+    // 4. دالة الإرسال
     async function sendMessage() {
         const input = document.getElementById('msgInput');
         const text = input.value.trim();
@@ -131,10 +150,8 @@
         if (!text || input.disabled) return;
 
         try {
-            const userSnap = await getDoc(doc(db, "Users", currentUser.uid));
-            const senderName = userSnap.data().fullName;
-
-            input.value = ""; // تفريغ الحقل فوراً
+            const senderName = currentUserData.fullName;
+            input.value = ""; // مسح الحقل فوراً
 
             await addDoc(collection(db, "PublicMessages"), {
                 senderId: currentUser.uid,
@@ -142,10 +159,8 @@
                 text: text,
                 timestamp: serverTimestamp()
             });
-            console.log("تم الإرسال بنجاح");
         } catch (error) {
-            console.error("خطأ في الإرسال:", error);
-            alert("حدث خطأ أثناء إرسال الرسالة");
+            console.error("خطأ إرسال:", error);
         }
     }
 
