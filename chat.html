@@ -70,21 +70,40 @@
         loadRecent();
     });
 
-    function listenConfig() {
-        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
-            config = snap.data() || { publicChatEnabled: true };
-            const status = document.getElementById('pubStatus');
-            const isAdmin = me.role === 'admin';
+   function listenConfig() {
+    const pubBtn = document.getElementById('publicBtn');
+    const status = document.getElementById('pubStatus');
+
+    // مراقبة الإعدادات بلحظتها
+    onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+        // إذا لم توجد الوثيقة، نعتبر الدردشة مفتوحة افتراضياً
+        const config = snap.exists() ? snap.data() : { publicChatEnabled: true };
+        
+        // التحقق من الرتبة (مع التأكد من وجود البيانات)
+        const isAdmin = (me && me.role === 'admin');
+
+        if (!config.publicChatEnabled && !isAdmin) {
+            // حالة التعطيل للعضو العادي
+            status.innerText = "🔒 مغلق مؤقتاً من قبل الإدارة";
+            pubBtn.style.opacity = "0.6";
+            pubBtn.onclick = () => alert("المجلس العام مغلق حالياً بطلب من الإدارة.");
+        } else {
+            // حالة التشغيل (أو إذا كان المستخدم مديراً)
+            status.innerText = "متصل الآن - شارك في الحديث";
+            pubBtn.style.opacity = "1";
+            pubBtn.onclick = () => location.href = 'public_chat.html';
             
-            if (!config.publicChatEnabled && !isAdmin) {
-                status.innerText = "🔒 مغلق مؤقتاً";
-                document.getElementById('publicBtn').onclick = () => alert("المجلس مغلق");
-            } else {
-                status.innerText = "شارك في حديث العائلة";
-                document.getElementById('publicBtn').onclick = () => location.href = 'public_chat.html';
+            if (!config.publicChatEnabled && isAdmin) {
+                status.innerText = "🛠 وضع الإدارة (مغلق عن البقية)";
             }
-        });
-    }
+        }
+    }, (error) => {
+        // في حال فشل المزامنة، نفتح الدخول كخيار احتياطي
+        console.error("Error syncing config:", error);
+        status.innerText = "المجلس العام";
+        pubBtn.onclick = () => location.href = 'public_chat.html';
+    });
+}
 
     function loadRecent() {
         const q = query(collection(db, "PrivateMessages"), orderBy("timestamp", "desc"), limit(50));
