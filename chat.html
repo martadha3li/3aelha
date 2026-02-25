@@ -3,58 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مركز الدردشة - العائلة</title>
+    <title>مركز الدردشة</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --text-sec: #8E8E93; }
         body { background: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding-top: 80px; padding-bottom: 100px; }
-        
         .container { padding: 0 15px; }
 
-        /* ستايل البحث المطور */
         .search-box { margin-bottom: 20px; position: relative; z-index: 100; }
-        .search-input { 
-            width: 100%; padding: 12px 15px; border-radius: 12px; border: none; 
-            background: #E5E5EA; outline: none; box-sizing: border-box; font-size: 15px;
-        }
-        #searchResults { 
-            background: white; border-radius: 0 0 15px 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-            max-height: 250px; overflow-y: auto; position: absolute; width: 100%; top: 45px;
-        }
+        .search-input { width: 100%; padding: 12px 15px; border-radius: 12px; border: none; background: #E5E5EA; outline: none; box-sizing: border-box; font-size: 15px; }
+        #searchResults { background: white; border-radius: 0 0 15px 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); max-height: 250px; overflow-y: auto; position: absolute; width: 100%; top: 45px; }
 
         .section-title { font-size: 13px; color: var(--text-sec); margin: 20px 5px 10px; font-weight: 600; text-transform: uppercase; }
         
-        .chat-card {
-            background: white; border-radius: 18px; padding: 12px 15px;
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 8px; cursor: pointer; transition: 0.2s;
-            border: 0.5px solid rgba(0,0,0,0.05); position: relative;
-        }
+        .chat-card { background: white; border-radius: 18px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; border: 0.5px solid rgba(0,0,0,0.05); position: relative; }
         .chat-card:active { transform: scale(0.98); }
 
-        .avatar { 
-            width: 52px; height: 52px; border-radius: 50%; 
-            background: #eee; color: white; display: flex; 
-            align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 20px; flex-shrink: 0; position: relative;
-        }
-        .online-dot { 
-            position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; 
-            background: #34C759; border: 2.5px solid white; border-radius: 50%; 
-        }
+        /* ستايل الدردشة المعطلة */
+        .chat-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+
+        .avatar { width: 52px; height: 52px; border-radius: 50%; background: #eee; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; flex-shrink: 0; position: relative; }
+        .online-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #34C759; border: 2.5px solid white; border-radius: 50%; }
 
         .chat-info { flex: 1; overflow: hidden; }
-        .chat-header { display: flex; justify-content: space-between; align-items: center; }
         .chat-name { font-weight: bold; color: #1c1c1e; font-size: 16px; }
-        .chat-time { font-size: 11px; color: var(--text-sec); }
-        .chat-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-        .chat-last-msg { font-size: 13px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .unread-badge { 
-            background: #FF3B30; color: white; font-size: 10px; 
-            padding: 2px 7px; border-radius: 10px; font-weight: bold; 
-        }
-
-        .loading-text { text-align: center; color: #999; font-size: 12px; padding: 20px; }
+        .chat-last-msg { font-size: 13px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .unread-badge { background: #FF3B30; color: white; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -69,24 +42,23 @@
         </div>
 
         <div class="section-title">الغرف والمجموعات</div>
-        <div class="chat-card" onclick="location.href='public_chat.html'">
+        
+        <div id="publicChatCard" class="chat-card">
             <div class="avatar" style="background: linear-gradient(45deg, #007AFF, #5856D6);">🏠</div>
             <div class="chat-info">
-                <span class="chat-name">المجلس العام للعائلة</span>
-                <span class="chat-last-msg">دردشة جماعية لكل أفراد العائلة</span>
+                <span class="chat-name" id="publicName">المجلس العام للعائلة</span>
+                <span class="chat-last-msg" id="publicStatus">جاري التحقق من الحالة...</span>
             </div>
         </div>
-        <div id="tempGroupsList"></div>
 
+        <div id="tempGroupsList"></div>
         <div class="section-title">المحادثات الأخيرة</div>
-        <div id="recentPrivateList">
-            <div class="loading-text">جاري جلب المحادثات...</div>
-        </div>
+        <div id="recentPrivateList"></div>
     </div>
 
 <script type="module">
     import { db, auth } from './config.js';
-    import { collection, query, where, getDocs, doc, onSnapshot, getDoc, orderBy, or } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, query, where, getDocs, doc, onSnapshot, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let currentUserData = null;
 
@@ -94,6 +66,7 @@
         if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
             currentUserData = userSnap.data();
+            initPublicChatControl();
             loadTemporaryGroups(user.uid);
             loadRecentChats(user.uid);
         } else {
@@ -101,7 +74,31 @@
         }
     });
 
-    // --- تحديث: البحث بالاسم أو رقم الجوال ---
+    // --- ميزة التحكم في الدردشة العامة ---
+    function initPublicChatControl() {
+        const publicCard = document.getElementById('publicChatCard');
+        const publicStatus = document.getElementById('publicStatus');
+
+        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+            const config = snap.data();
+            const isPublicEnabled = config.publicChatEnabled;
+            const isAdmin = currentUserData.role === 'admin';
+
+            if (!isPublicEnabled && !isAdmin) {
+                // معطلة للعضو العادي
+                publicCard.classList.add('disabled');
+                publicStatus.innerHTML = "🔒 مغلقة حالياً من قِبل الإدارة";
+                publicCard.onclick = () => alert("عذراً، الدردشة العامة مغلقة حالياً.");
+            } else {
+                // مفتوحة أو المستخدم مدير
+                publicCard.classList.remove('disabled');
+                publicStatus.innerHTML = isPublicEnabled ? "دردشة جماعية لكل أفراد العائلة" : "🛠 (أنت مدير) الدردشة معطلة للجمهور";
+                publicCard.onclick = () => location.href = 'public_chat.html';
+            }
+        });
+    }
+
+    // --- محرك البحث (اسم + جوال) ---
     const searchInput = document.getElementById('userSearch');
     const searchResDiv = document.getElementById('searchResults');
 
@@ -112,14 +109,9 @@
         const configSnap = await getDoc(doc(db, "Settings", "AppConfig"));
         const config = configSnap.data();
 
-        let q;
-        // إذا كان المدخل رقمياً بالكامل، يبحث في حقل الجوال
-        if (/^\d+$/.test(term)) {
-            q = query(collection(db, "Users"), where("phone", "==", term));
-        } else {
-            // وإلا يبحث في حقل الاسم
-            q = query(collection(db, "Users"), where("fullName", ">=", term), where("fullName", "<=", term + '\uf8ff'));
-        }
+        let q = (/^\d+$/.test(term)) ? 
+            query(collection(db, "Users"), where("phone", "==", term)) :
+            query(collection(db, "Users"), where("fullName", ">=", term), where("fullName", "<=", term + '\uf8ff'));
 
         const snap = await getDocs(q);
         searchResDiv.innerHTML = "";
@@ -147,80 +139,52 @@
             if(!isRestricted) div.onclick = () => location.href = `private_chat.html?id=${uDoc.id}`;
             searchResDiv.appendChild(div);
         });
-
-        if (snap.empty) {
-            searchResDiv.innerHTML = "<div class='loading-text'>لا توجد نتائج مطابقة</div>";
-        }
     });
 
-    // --- جلب المجموعات المؤقتة ---
+    // --- جلب المجموعات والدردشات الأخيرة (نفس الكود السابق المصلح) ---
     function loadTemporaryGroups(uid) {
-        const q = query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid));
-        onSnapshot(q, snap => {
+        onSnapshot(query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid)), snap => {
             const list = document.getElementById('tempGroupsList');
             list.innerHTML = "";
             snap.forEach(d => {
-                const g = d.data();
-                list.innerHTML += `
-                    <div class="chat-card" onclick="location.href='group_chat.html?id=${d.id}'">
-                        <div class="avatar" style="background:#FF9500;">⏳</div>
-                        <div class="chat-info"><span class="chat-name">${g.groupName}</span><br><small>مجموعة خاصة مؤقتة</small></div>
-                    </div>`;
+                list.innerHTML += `<div class="chat-card" onclick="location.href='group_chat.html?id=${d.id}'">
+                    <div class="avatar" style="background:#FF9500;">⏳</div>
+                    <div class="chat-info"><span class="chat-name">${d.data().groupName}</span><br><small>مجموعة خاصة مؤقتة</small></div>
+                </div>`;
             });
         });
     }
 
-    // --- جلب السجل الأخير مع العداد والوقت ---
     function loadRecentChats(uid) {
-        const q = query(collection(db, "PrivateMessages"));
-        onSnapshot(q, async snap => {
-            const lastMsgs = new Map();
-            const unreadCounts = new Map();
-
+        onSnapshot(query(collection(db, "PrivateMessages")), async snap => {
+            const lastMsgs = new Map(); const unread = new Map();
             snap.forEach(d => {
-                const m = d.data();
-                const otherId = m.senderId === uid ? m.receiverId : m.receiverId === uid ? m.senderId : null;
-                if (otherId) {
+                const m = d.data(); const otherId = m.senderId === uid ? m.receiverId : m.receiverId === uid ? m.senderId : null;
+                if(otherId) {
                     const existing = lastMsgs.get(otherId);
-                    const mTime = m.timestamp?.toMillis() || 0;
-                    if (!existing || mTime > (existing.timestamp?.toMillis() || 0)) {
-                        lastMsgs.set(otherId, m);
-                    }
-                    if (m.receiverId === uid && m.isRead === false) {
-                        unreadCounts.set(otherId, (unreadCounts.get(otherId) || 0) + 1);
-                    }
+                    if(!existing || (m.timestamp?.toMillis() || 0) > (existing.timestamp?.toMillis() || 0)) lastMsgs.set(otherId, m);
+                    if(m.receiverId === uid && !m.isRead) unread.set(otherId, (unread.get(otherId) || 0) + 1);
                 }
             });
-
-            const sorted = Array.from(lastMsgs.entries()).sort((a, b) => (b[1].timestamp?.toMillis() || 0) - (a[1].timestamp?.toMillis() || 0));
+            const sorted = Array.from(lastMsgs.entries()).sort((a,b) => (b[1].timestamp?.toMillis() || 0) - (a[1].timestamp?.toMillis() || 0));
             const recentDiv = document.getElementById('recentPrivateList');
-            recentDiv.innerHTML = sorted.length === 0 ? "<div class='loading-text'>لا توجد محادثات سابقة</div>" : "";
-
-            for (let [otherId, m] of sorted) {
-                const uSnap = await getDoc(doc(db, "Users", otherId));
-                if (uSnap.exists()) {
-                    const u = uSnap.data();
-                    const count = unreadCounts.get(otherId) || 0;
+            recentDiv.innerHTML = "";
+            for(let [otherId, m] of sorted) {
+                const uDoc = await getDoc(doc(db, "Users", otherId));
+                if(uDoc.exists()) {
+                    const u = uDoc.data(); const count = unread.get(otherId) || 0;
                     const isOnline = u.lastSeen && (new Date().getTime() - u.lastSeen.toMillis()) < 300000;
-                    const timeStr = m.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "";
-
                     recentDiv.innerHTML += `
-                        <div class="chat-card" onclick="location.href='private_chat.html?id=${otherId}'">
-                            <div class="avatar" style="background:var(--ios-blue);">
-                                ${u.fullName.charAt(0)}
-                                ${isOnline ? '<div class="online-dot"></div>' : ''}
+                    <div class="chat-card" onclick="location.href='private_chat.html?id=${otherId}'">
+                        <div class="avatar" style="background:var(--ios-blue);">${u.fullName.charAt(0)}${isOnline ? '<div class="online-dot"></div>' : ''}</div>
+                        <div class="chat-info">
+                            <div style="display:flex; justify-content:space-between;"><span class="chat-name">${u.fullName}</span><span style="font-size:10px; color:#999;">${m.timestamp?.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})||''}</span></div>
+                            <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                                <span class="chat-last-msg" style="${count>0?'color:#000; font-weight:bold;':''}">${m.image?'📷 صورة':m.text}</span>
+                                ${count>0?`<span class="unread-badge">${count}</span>`:''}
                             </div>
-                            <div class="chat-info">
-                                <div class="chat-header">
-                                    <span class="chat-name">${u.fullName}</span>
-                                    <span class="chat-time" style="${count > 0 ? 'color:var(--ios-blue); font-weight:bold;' : ''}">${timeStr}</span>
-                                </div>
-                                <div class="chat-sub">
-                                    <span class="chat-last-msg" style="${count > 0 ? 'color:#000; font-weight:500;' : ''}">${m.image ? '📷 صورة' : m.text}</span>
-                                    ${count > 0 ? `<span class="unread-badge">${count}</span>` : ''}
-                                </div>
-                            </div>
-                        </div>`;
+                        </div>
+                    </div>`;
                 }
             }
         });
