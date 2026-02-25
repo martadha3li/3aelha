@@ -3,33 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مركز الدردشة</title>
+    <title>مركز الدردشة - العائلة</title>
     <style>
         :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --text-sec: #8E8E93; }
         body { background: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding-top: 80px; padding-bottom: 100px; }
         .container { padding: 0 15px; }
 
         /* البحث */
-        .search-box { margin-bottom: 20px; position: relative; z-index: 1000; }
+        .search-box { margin-bottom: 20px; position: relative; }
         .search-input { width: 100%; padding: 12px 15px; border-radius: 12px; border: none; background: #E5E5EA; outline: none; box-sizing: border-box; font-size: 15px; }
-        #searchResults { background: white; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; position: absolute; width: 100%; top: 50px; display: none; border: 0.5px solid #ddd; width: 100%; }
+        #searchResults { background: white; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; position: absolute; width: 100%; top: 50px; display: none; z-index: 2000; border: 0.5px solid #ddd; }
+        .search-item { padding: 12px; border-bottom: 0.5px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 
-        .section-title { font-size: 13px; color: var(--text-sec); margin: 20px 5px 10px; font-weight: 600; text-transform: uppercase; }
+        .section-title { font-size: 13px; color: var(--text-sec); margin: 20px 5px 10px; font-weight: 600; }
         
-        .chat-card { background: white; border-radius: 18px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; border: 0.5px solid rgba(0,0,0,0.05); }
-        .chat-card:active { transform: scale(0.98); }
-
-        .avatar { width: 52px; height: 52px; border-radius: 50%; background: #eee; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; flex-shrink: 0; }
+        .chat-card { background: white; border-radius: 18px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; border: 0.5px solid rgba(0,0,0,0.05); }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: #ccc; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; overflow: hidden; }
         .chat-info { flex: 1; overflow: hidden; }
-        .chat-name { font-weight: bold; color: #1c1c1e; font-size: 16px; display: block; }
+        .chat-name { font-weight: bold; color: #1c1c1e; display: block; margin-bottom: 2px; }
         .chat-last-msg { font-size: 13px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
-        /* رسالة التعطيل */
-        .disabled-notice { 
-            background: #fffbe6; color: #856404; padding: 15px; border-radius: 12px; 
-            text-align: center; font-size: 14px; border: 1px dashed #ffe58f; margin: 10px 0;
-            display: none; 
-        }
+        .disabled-notice { background: #FFF9C4; color: #856404; padding: 12px; border-radius: 12px; text-align: center; font-size: 13px; margin-bottom: 15px; display: none; }
+        .loading-text { text-align: center; color: var(--text-sec); margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -39,261 +34,185 @@
 
     <div class="container">
         <div class="search-box">
-            <input type="text" id="userSearch" class="search-input" placeholder="بحث عن أفراد العائلة...">
+            <input type="text" id="userSearch" class="search-input" placeholder="بحث عن شخص...">
             <div id="searchResults"></div>
         </div>
 
-        <div class="section-title">الغرف والمجموعات</div>
-        
+        <div id="privateDisabledNotice" class="disabled-notice">⚠️ المراسلات الخاصة معطلة حالياً</div>
+
+        <div class="section-title">المجلس العام</div>
         <div id="publicChatCard" class="chat-card">
             <div class="avatar" style="background: linear-gradient(45deg, #007AFF, #5856D6);">🏠</div>
             <div class="chat-info">
                 <span class="chat-name">المجلس العام للعائلة</span>
-                <span class="chat-last-msg" id="publicStatus">جاري التحميل...</span>
+                <span id="publicStatus" class="chat-last-msg">جاري التحقق من الحالة...</span>
             </div>
         </div>
 
-        <div id="tempGroupsList"></div>
+        <div id="tempGroupsSection" style="display:none;">
+            <div class="section-title">المجموعات المؤقتة</div>
+            <div id="tempGroupsList"></div>
+        </div>
 
         <div class="section-title">المحادثات الخاصة</div>
-        
-        <div id="privateDisabledNotice" class="disabled-notice">⚠️ المراسلات الخاصة معطلة حالياً من قبل الإدارة</div>
-        
-        <div id="recentPrivateList"></div>
+        <div id="recentPrivateList">
+            <div class="loading-text">جاري تحميل المحادثات...</div>
+        </div>
     </div>
 
 <script type="module">
-
-    
     import { db, auth } from './config.js';
     import { collection, query, where, getDocs, doc, onSnapshot, getDoc, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initNotifications } from './notifications.js';
 
-    let currentUserData = null;
-    let appConfig = { publicChatEnabled: true, privateChatEnabled: true, genderRestriction: false };
+    let myData = null;
+    let config = null;
 
- import { initNotifications } from './notifications.js';
-    
-    // استدعاء نظام الإشعارات والصوت في هذه الصفحة
-    initNotifications();
-
-    
-  // تأكد من أن هذه المتغيرات معرفة في أعلى السكريبت
-let currentUserData = null;
-let appConfig = null;
-
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        try {
-            // 1. جلب بيانات المستخدم فوراً
+    // 1. مراقبة حالة تسجيل الدخول وبياناتي
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
             if (userSnap.exists()) {
-                currentUserData = userSnap.data();
-                
-                // 2. تشغيل المراقب اللحظي للإعدادات
-                // وضعنا هذه الدالة هنا لضمان وجود currentUserData أولاً
-                watchAppConfig();
-                
-                // 3. تحميل بقية البيانات
-                loadTemporaryGroups(user.uid);
-                loadRecentChats(user.uid);
+                myData = userSnap.data();
+                initNotifications(); // تشغيل الإشعارات
+                startApp();
             }
-        } catch (error) {
-            console.error("خطأ في تحميل بيانات المستخدم:", error);
-        }
-    } else {
-        window.location.href = "login.html";
-    }
-});
-
-function watchAppConfig() {
-    // مراقب التغييرات في الإعدادات
-    onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
-        const publicCard = document.getElementById('publicChatCard');
-        const publicStatus = document.getElementById('publicStatus');
-        
-        if (snap.exists()) {
-            appConfig = snap.data();
-            const isAdmin = currentUserData?.role === 'admin';
-
-            // تحديث حالة المجلس العام
-            if (!appConfig.publicChatEnabled && !isAdmin) {
-                // حالة التعطيل للمستخدم العادي
-                publicCard.style.opacity = "0.6";
-                publicCard.style.filter = "grayscale(1)";
-                publicStatus.innerText = "🔒 مغلق حالياً من قبل الإدارة";
-                publicCard.onclick = () => alert("المجلس العام معطل مؤقتاً بأمر الإدارة.");
-            } else {
-                // حالة التشغيل (أو إذا كان المستخدم مديراً)
-                publicCard.style.opacity = "1";
-                publicCard.style.filter = "none";
-                publicStatus.innerText = "المجلس العام لجميع أفراد العائلة";
-                publicCard.onclick = () => window.location.href = 'public_chat.html';
-                
-                // إذا كان المدير يدخل والدردشة معطلة للآخرين
-                if (!appConfig.publicChatEnabled && isAdmin) {
-                    publicStatus.innerText = "🛠 وضع الإدارة (الدردشة معطلة للعامة)";
-                }
-            }
-
-            // تحديث واجهة الخاص (تنبيه التعطيل)
-            const privateNotice = document.getElementById('privateDisabledNotice');
-            const recentList = document.getElementById('recentPrivateList');
-            if (!appConfig.privateChatEnabled && !isAdmin) {
-                privateNotice.style.display = 'block';
-                recentList.style.opacity = '0.5';
-                recentList.style.pointerEvents = 'none';
-            } else {
-                privateNotice.style.display = 'none';
-                recentList.style.opacity = '1';
-                recentList.style.pointerEvents = 'auto';
-            }
-        } else {
-            // في حال عدم وجود وثيقة إعدادات أصلاً
-            publicStatus.innerText = "المجلس العام مفتوح";
-            publicCard.onclick = () => window.location.href = 'public_chat.html';
-        }
-    });
-}
-
-    // 3. تحديث الواجهة بناءً على السياسات
-    function updateUI() {
-        const isAdmin = currentUserData?.role === 'admin';
-        const publicCard = document.getElementById('publicChatCard');
-        const publicStatus = document.getElementById('publicStatus');
-        const privateNotice = document.getElementById('privateDisabledNotice');
-        const recentList = document.getElementById('recentPrivateList');
-
-        // سياسة المجلس العام
-        if (!appConfig.publicChatEnabled && !isAdmin) {
-            publicCard.style.opacity = "0.5";
-            publicStatus.innerText = "🔒 مغلق حالياً من قبل الإدارة";
-            publicCard.onclick = () => alert("الدردشة العامة معطلة مؤقتاً.");
-        } else {
-            publicCard.style.opacity = "1";
-            publicStatus.innerText = appConfig.publicChatEnabled ? "المجلس العام لجميع أفراد العائلة" : "🛠 دخول الإدارة (الدردشة معطلة)";
-            publicCard.onclick = () => window.location.href = 'public_chat.html';
-        }
-
-        // سياسة الدردشة الخاصة
-        if (!appConfig.privateChatEnabled && !isAdmin) {
-            privateNotice.style.display = 'block';
-            recentList.style.filter = 'grayscale(1)';
-            recentList.style.pointerEvents = 'none';
-        } else {
-            privateNotice.style.display = 'none';
-            recentList.style.filter = 'none';
-            recentList.style.pointerEvents = 'auto';
-        }
-    }
-
-    // 4. محرك البحث الذكي
-    const searchInput = document.getElementById('userSearch');
-    const searchResDiv = document.getElementById('searchResults');
-
-    searchInput.addEventListener('input', async (e) => {
-        const term = e.target.value.trim();
-        if (term.length < 2) { searchResDiv.style.display = "none"; return; }
-
-        const isAdmin = currentUserData?.role === 'admin';
-        // جلب عينة من المستخدمين (للفلترة برمجياً)
-        const q = query(collection(db, "Users"), limit(100));
-        const snap = await getDocs(q);
-        
-        searchResDiv.innerHTML = "";
-        searchResDiv.style.display = "block";
-
-        snap.forEach(uDoc => {
-            const u = uDoc.data();
-            if (uDoc.id === auth.currentUser.uid) return;
-            
-            // فلترة بالاسم
-            if (!u.fullName.includes(term)) return;
-
-            // فلترة بالجنس إذا كانت الخاصية مفعلة
-            if (appConfig.genderRestriction && !isAdmin && u.gender !== currentUserData.gender) return;
-
-            const div = document.createElement('div');
-            div.style.padding = "12px";
-            div.style.borderBottom = "1px solid #eee";
-            div.style.cursor = "pointer";
-            div.innerHTML = `<b>${u.fullName}</b> <small style="color:gray">(${u.gender})</small>`;
-            
-            div.onclick = () => {
-                if (appConfig.privateChatEnabled || isAdmin) {
-                    window.location.href = `private_chat.html?id=${uDoc.id}`;
-                } else {
-                    alert("المراسلات الخاصة معطلة.");
-                }
-            };
-            searchResDiv.appendChild(div);
-        });
+        } else { window.location.href = "login.html"; }
     });
 
-    // 5. جلب المجموعات المؤقتة
-    function loadTemporaryGroups(uid) {
-        onSnapshot(query(collection(db, "TemporaryGroups"), where("members", "array-contains", uid)), snap => {
-            const list = document.getElementById('tempGroupsList');
-            list.innerHTML = "";
-            snap.forEach(d => {
-                const group = d.data();
-                list.innerHTML += `
-                <div class="chat-card" onclick="window.location.href='group_chat.html?id=${d.id}'">
-                    <div class="avatar" style="background:#FF9500;">⏳</div>
-                    <div class="chat-info">
-                        <span class="chat-name">${group.groupName}</span>
-                        <span class="chat-last-msg">مجموعة عمل مؤقتة</span>
-                    </div>
-                </div>`;
-            });
+    function startApp() {
+        // 2. مراقبة الإعدادات (تحديث لحظي)
+        onSnapshot(doc(db, "Settings", "AppConfig"), (snap) => {
+            config = snap.data() || { publicChatEnabled: true, privateChatEnabled: true };
+            renderPublicChatStatus();
+            loadRecentChats(); // إعادة تحميل الخاص لتطبيق القيود فوراً
         });
+
+        loadTemporaryGroups();
     }
 
-    // 6. جلب المحادثات الخاصة الأخيرة
-    function loadRecentChats(uid) {
-        // مراقبة كل الرسائل (تبسيط للمشروع الصغير)
-        onSnapshot(query(collection(db, "PrivateMessages"), orderBy("timestamp", "desc")), async snap => {
-            const recentDiv = document.getElementById('recentPrivateList');
-            recentDiv.innerHTML = "";
+    // 3. حالة المجلس العام
+    function renderPublicChatStatus() {
+        const card = document.getElementById('publicChatCard');
+        const status = document.getElementById('publicStatus');
+        const isAdmin = myData.role === 'admin';
+
+        if (!config.publicChatEnabled && !isAdmin) {
+            status.innerText = "🔒 مغلق حالياً من قبل الإدارة";
+            card.style.opacity = "0.6";
+            card.onclick = () => alert("المجلس العام مغلق حالياً.");
+        } else {
+            status.innerText = "اضغط للدخول والمشاركة";
+            card.style.opacity = "1";
+            card.onclick = () => window.location.href = 'public_chat.html';
+        }
+    }
+
+    // 4. تحميل المحادثات الخاصة الأخيرة
+    function loadRecentChats() {
+        const listDiv = document.getElementById('recentPrivateList');
+        const isAdmin = myData.role === 'admin';
+        
+        // إظهار تنبيه التعطيل
+        document.getElementById('privateDisabledNotice').style.display = (!config.privateChatEnabled && !isAdmin) ? 'block' : 'none';
+
+        const q = query(collection(db, "PrivateMessages"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, async (snap) => {
+            listDiv.innerHTML = "";
             const lastUsers = new Set();
+            let count = 0;
 
-            for (const docSnap of snap.docs) {
-                const m = docSnap.data();
-                const otherId = m.senderId === uid ? m.receiverId : (m.receiverId === uid ? m.senderId : null);
+            for (const d of snap.docs) {
+                if (count >= 15) break;
+                const m = d.data();
+                const otherId = m.senderId === auth.currentUser.uid ? m.receiverId : (m.receiverId === auth.currentUser.uid ? m.senderId : null);
                 
                 if (otherId && !lastUsers.has(otherId)) {
                     lastUsers.add(otherId);
-                    const userSnap = await getDoc(doc(db, "Users", otherId));
-                    if (userSnap.exists()) {
-                        const u = userSnap.data();
+                    count++;
+                    const uSnap = await getDoc(doc(db, "Users", otherId));
+                    if (uSnap.exists()) {
+                        const u = uSnap.data();
                         const card = document.createElement('div');
                         card.className = "chat-card";
-                        card.onclick = () => window.location.href = `private_chat.html?id=${otherId}`;
+                        card.style.opacity = (!config.privateChatEnabled && !isAdmin) ? "0.5" : "1";
+                        card.onclick = () => {
+                            if (!config.privateChatEnabled && !isAdmin) return alert("المراسلة الخاصة معطلة.");
+                            window.location.href = `private_chat.html?id=${otherId}`;
+                        };
                         card.innerHTML = `
-                            <div class="avatar" style="background:var(--ios-blue);">${u.fullName[0]}</div>
+                            <div class="avatar" style="background:#007AFF">${u.fullName[0]}</div>
                             <div class="chat-info">
                                 <span class="chat-name">${u.fullName}</span>
                                 <span class="chat-last-msg">${m.text}</span>
                             </div>
                         `;
-                        recentDiv.appendChild(card);
+                        listDiv.appendChild(card);
                     }
                 }
-                if (lastUsers.size >= 10) break; // عرض آخر 10 محادثات فقط
             }
+            if (count === 0) listDiv.innerHTML = '<div class="loading-text">لا توجد محادثات سابقة</div>';
         });
     }
 
-    // إغلاق قائمة البحث عند الضغط في أي مكان آخر
-    document.addEventListener('click', (e) => {
-        if(!searchInput.contains(e.target)) searchResDiv.style.display = "none";
+    // 5. محرك البحث الذكي
+    document.getElementById('userSearch').addEventListener('input', async (e) => {
+        const term = e.target.value.trim();
+        const resDiv = document.getElementById('searchResults');
+        if (term.length < 2) { resDiv.style.display = "none"; return; }
+
+        const snap = await getDocs(collection(db, "Users"));
+        resDiv.innerHTML = "";
+        resDiv.style.display = "block";
+
+        snap.forEach(uDoc => {
+            const u = uDoc.data();
+            if (uDoc.id === auth.currentUser.uid) return;
+            if (!u.fullName.includes(term)) return;
+            
+            // قيد الجنس
+            if (config.genderRestriction && myData.role !== 'admin' && u.gender !== myData.gender) return;
+
+            const div = document.createElement('div');
+            div.className = "search-item";
+            div.innerHTML = `<b>${u.fullName}</b> <small>(${u.gender})</small>`;
+            div.onclick = () => {
+                if (!config.privateChatEnabled && myData.role !== 'admin') return alert("الخاص معطل.");
+                window.location.href = `private_chat.html?id=${uDoc.id}`;
+            };
+            resDiv.appendChild(div);
+        });
     });
 
+    // 6. المجموعات المؤقتة
+    function loadTemporaryGroups() {
+        const q = query(collection(db, "TemporaryGroups"), where("members", "array-contains", auth.currentUser.uid));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('tempGroupsList');
+            const section = document.getElementById('tempGroupsSection');
+            if (snap.empty) { section.style.display = 'none'; return; }
+            
+            section.style.display = 'block';
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const g = d.data();
+                list.innerHTML += `
+                    <div class="chat-card" onclick="window.location.href='group_chat.html?id=${d.id}'">
+                        <div class="avatar" style="background:#FF9500;">⏳</div>
+                        <div class="chat-info">
+                            <span class="chat-name">${g.groupName}</span>
+                            <span class="chat-last-msg">مجموعة مؤقتة تنتهي قريباً</span>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
 
-   
-
-
-    
+    // إغلاق البحث عند النقر بالخارج
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-box')) document.getElementById('searchResults').style.display = 'none';
+    });
 </script>
-
 </body>
 </html>
