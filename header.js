@@ -103,7 +103,7 @@ async function createDynamicHeader() {
             <div class="header-top-row">
                 <div class="header-logo">
                     <img src="logo.png" onerror="this.src='https://via.placeholder.com/30'">
-                    <span>العائلة 2026</span>
+                    <span> 1 - العائلة 2026</span>
                 </div>
                 <div class="settings-trigger" id="headTrigger">⚙️</div>
             </div>
