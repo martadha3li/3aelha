@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>إدارة الأخبار والتثبيت</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; --ios-red: #FF3B30; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; --ios-red: #FF3B30; --wedding-gold: #FFD700; --death-dark: #3A3A3C; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--ios-bg); margin: 0; padding: 20px; direction: rtl; }
         
         .header { display: flex; align-items: center; margin-bottom: 20px; }
@@ -14,7 +15,7 @@
 
         .form-container { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .tab-selector { display: flex; background: #e5e5ea; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
-        .tab-item { flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #8e8e93; }
+        .tab-item { flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: #8e8e93; }
         .tab-item.active { background: white; color: var(--ios-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
         .input-group { margin-bottom: 15px; }
@@ -23,15 +24,21 @@
         
         .news-picker { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; }
         .pick-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f2f2f2; cursor: pointer; transition: 0.2s; }
-        .pick-item:last-child { border-bottom: none; }
-        .pick-item:active { background: #f0f0f5; }
+        
+        /* تمييز الألوان في القائمة */
+        .pick-item.wedding { border-right: 5px solid var(--wedding-gold); background: #fffdf0; }
+        .pick-item.death { border-right: 5px solid var(--death-dark); background: #f4f4f4; }
+        
         .pick-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; background: #eee; }
         .pick-title { font-size: 13px; font-weight: bold; flex: 1; color: #1c1c1e; }
-        .pick-badge { font-size: 10px; padding: 2px 6px; border-radius: 5px; background: #eee; color: #666; }
-        .pick-radio { accent-color: var(--ios-blue); width: 18px; height: 18px; }
+        .pick-badge { font-size: 10px; padding: 2px 6px; border-radius: 50px; background: #eee; color: #666; }
+        .pick-badge.gold { background: var(--wedding-gold); color: #000; }
+        .pick-badge.black { background: var(--death-dark); color: #fff; }
 
+        .ai-status { font-size: 12px; color: var(--ios-blue); text-align: center; margin-top: 10px; display: none; }
         .hidden { display: none !important; }
         .publish-btn { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .ai-btn { background: linear-gradient(135deg, #007AFF, #5856D6); }
         .remove-pin-btn { width: 100%; padding: 12px; background: #fff; color: var(--ios-red); border: 1.5px solid var(--ios-red); border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
@@ -45,6 +52,7 @@
     <div class="form-container">
         <div class="tab-selector">
             <div class="tab-item active" id="tabNormal" onclick="switchTab('normal')">إضافة خبر</div>
+            <div class="tab-item" id="tabAI" onclick="switchTab('ai')">🤖 قراءة صورة</div>
             <div class="tab-item" id="tabPinned" onclick="switchTab('pinned')">تثبيت / إلغاء</div>
         </div>
 
@@ -70,6 +78,18 @@
                 <textarea id="postBody" rows="5" placeholder="اكتب تفاصيل المنشور..."></textarea>
             </div>
             <button id="mainBtn" class="publish-btn">نشر الآن</button>
+        </div>
+
+        <div id="aiForm" class="hidden">
+            <div style="text-align: center; padding: 10px 0;">
+                <p style="font-size: 13px; color: #666;">ارفع صورة "بوست الواتساب" وسأقوم باستخراج النص لك تلقائياً</p>
+                <div class="input-group">
+                    <label>اختر صورة البوست</label>
+                    <input type="file" id="aiFileInput" accept="image/*">
+                </div>
+                <div id="aiLoading" class="ai-status">⏳ جاري قراءة النص من الصورة...</div>
+                <button onclick="processAIImage()" class="publish-btn ai-btn">تحليل الصورة 🔍</button>
+            </div>
         </div>
 
         <div id="pinnedForm" class="hidden">
@@ -100,18 +120,49 @@
         window.switchTab = (mode) => {
             currentMode = mode;
             document.getElementById('tabNormal').classList.toggle('active', mode === 'normal');
+            document.getElementById('tabAI').classList.toggle('active', mode === 'ai');
             document.getElementById('tabPinned').classList.toggle('active', mode === 'pinned');
             document.getElementById('normalForm').classList.toggle('hidden', mode !== 'normal');
+            document.getElementById('aiForm').classList.toggle('hidden', mode !== 'ai');
             document.getElementById('pinnedForm').classList.toggle('hidden', mode !== 'pinned');
             if(mode === 'pinned') loadNewsForPicker();
+        };
+
+        window.processAIImage = async () => {
+            const fileInput = document.getElementById('aiFileInput');
+            const file = fileInput.files[0];
+            const status = document.getElementById('aiLoading');
+            if (!file) return alert("يرجى اختيار صورة أولاً");
+            status.style.display = "block";
+            try {
+                const result = await Tesseract.recognize(file, 'ara', { logger: m => console.log(m) });
+                const text = result.data.text;
+                document.getElementById('postBody').value = text;
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                if (lines.length > 0) {
+                    document.getElementById('postTitle').value = lines[0].substring(0, 50);
+                }
+                if (text.includes("زواج") || text.includes("افراح") || text.includes("يتشرف")) {
+                    document.getElementById('postType').value = "wedding";
+                    updateDefaultTitle();
+                } else if (text.includes("وفاة") || text.includes("انتقل") || text.includes("رحمة الله")) {
+                    document.getElementById('postType').value = "death";
+                    updateDefaultTitle();
+                }
+                alert("✅ تمت القراءة! تم نقل النص إلى تبويب 'إضافة خبر' للمراجعة.");
+                switchTab('normal');
+            } catch (e) {
+                alert("فشل في تحليل الصورة، يرجى المحاولة بصورة أوضح.");
+            } finally {
+                status.style.display = "none";
+            }
         };
 
         window.updateDefaultTitle = () => {
             const type = document.getElementById('postType').value;
             const titleInput = document.getElementById('postTitle');
-            if(type === 'wedding') titleInput.value = "دعوة زواج: ";
-            else if(type === 'death') titleInput.value = "إنا لله وإنا إليه راجعون: ";
-            else titleInput.value = "";
+            if(type === 'wedding' && !titleInput.value.includes("دعوة زواج")) titleInput.value = "دعوة زواج: " + titleInput.value;
+            else if(type === 'death' && !titleInput.value.includes("إنا لله")) titleInput.value = "إنا لله وإنا إليه راجعون: " + titleInput.value;
         };
 
         async function loadNewsForPicker() {
@@ -123,16 +174,20 @@
                 picker.innerHTML = "";
                 snap.forEach(d => {
                     const data = d.data();
-                    const isPinned = (data.type === 'wedding' || data.type === 'death');
+                    const type = data.type || 'normal';
                     const div = document.createElement('div');
-                    div.className = 'pick-item';
+                    div.className = `pick-item ${type}`;
                     div.onclick = () => { selectedNewsId = d.id; div.querySelector('input').checked = true; };
+                    
+                    let badgeClass = type === 'wedding' ? 'gold' : (type === 'death' ? 'black' : '');
+                    let badgeText = type === 'wedding' ? 'زواج 💍' : (type === 'death' ? 'وفاة 🖤' : 'عادي 📄');
+
                     div.innerHTML = `
                         <input type="radio" name="pick" class="pick-radio">
                         <img src="${data.img || 'https://via.placeholder.com/50'}" class="pick-img">
                         <div class="pick-title">
                             ${data.title}
-                            ${isPinned ? `<span class="pick-badge">مثبت حالياً</span>` : ''}
+                            <span class="pick-badge ${badgeClass}">${badgeText}</span>
                         </div>
                     `;
                     picker.appendChild(div);
@@ -140,7 +195,6 @@
             } catch(e) { picker.innerHTML = "فشل تحميل البيانات"; }
         }
 
-        // زر النشر للخبر العادي
         document.getElementById('mainBtn').onclick = async () => {
             const title = document.getElementById('postTitle').value;
             const body = document.getElementById('postBody').value;
@@ -149,18 +203,22 @@
 
             if(!title || !body) return alert("يرجى إكمال العنوان والنص");
 
-            let imgUrl = "https://via.placeholder.com/500x300";
+            const saveAction = (imgUrl) => {
+                saveToFirebase(title, body, imgUrl, type);
+            };
+
             if(file) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = async () => saveToFirebase(title, body, reader.result, type);
+                reader.onload = () => saveAction(reader.result);
             } else {
-                saveToFirebase(title, body, imgUrl, type);
+                saveAction("https://via.placeholder.com/500x300");
             }
         };
 
         async function saveToFirebase(title, body, img, type) {
             try {
+                // حفظ الخبر مع نوعه المختار من القائمة المنسدلة
                 await addDoc(collection(db, "News"), {
                     title, body, img, type,
                     publishDate: Date.now(),
@@ -168,24 +226,19 @@
                     visible: true,
                     likedBy: [], viewedBy: [], comments: []
                 });
-                alert("تم نشر الخبر بنجاح");
+                alert("تم نشر الخبر بنجاح كـ " + (type === 'wedding' ? 'زواج' : type === 'death' ? 'وفاة' : 'خبر عام'));
                 window.location.href = "news.html";
             } catch(e) { alert("حدث خطأ أثناء النشر"); }
         }
 
-        // التعامل مع التثبيت أو الإلغاء
         window.handlePinAction = async (action) => {
             if(!selectedNewsId) return alert("يرجى اختيار منشور من القائمة أولاً");
-            
             try {
                 const newType = (action === 'pin') ? document.getElementById('pinType').value : 'normal';
                 await updateDoc(doc(db, "News", selectedNewsId), { type: newType });
-                
-                alert(action === 'pin' ? "تم التثبيت في الأعلى" : "تم إلغاء التثبيت بنجاح");
+                alert(action === 'pin' ? "تم التثبيت في الأعلى بنجاح" : "تم إلغاء التثبيت بنجاح");
                 window.location.href = "news.html";
-            } catch(e) {
-                alert("حدث خطأ في تحديث الحالة");
-            }
+            } catch(e) { alert("حدث خطأ في تحديث الحالة"); }
         };
     </script>
 </body>
