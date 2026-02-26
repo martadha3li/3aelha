@@ -3,153 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إضافة خبر عائلي ذكي</title>
+    <title>إدارة أخبار العائلة</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --tg-blue: #2481cc; --tg-bg: #f4f4f4; --success: #34c759; }
+        :root { --tg-blue: #2481cc; --tg-bg: #f4f4f4; --success: #34c759; --danger: #ff3b30; }
         body { background: var(--tg-bg); font-family: -apple-system, sans-serif; padding: 20px 10px; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 550px; margin: 0 auto; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         
-        /* زر الذكاء الاصطناعي - تأكدت من ظهوره هنا */
+        /* تحسينات الـ AI */
         .ai-magic-btn { 
-            background: linear-gradient(135deg, #64b5f6, #2481cc) !important; 
-            color: white !important; border: none; padding: 16px; border-radius: 15px; 
-            width: 100%; cursor: pointer; font-weight: bold; margin-bottom: 20px;
-            display: flex !important; align-items: center; justify-content: center; gap: 10px;
-            box-shadow: 0 4px 12px rgba(36, 129, 204, 0.3);
+            background: linear-gradient(135deg, #64b5f6, #2481cc); 
+            color: white; border: none; padding: 14px; border-radius: 15px; 
+            width: 100%; cursor: pointer; font-weight: bold; margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
+        .progress-container { width: 100%; background: #eee; border-radius: 10px; height: 10px; margin: 10px 0; display: none; overflow: hidden; }
+        #progressBar { width: 0%; height: 100%; background: var(--tg-blue); transition: 0.3s; }
+        #statusMsg { font-size: 13px; text-align: center; color: var(--tg-blue); margin-bottom: 10px; font-weight: bold; }
 
-        .input-group { margin-bottom: 18px; text-align: right; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 14px; }
-        input, textarea { 
-            width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 12px; 
-            box-sizing: border-box; outline: none; transition: 0.3s; font-size: 15px;
-        }
-        input:focus, textarea:focus { border-color: var(--tg-blue); background: #f9fbff; }
+        .input-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #555; }
+        input, textarea { width: 100%; padding: 12px; border: 1.5px solid #eee; border-radius: 12px; box-sizing: border-box; outline: none; font-size: 15px; }
         
-        .pin-option { display: flex; align-items: center; gap: 10px; background: #fdfdfd; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
+        .publish-btn { background: var(--success); color: white; border: none; padding: 15px; border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        .publish-btn { 
-            background: var(--success) !important; color: white !important; border: none; padding: 16px; 
-            border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer; 
-            font-size: 17px; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
-        }
-        #statusMsg { font-size: 13px; text-align: center; margin-bottom: 12px; min-height: 20px; color: var(--tg-blue); }
+        /* إدارة الأخبار الحالية */
+        .news-item { background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; border-right: 5px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .news-item.pinned { border-right-color: #ffcc00; background: #fffdf0; }
+        .news-info { flex: 1; text-align: right; }
+        .news-info h4 { margin: 0 0 5px; font-size: 15px; }
+        .news-info p { margin: 0; font-size: 12px; color: #777; }
+        .actions { display: flex; gap: 8px; }
+        .btn-pin { background: #f0f0f0; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 18px; }
+        .btn-del { background: #fff0f0; border: none; padding: 8px; border-radius: 8px; cursor: pointer; color: var(--danger); }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="text-align: center; margin-bottom: 25px;">نشر خبر عائلي 📢</h2>
+<div class="container">
+    <div class="card">
+        <h2 style="text-align: center; margin: 0 0 20px;">إضافة خبر جديد 🖋️</h2>
 
-    <input type="file" id="aiImageInput" accept="image/*" style="display: none;">
-    <button type="button" class="ai-magic-btn" onclick="document.getElementById('aiImageInput').click()">
-        🪄 قراءة بيانات الخبر من صورة (AI)
-    </button>
-    <div id="statusMsg"></div>
+        <input type="file" id="aiImageInput" accept="image/*" style="display: none;">
+        <button type="button" class="ai-magic-btn" onclick="document.getElementById('aiImageInput').click()">
+            🪄 سحب البيانات من صورة (قراءة ذكية)
+        </button>
+        
+        <div class="progress-container" id="progCont">
+            <div id="progressBar"></div>
+        </div>
+        <div id="statusMsg"></div>
 
-    <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+        <div class="input-group">
+            <label>عنوان الخبر</label>
+            <input type="text" id="newsTitle" placeholder="مثلاً: رزق بمولود">
+        </div>
+        <div class="input-group">
+            <label>التفاصيل</label>
+            <textarea id="newsDetails" rows="4" placeholder="اكتب تفاصيل الخبر هنا..."></textarea>
+        </div>
+        <div class="input-group">
+            <label>التاريخ</label>
+            <input type="text" id="newsDate" placeholder="١٤٤٧/٩/٩ هـ">
+        </div>
 
-    <div class="input-group">
-        <label>عنوان الخبر</label>
-        <input type="text" id="newsTitle" placeholder="مثلاً: رزق بمولود جديد">
+        <button id="publishBtn" class="publish-btn">🚀 نشر الخبر الآن</button>
     </div>
 
-    <div class="input-group">
-        <label>تفاصيل الخبر</label>
-        <textarea id="newsDetails" rows="5" placeholder="اكتب تفاصيل الخبر هنا..."></textarea>
-    </div>
-
-    <div class="input-group">
-        <label>التاريخ</label>
-        <input type="text" id="newsDate" placeholder="١٤٤٧/٩/٩ هـ">
-    </div>
-
-    <div class="pin-option">
-        <input type="checkbox" id="isPinned" style="width: 20px; height: 20px;">
-        <label for="isPinned" style="margin: 0; cursor: pointer;">📌 تثبيت هذا الخبر في الأعلى</label>
-    </div>
-
-    <button type="button" id="publishBtn" class="publish-btn">✅ نشر الخبر وإرسال إشعارات</button>
+    <h3 style="text-align: right; padding-right: 10px;">إدارة الأخبار المنشورة</h3>
+    <div id="newsList">
+        </div>
 </div>
 
 <script type="module">
     import { db } from './config.js';
-    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // 1. منطق قراءة الصورة المطور
     const aiInput = document.getElementById('aiImageInput');
+    const progCont = document.getElementById('progCont');
+    const progBar = document.getElementById('progressBar');
     const status = document.getElementById('statusMsg');
 
-    // 1. منطق معالجة الصورة بالذكاء الاصطناعي
     aiInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "⏳ جاري تحليل الصورة... يرجى الانتظار";
+        progCont.style.display = "block";
+        status.innerText = "جاري البدء...";
         
         try {
-            // استخدام Tesseract من النافذة العامة (Global)
-            const { data: { text } } = await Tesseract.recognize(file, 'ara');
+            const worker = await Tesseract.createWorker('ara', 1, {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        const p = Math.floor(m.progress * 100);
+                        progBar.style.width = p + "%";
+                        status.innerText = `جاري استخراج النص: ${p}%`;
+                    }
+                }
+            });
+
+            const { data: { text } } = await worker.recognize(file);
             
-            // محاولة استخراج التاريخ
+            // تعبئة البيانات
             const dateMatch = text.match(/\d{4}\/\d{1,2}\/\d{1,2}/);
             if (dateMatch) document.getElementById('newsDate').value = dateMatch[0] + " هـ";
-
-            // محاولة تحديد العنوان
+            
             if (text.includes("مولود") || text.includes("رزق")) {
                 document.getElementById('newsTitle').value = "🎊 رزق بمولود جديد";
             }
 
-            // وضع النص في التفاصيل
             document.getElementById('newsDetails').value = text.trim();
-            status.innerText = "✅ اكتملت القراءة بنجاح!";
+            
+            status.innerHTML = "✅ تم استخراج النص بنجاح!";
+            status.style.color = "var(--success)";
+            await worker.terminate();
         } catch (err) {
-            console.error(err);
-            status.innerText = "❌ فشلت القراءة، يرجى الإدخال يدوياً.";
+            status.innerText = "❌ فشل التحليل، حاول يدوياً.";
+            status.style.color = "var(--danger)";
         }
     });
 
-    // 2. منطق نشر الخبر (تم إصلاح الربط هنا)
+    // 2. نشر الخبر
     document.getElementById('publishBtn').onclick = async function() {
-        const title = document.getElementById('newsTitle').value.trim();
-        const details = document.getElementById('newsDetails').value.trim();
-        const date = document.getElementById('newsDate').value.trim();
-        const pinned = document.getElementById('isPinned').checked;
+        const title = document.getElementById('newsTitle').value;
+        const details = document.getElementById('newsDetails').value;
+        const date = document.getElementById('newsDate').value;
 
-        if(!title || !details) {
-            alert("يرجى إكمال العنوان والتفاصيل");
-            return;
-        }
+        if(!title || !details) return alert("أكمل البيانات");
 
-        this.disabled = true;
-        this.innerText = "⏳ جاري النشر...";
-
-        try {
-            // حفظ الخبر
-            await addDoc(collection(db, "FamilyNews"), {
-                title,
-                details,
-                date,
-                isPinned: pinned,
-                timestamp: serverTimestamp()
-            });
-
-            // إرسال إشعار للمدير
-            await addDoc(collection(db, "NotificationsQueue"), {
-                title: "خبر جديد: " + title,
-                body: details.substring(0, 50) + "...",
-                timestamp: serverTimestamp()
-            });
-
-            alert("تم النشر وتنبيه العائلة! ✅");
-            window.location.href = "admin.html";
-        } catch (err) {
-            console.error(err);
-            alert("حدث خطأ أثناء النشر.");
-            this.disabled = false;
-            this.innerText = "✅ نشر الخبر وإرسال إشعارات";
-        }
+        await addDoc(collection(db, "FamilyNews"), {
+            title, details, date, isPinned: false, timestamp: serverTimestamp()
+        });
+        
+        alert("تم النشر ✅");
+        location.reload();
     };
+
+    // 3. جلب وإدارة الأخبار (التثبيت والحذف)
+    function loadNewsManager() {
+        const q = query(collection(db, "FamilyNews"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('newsList');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const n = d.data();
+                const div = document.createElement('div');
+                div.className = `news-item ${n.isPinned ? 'pinned' : ''}`;
+                div.innerHTML = `
+                    <div class="news-info">
+                        <h4>${n.isPinned ? '📌 ' : ''}${n.title}</h4>
+                        <p>${n.date || ''}</p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-pin" onclick="togglePin('${d.id}', ${n.isPinned})">
+                            ${n.isPinned ? '📍' : '📌'}
+                        </button>
+                        <button class="btn-del" onclick="deleteNews('${d.id}')">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    // وظائف التحكم العالمية
+    window.togglePin = async (id, currentStatus) => {
+        await updateDoc(doc(db, "FamilyNews", id), { isPinned: !currentStatus });
+    };
+
+    window.deleteNews = async (id) => {
+        if(confirm("هل تريد حذف هذا الخبر؟")) await deleteDoc(doc(db, "FamilyNews", id));
+    };
+
+    loadNewsManager();
 </script>
 </body>
 </html>
