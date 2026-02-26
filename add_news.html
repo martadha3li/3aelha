@@ -3,41 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إضافة خبر عائلي</title>
+    <title>إضافة خبر عائلي ذكي</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root { --tg-blue: #2481cc; --tg-bg: #f4f4f4; --success: #34c759; }
         body { background: var(--tg-bg); font-family: -apple-system, sans-serif; padding: 20px 10px; margin: 0; }
         .card { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 550px; margin: 0 auto; }
         
-        /* زر الذكاء الاصطناعي */
+        /* زر الذكاء الاصطناعي - تأكدت من ظهوره هنا */
         .ai-magic-btn { 
-            background: linear-gradient(135deg, #64b5f6, #2481cc); 
-            color: white; border: none; padding: 14px; border-radius: 15px; 
+            background: linear-gradient(135deg, #64b5f6, #2481cc) !important; 
+            color: white !important; border: none; padding: 16px; border-radius: 15px; 
             width: 100%; cursor: pointer; font-weight: bold; margin-bottom: 20px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            display: flex !important; align-items: center; justify-content: center; gap: 10px;
             box-shadow: 0 4px 12px rgba(36, 129, 204, 0.3);
         }
 
         .input-group { margin-bottom: 18px; text-align: right; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 14px; }
-        input, textarea, select { 
+        input, textarea { 
             width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 12px; 
             box-sizing: border-box; outline: none; transition: 0.3s; font-size: 15px;
         }
         input:focus, textarea:focus { border-color: var(--tg-blue); background: #f9fbff; }
         
-        /* خيار تثبيت الخبر */
-        .pin-option {
-            display: flex; align-items: center; gap: 10px; background: #fdfdfd;
-            padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px;
-        }
+        .pin-option { display: flex; align-items: center; gap: 10px; background: #fdfdfd; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; }
 
         .publish-btn { 
-            background: var(--success); color: white; border: none; padding: 16px; 
+            background: var(--success) !important; color: white !important; border: none; padding: 16px; 
             border-radius: 15px; width: 100%; font-weight: bold; cursor: pointer; 
             font-size: 17px; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);
         }
-        #statusMsg { font-size: 13px; text-align: center; margin-bottom: 12px; min-height: 20px; font-weight: 500; }
+        #statusMsg { font-size: 13px; text-align: center; margin-bottom: 12px; min-height: 20px; color: var(--tg-blue); }
     </style>
 </head>
 <body>
@@ -46,7 +43,7 @@
     <h2 style="text-align: center; margin-bottom: 25px;">نشر خبر عائلي 📢</h2>
 
     <input type="file" id="aiImageInput" accept="image/*" style="display: none;">
-    <button class="ai-magic-btn" onclick="document.getElementById('aiImageInput').click()">
+    <button type="button" class="ai-magic-btn" onclick="document.getElementById('aiImageInput').click()">
         🪄 قراءة بيانات الخبر من صورة (AI)
     </button>
     <div id="statusMsg"></div>
@@ -60,12 +57,7 @@
 
     <div class="input-group">
         <label>تفاصيل الخبر</label>
-        <textarea id="newsDetails" rows="5" placeholder="اكتب تفاصيل الخبر هنا بالتفصيل..."></textarea>
-    </div>
-
-    <div class="input-group">
-        <label>صورة الخبر (اختياري)</label>
-        <input type="file" id="newsImageFile" accept="image/*">
+        <textarea id="newsDetails" rows="5" placeholder="اكتب تفاصيل الخبر هنا..."></textarea>
     </div>
 
     <div class="input-group">
@@ -74,92 +66,88 @@
     </div>
 
     <div class="pin-option">
-        <input type="checkbox" id="isPinned" style="width: 20px; height: 20px; cursor: pointer;">
+        <input type="checkbox" id="isPinned" style="width: 20px; height: 20px;">
         <label for="isPinned" style="margin: 0; cursor: pointer;">📌 تثبيت هذا الخبر في الأعلى</label>
     </div>
 
-    <button id="publishBtn" class="publish-btn">✅ نشر الخبر وإرسال إشعارات</button>
+    <button type="button" id="publishBtn" class="publish-btn">✅ نشر الخبر وإرسال إشعارات</button>
 </div>
 
 <script type="module">
-    import Tesseract from 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
     import { db } from './config.js';
-    import { collection, addDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const aiInput = document.getElementById('aiImageInput');
     const status = document.getElementById('statusMsg');
 
-    // 1. منطق الذكاء الاصطناعي لقراءة الصورة
-    aiInput.onchange = async (e) => {
+    // 1. منطق معالجة الصورة بالذكاء الاصطناعي
+    aiInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.style.color = "#2481cc";
         status.innerText = "⏳ جاري تحليل الصورة... يرجى الانتظار";
-
+        
         try {
-            const result = await Tesseract.recognize(file, 'ara');
-            const text = result.data.text;
-
-            // استخراج التاريخ بالنمط العربي
+            // استخدام Tesseract من النافذة العامة (Global)
+            const { data: { text } } = await Tesseract.recognize(file, 'ara');
+            
+            // محاولة استخراج التاريخ
             const dateMatch = text.match(/\d{4}\/\d{1,2}\/\d{1,2}/);
             if (dateMatch) document.getElementById('newsDate').value = dateMatch[0] + " هـ";
 
-            // تحديد العنوان الذكي
+            // محاولة تحديد العنوان
             if (text.includes("مولود") || text.includes("رزق")) {
                 document.getElementById('newsTitle').value = "🎊 رزق بمولود جديد";
-            } else if (text.includes("وفاة") || text.includes("ذمة الله")) {
-                document.getElementById('newsTitle').value = "🏴 انتقل إلى رحمة الله";
             }
 
-            // تعبئة التفاصيل
+            // وضع النص في التفاصيل
             document.getElementById('newsDetails').value = text.trim();
-
-            status.innerText = "✅ اكتملت القراءة! يمكنك التعديل يدوياً الآن.";
-            status.style.color = "#34c759";
+            status.innerText = "✅ اكتملت القراءة بنجاح!";
         } catch (err) {
-            status.innerText = "❌ تعذر القراءة الآلية، يرجى الإدخال يدوياً.";
-            status.style.color = "red";
+            console.error(err);
+            status.innerText = "❌ فشلت القراءة، يرجى الإدخال يدوياً.";
         }
-    };
+    });
 
-    // 2. دالة النشر (يدوي + AI + إشعارات)
-    document.getElementById('publishBtn').onclick = async () => {
+    // 2. منطق نشر الخبر (تم إصلاح الربط هنا)
+    document.getElementById('publishBtn').onclick = async function() {
         const title = document.getElementById('newsTitle').value.trim();
         const details = document.getElementById('newsDetails').value.trim();
         const date = document.getElementById('newsDate').value.trim();
         const pinned = document.getElementById('isPinned').checked;
 
-        if(!title || !details) return alert("يرجى إدخال العنوان والتفاصيل");
+        if(!title || !details) {
+            alert("يرجى إكمال العنوان والتفاصيل");
+            return;
+        }
 
-        const btn = document.getElementById('publishBtn');
-        btn.disabled = true;
-        btn.innerText = "⏳ جاري النشر...";
+        this.disabled = true;
+        this.innerText = "⏳ جاري النشر...";
 
         try {
-            // حفظ الخبر في قاعدة البيانات مع خاصية التثبيت Pinned
-            const newsRef = await addDoc(collection(db, "FamilyNews"), {
+            // حفظ الخبر
+            await addDoc(collection(db, "FamilyNews"), {
                 title,
                 details,
                 date,
                 isPinned: pinned,
-                timestamp: serverTimestamp(),
-                publisher: "Admin"
-            });
-
-            // إرسال الإشعار الفوري (عبر جدول الإشعارات المبرمج سابقاً)
-            await addDoc(collection(db, "NotificationsQueue"), {
-                title: "خبر جديد: " + title,
-                body: details.substring(0, 60) + "...",
                 timestamp: serverTimestamp()
             });
 
-            alert("تم نشر الخبر وتنبيه العائلة بنجاح! ✅");
+            // إرسال إشعار للمدير
+            await addDoc(collection(db, "NotificationsQueue"), {
+                title: "خبر جديد: " + title,
+                body: details.substring(0, 50) + "...",
+                timestamp: serverTimestamp()
+            });
+
+            alert("تم النشر وتنبيه العائلة! ✅");
             window.location.href = "admin.html";
         } catch (err) {
-            alert("حدث خطأ: " + err.message);
-            btn.disabled = false;
-            btn.innerText = "✅ نشر الخبر وإرسال إشعارات";
+            console.error(err);
+            alert("حدث خطأ أثناء النشر.");
+            this.disabled = false;
+            this.innerText = "✅ نشر الخبر وإرسال إشعارات";
         }
     };
 </script>
