@@ -1,300 +1,150 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>المسابقات | منصة العائلة</title>
-    
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-import { auth, db } from './config.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المسابقات</title>
 
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        // 1. جلب رتبة المستخدم
-        const userDoc = await getDoc(doc(db, "Users", user.uid));
-        const userData = userDoc.data();
-        
-        // 2. جلب إعدادات التوجيه من المدير
-        const accessDoc = await getDoc(doc(db, "Settings", "AccessControl"));
-        const accessData = accessDoc.data();
-
-        if (userData.role === 'user' && accessData.forcedRedirect === "true") {
-            // إذا كان المستخدم عادي والتوجيه مفعل، نرسله للصفحة المحددة
-            if (!window.location.href.includes(accessData.targetPage)) {
-                window.location.href = accessData.targetPage;
-            }
-        }
-    }
-});
-
-        
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({ appId: "a96c2d21-5d88-40fb-8c60-4c0911e9be15" });
-      });
-    </script>
-
-    <style>
-        :root { 
-            --ios-blue: #007AFF; --ios-bg: #F2F2F7; --ios-orange: #FF9500; 
-            --ios-green: #34C759; --ios-red: #FF3B30; --card-bg: #FFFFFF;
-        }
-
-        body { 
-            background: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 70px; padding-bottom: 90px; direction: rtl;
-        }
-
-        .top-bar {
-            position: fixed; top: 0; width: 100%; height: 65px;
-            background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box; border-bottom: .5px solid #C6C6C8; z-index: 5000;
-        }
-
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-
-        /* بطاقة المسابقة */
-        .comp-card { 
-            background: var(--card-bg); border-radius: 22px; padding: 20px; 
-            margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 0.5px solid #E5E5EA;
-        }
-        
-        /* شكل المسابقة المنتهية */
-        .comp-card.ended {
-            border: 2px solid var(--ios-red);
-            background: #FFF5F5;
-        }
-
-        .comp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-        
-        .comp-end-timer { 
-            font-size: 11px; background: #FFF9F2; color: var(--ios-orange); 
-            padding: 6px 12px; border-radius: 10px; font-weight: bold; border: 0.5px solid #FFE0B2; 
-        }
-
-        .ended-label { color: var(--ios-red); font-weight: bold; font-size: 12px; }
-
-        /* تنسيق السؤال */
-        .q-box { background: #F8F8FB; border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1.5px solid #EEE; transition: 0.3s; position: relative; }
-        
-        /* السؤال المجاب عليه: باهت جداً وإطار أخضر */
-        .q-box.answered { 
-            opacity: 0.4; 
-            pointer-events: none; 
-            border: 3px solid var(--ios-green); 
-            background: #F0FFF4;
-        }
-
-        .option-btn { 
-            width: 100%; padding: 15px; margin-top: 10px; border-radius: 14px; 
-            border: 1px solid #E5E5EA; background: white; cursor: pointer; 
-            text-align: right; font-size: 15px; font-weight: 500;
-        }
-        
-        .option-btn.correct { background: var(--ios-green) !important; color: white; border-color: var(--ios-green); }
-
-        .ans-meta {
-            font-size: 10px; color: #555; margin-top: 8px; text-align: left; font-style: italic;
-        }
-
-        .answered-label-container {
-            display: flex; justify-content: space-between; align-items: center; margin-top: 10px;
-        }
-
-        .answered-tag { 
-            font-size: 11px; color: var(--ios-green); font-weight: bold; 
-            background: #E8F5E9; padding: 4px 10px; border-radius: 20px;
-        }
-
-        .bottom-bar {
-            position: fixed; bottom: 0; width: 100%; height: 75px;
-            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
-            display: flex; justify-content: space-around; align-items: center; border-top: 0.5px solid #C6C6C8; z-index: 5000;
-        }
-        .nav-item { font-size: 26px; color: #8E8E93; text-decoration: none; }
-        .nav-item.active { color: var(--ios-blue); }
-    </style>
+<style>
+:root{
+ --blue:#007AFF;
+ --green:#34C759;
+ --red:#FF3B30;
+ --bg:#F2F2F7;
+}
+body{margin:0;font-family:sans-serif;background:var(--bg);padding:70px 15px 100px;}
+.comp-card{background:#fff;border-radius:20px;padding:20px;margin-bottom:25px;box-shadow:0 5px 15px rgba(0,0,0,.05);}
+.comp-card.ended{border:2px solid var(--red);background:#FFF5F5;}
+.q-box{background:#f8f8fb;padding:15px;border-radius:15px;margin-bottom:15px;border:1px solid #eee;position:relative;}
+.q-box.answered{opacity:.45;pointer-events:none;border:3px solid var(--green);background:#F0FFF4;}
+.q-box.answered::after{
+content:"تمت الإجابة مسبقاً";
+position:absolute;top:10px;left:10px;
+background:var(--green);color:#fff;
+padding:5px 10px;border-radius:20px;font-size:10px;
+}
+.option-btn{width:100%;padding:12px;margin-top:8px;border-radius:12px;border:1px solid #ddd;background:#fff;cursor:pointer;text-align:right;}
+.option-btn.correct{background:var(--green)!important;color:#fff;border-color:var(--green);}
+.option-btn.wrong{background:var(--red)!important;color:#fff;border-color:var(--red);}
+</style>
 </head>
 <body>
 
-<div class="top-bar">
-    <div onclick="history.back()" style="cursor:pointer">🔙</div>
-    <b>المسابقات</b>
-    <div id="adminTools" style="display:none;" onclick="location.href='add_competition.html'">⊕</div>
-</div>
-
-<div class="container" id="compsFeed">
-    <p style="text-align:center; color:gray; margin-top:50px;">جاري تحميل المسابقات...</p>
-</div>
-
-<nav class="bottom-bar">
-    <a href="news.html" class="nav-item">🏠</a>
-    <a href="chat.html" class="nav-item">💬</a>
-    <a href="competitions.html" class="nav-item active">🏆</a>
-    <a href="profile.html" class="nav-item">👤</a>
-</nav>
+<h2>🏆 المسابقات</h2>
+<div id="compsFeed">جاري التحميل...</div>
 
 <script type="module">
-    import { auth, db } from './config.js';
-    import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { auth, db } from './config.js';
+import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    let userData = null;
-    let myAnswersData = {}; // تخزين تفاصيل الإجابة (الوقت، معرف السؤال)
+let userData=null;
+let answeredQuestions={};
 
-    onAuthStateChanged(auth, async user => {
-        if (user) {
-            const snap = await getDoc(doc(db, "Users", user.uid));
-            userData = snap.data();
-            if (userData?.role === 'admin' || userData?.role === 'مدير') {
-                document.getElementById('adminTools').style.display = 'block';
-            }
-            
-            // جلب الإجابات مع التوقيت
-            const ansQuery = query(collection(db, "Answers"), where("userId", "==", user.uid));
-            const ansSnap = await getDocs(ansQuery);
-            ansSnap.forEach(doc => {
-                const data = doc.data();
-                myAnswersData[data.questionId] = data.timestamp;
-            });
+onAuthStateChanged(auth, async user=>{
+ if(!user){location.href="login.html";return;}
 
-            loadComps();
-        } else location.href = "login.html";
-    });
+ const snap=await getDoc(doc(db,"Users",user.uid));
+ userData=snap.data();
 
-    function loadComps() {
-        onSnapshot(collection(db, "Competitions"), snap => {
-            const feed = document.getElementById('compsFeed');
-            feed.innerHTML = "";
-            if(snap.empty) feed.innerHTML = '<p style="text-align:center; color:gray;">لا توجد مسابقات حالياً</p>';
+ const ansQuery=query(collection(db,"Answers"),where("userId","==",user.uid));
+ const ansSnap=await getDocs(ansQuery);
+ ansSnap.forEach(d=>{
+   answeredQuestions[d.data().questionId]=true;
+ });
 
-            snap.forEach(d => {
-                const c = d.data();
-                const isEnded = new Date(c.endDate) < new Date();
-                
-                const card = document.createElement('div');
-                card.className = `comp-card ${isEnded ? 'ended' : ''}`;
-                
-                if (isEnded) {
-                    const endFormatted = new Date(c.endDate).toLocaleString('ar-EG');
-                    card.innerHTML = `
-                        <div class="comp-header" style="margin-bottom:0">
-                            <div>
-                                <h3 style="margin:0">${c.title}</h3>
-                                <p class="ended-label">هذه المسابقة انتهت بتاريخ: ${endFormatted}</p>
-                            </div>
-                            <div class="comp-end-timer" style="background:#FFEBEB; color:red; border-color:#FFD1D1">منتهية</div>
-                        </div>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div class="comp-header">
-                            <h3>${c.title}</h3>
-                            <div id="end-timer-${d.id}" class="comp-end-timer">...</div>
-                        </div>
-                        <div id="qs-${d.id}"></div>
-                    `;
-                    startCountdown(c.endDate, `end-timer-${d.id}`);
-                    loadQuestions(d.id, c.title);
-                }
-                feed.appendChild(card);
-            });
-        });
-    }
+ loadCompetitions();
+});
 
-    async function loadQuestions(cid, ctitle) {
-        const qSnap = await getDocs(collection(db, `Competitions/${cid}/Questions`));
-        const cont = document.getElementById(`qs-${cid}`);
-        const now = new Date();
+function loadCompetitions(){
+ onSnapshot(collection(db,"Competitions"), snap=>{
+   const feed=document.getElementById("compsFeed");
+   feed.innerHTML="";
 
-        qSnap.forEach(qDoc => {
-            const q = qDoc.data();
-            if (new Date(q.showAt) > now) return; 
+   snap.forEach(docSnap=>{
+     const c=docSnap.data();
+     const isEnded=c.endDate? new Date(c.endDate)<new Date():false;
 
-            const ansTime = myAnswersData[qDoc.id];
-            const isAns = !!ansTime;
+     const card=document.createElement("div");
+     card.className="comp-card"+(isEnded?" ended":"");
 
-            const qBox = document.createElement('div');
-            qBox.className = `q-box ${isAns ? 'answered' : ''}`;
-            
-            let optsHtml = "";
-            q.options.forEach(opt => {
-                let cls = (isAns && opt === q.correctOption) ? "correct" : "";
-                optsHtml += `
-                    <button class="option-btn ${cls}" ${isAns ? 'disabled' : ''} 
-                        onclick="sendAns('${cid}','${ctitle}','${qDoc.id}','${q.text}','${opt}','${q.correctOption}', ${q.points}, this)">
-                        ${opt}
-                    </button>`;
-            });
+     card.innerHTML=`<h3>${c.title}</h3>`;
+     const qsDiv=document.createElement("div");
 
-            // تحويل التوقيت لتنسيق مقروء
-            let timeString = "";
-            if (isAns && ansTime) {
-                const d = ansTime.toDate ? ansTime.toDate() : new Date(ansTime);
-                timeString = d.toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' });
-            }
+     card.appendChild(qsDiv);
+     feed.appendChild(card);
 
-            qBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                    <b style="flex:1">${q.text}</b> 
-                    <span style="color:var(--ios-blue); font-size:11px; font-weight:bold; margin-right:8px;">💎 ${q.points} ن</span>
-                </div>
-                ${optsHtml}
-                ${isAns ? `
-                    <div class="answered-label-container">
-                        <span class="answered-tag">✓ تمت الإجابة</span>
-                        <span class="ans-meta">وقت الإجابة: ${timeString}</span>
-                    </div>
-                ` : ''}
-            `;
-            cont.appendChild(qBox);
-        });
-    }
+     if(!isEnded) loadQuestions(docSnap.id,c.title,qsDiv);
+   });
+ });
+}
 
-    window.sendAns = async (cid, ct, qid, qt, sel, corr, pts, btn) => {
-        if(!confirm("تأكيد الإجابة؟")) return;
-        const buttons = btn.parentElement.querySelectorAll('button');
-        buttons.forEach(b => b.disabled = true);
-        const isC = sel.trim() === corr.trim();
-        
-        try {
-            await addDoc(collection(db, "Answers"), {
-                userId: auth.currentUser.uid,
-                userName: userData.fullName || "عضو",
-                compId: cid,
-                compTitle: ct,
-                questionId: qid,
-                questionText: qt,
-                selectedOption: sel,
-                isCorrect: isC,
-                pointsAwarded: isC ? pts : 0,
-                timestamp: serverTimestamp()
-            });
-            location.reload(); 
-        } catch (error) {
-            alert("حدث خطأ، حاول مجدداً.");
-            buttons.forEach(b => b.disabled = false);
-        }
-    };
+async function loadQuestions(cid,ctitle,container){
+ const qSnap=await getDocs(collection(db,`Competitions/${cid}/Questions`));
+ const now=new Date();
 
-    function startCountdown(dateStr, elementId) {
-        const target = new Date(dateStr).getTime();
-        const el = document.getElementById(elementId);
-        if(!el) return;
-        const update = () => {
-            const diff = target - new Date().getTime();
-            if (diff <= 0) { el.innerHTML = "منتهية"; return; }
-            const d = Math.floor(diff / 86400000);
-            const h = Math.floor((diff % 86400000) / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            el.innerHTML = `⏳ ينتهي خلال ${d}ي و ${h}س`;
-        };
-        update();
-        setInterval(update, 60000);
-    }
+ qSnap.forEach(qDoc=>{
+   const q=qDoc.data();
+   if(new Date(q.showAt)>now) return;
+
+   const isAnswered=answeredQuestions[qDoc.id];
+   const box=document.createElement("div");
+   box.className="q-box"+(isAnswered?" answered":"");
+
+   box.innerHTML=`<b>${q.text}</b> <span style="color:blue">💎 ${q.points}</span>`;
+
+   q.options.forEach(opt=>{
+     const btn=document.createElement("button");
+     btn.className="option-btn";
+     btn.innerText=opt;
+
+     if(!isAnswered){
+       btn.onclick=()=>sendAnswer(cid,ctitle,qDoc.id,q.text,opt,q.correctOption,q.points,box);
+     }
+
+     box.appendChild(btn);
+   });
+
+   container.appendChild(box);
+ });
+}
+
+async function sendAnswer(cid,ctitle,qid,qt,selected,correct,points,qBox){
+
+ if(!confirm("تأكيد الإجابة؟")) return;
+
+ const existing=query(collection(db,"Answers"),
+  where("userId","==",auth.currentUser.uid),
+  where("questionId","==",qid)
+ );
+ const check=await getDocs(existing);
+ if(!check.empty){ alert("أجبت سابقاً"); return;}
+
+ const isCorrect=selected.trim()===correct.trim();
+ const buttons=qBox.querySelectorAll("button");
+
+ buttons.forEach(b=>{
+   b.disabled=true;
+   if(b.innerText.trim()===correct.trim()) b.classList.add("correct");
+   if(!isCorrect && b.innerText.trim()===selected.trim()) b.classList.add("wrong");
+ });
+
+ qBox.classList.add("answered");
+
+ await addDoc(collection(db,"Answers"),{
+   userId:auth.currentUser.uid,
+   userName:userData.fullName||"عضو",
+   userPhone:userData.phone||"",
+   compId:cid,
+   compTitle:ctitle,
+   questionId:qid,
+   questionText:qt,
+   selectedOption:selected,
+   isCorrect:isCorrect,
+   pointsAwarded:isCorrect?points:0,
+   timestamp:serverTimestamp()
+ });
+}
 </script>
 </body>
 </html>
