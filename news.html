@@ -63,6 +63,17 @@
     </div>
 
 <script type="module">
+
+import { monitorSession } from './check_access.js';
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        monitorSession(user.uid); // سيفحص العدد قبل السماح بالبقاء في الصفحة
+        // ... بقية كود الصفحة
+    }
+});
+
+    
     import { auth, db } from './config.js';
     import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -201,3 +212,4 @@
 </script>
 </body>
 </html>
+
