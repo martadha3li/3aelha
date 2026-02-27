@@ -34,6 +34,15 @@ padding:5px 10px;border-radius:20px;font-size:10px;
 <div id="compsFeed">جاري التحميل...</div>
 
 <script type="module">
+
+ import { monitorSession } from './check_access.js';
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        monitorSession(user.uid); // سيفحص العدد قبل السماح بالبقاء في الصفحة
+    }
+});
+ 
 import { auth, db } from './config.js';
 import { collection, onSnapshot, query, where, addDoc, getDocs, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
