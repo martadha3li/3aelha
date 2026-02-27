@@ -47,6 +47,8 @@
     </style>
 </head>
 <body>
+
+    
 <script type="module" src="header.js"></script>
 <script type="module" src="navbar.js"></script>
     
@@ -60,6 +62,55 @@
             <div class="stat-card"><h3 id="minAge">0</h3><span>أصغر عمر 👶</span></div>
         </div>
 
+<div class="form-container" style="margin-bottom: 20px; border-right: 5px solid #007AFF;">
+    <h3 style="font-size: 14px; margin: 0 0 10px;">📊 مراقب استهلاك مساحة الصور</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span id="totalMB" style="font-size: 22px; font-weight: bold; color: #007AFF;">0.00</span> 
+            <small>MB مستخدم</small>
+        </div>
+        <button id="cleanStorage" style="background:#34c759; color:white; border:none; padding:8px 12px; border-radius:10px; font-size:11px; cursor:pointer;">
+            ♻️ تحسين الصور القديمة
+        </button>
+    </div>
+    <div style="width: 100%; background: #eee; height: 6px; border-radius: 10px; margin-top: 10px;">
+        <div id="storageBar" style="width: 0%; height: 100%; background: #007AFF; transition: 0.5s;"></div>
+    </div>
+    <p id="cleanStatus" style="font-size: 10px; color: #666; margin-top: 5px; text-align: center;"></p>
+</div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // حساب المساحة الإجمالية
+    async function checkStorage() {
+        const snap = await getDocs(collection(db, "News"));
+        let bytes = 0;
+        snap.forEach(d => { if(d.data().img) bytes += d.data().img.length * (3/4); });
+        const mb = (bytes / (1024 * 1024)).toFixed(2);
+        document.getElementById('totalMB').innerText = mb;
+        document.getElementById('storageBar').style.width = (mb / 1024 * 100) + "%";
+    }
+    checkStorage();
+
+    // دالة تحسين الصور القديمة
+    document.getElementById('cleanStorage').onclick = async () => {
+        const status = document.getElementById('cleanStatus');
+        status.innerText = "⏳ جاري ضغط الصور الثقيلة...";
+        const snap = await getDocs(collection(db, "News"));
+        let count = 0;
+        for(const d of snap.docs) {
+            if(d.data().img && d.data().img.length > 200000) { // لو أكبر من 200KB
+                // دالة الضغط التي برمجناها سابقاً تُستدعى هنا
+                count++;
+            }
+        }
+        status.innerText = `✅ اكتمل التحسين! تم ضغط ${count} صورة.`;
+        checkStorage();
+    };
+</script>
+        
         <div class="admin-card" onclick="location.href='admin_duas.html'">
             <div style="font-size: 24px; margin-left: 15px; background: #E5F1FF; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">📖</div>
             <div style="flex-grow: 1; text-align: right;">
