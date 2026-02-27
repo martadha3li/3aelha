@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة تحكم المسابقات</title>
+<title>لوحة إدارة المسابقات</title>
 
 <style>
 body{margin:0;font-family:sans-serif;background:#f2f2f7;padding:20px}
 .card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,.05)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px}
-.stat{background:#111;color:#fff;padding:15px;border-radius:15px;text-align:center}
+input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:1px solid #ddd}
 button{padding:6px 10px;border:none;border-radius:10px;cursor:pointer;margin:3px}
 .primary{background:#007AFF;color:#fff}
 .success{background:#34C759;color:#fff}
@@ -17,81 +16,56 @@ button{padding:6px 10px;border:none;border-radius:10px;cursor:pointer;margin:3px
 .warning{background:#FF9500;color:#fff}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{padding:6px;border-bottom:1px solid #eee;font-size:12px;text-align:right}
-.progress{height:8px;background:#eee;border-radius:10px;overflow:hidden}
+.progress{height:6px;background:#eee;border-radius:10px;overflow:hidden;margin-top:5px}
 .progress div{height:100%;background:#34C759}
-.accordion{cursor:pointer;padding:15px;background:#f5f5f5;border-radius:15px;margin-top:10px;font-weight:bold;border:1px solid #e5e5ea}
-.panel{display:none;padding:15px;background:#fff;border:1px solid #eee;border-radius:0 0 15px 15px;border-top:none}
+.badge{padding:4px 8px;border-radius:8px;font-size:12px;color:#fff;cursor:pointer}
 .slot{height:80px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;border-radius:20px;margin-top:10px}
-
-/* إضافات أدوات تحرير الأسئلة */
-.q-box{background:#f9f9f9;padding:15px;border-radius:15px;margin-top:10px;border:1px dashed #ccc}
-.q-input{width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
-.opt-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
-.q-list-item{display:flex;justify-content:space-between;align-items:center;padding:8px;background:#fff;margin-top:5px;border-radius:8px;border:1px solid #eee;font-size:13px}
 </style>
 </head>
 <body>
 
-<h2>🚀 لوحة تحكم المسابقات الاحترافية</h2>
+<h2>🚀 لوحة إدارة المسابقات</h2>
 
+<!-- إضافة مسابقة -->
 <div class="card">
-<h3>📊 الإحصائيات العامة</h3>
-<div class="grid" id="dashboardStats"></div>
+<h3>➕ إنشاء مسابقة</h3>
+<input type="text" id="newTitle" placeholder="عنوان المسابقة">
+<label>تاريخ الانتهاء (اختياري)</label>
+<input type="datetime-local" id="newEnd">
+<button class="primary" onclick="createCompetition()">إنشاء</button>
 </div>
 
-<div class="card">
-<h3>➕ إنشاء مسابقة جديدة</h3>
-<input type="text" id="newTitle" class="q-input" style="width:70%" placeholder="عنوان المسابقة">
-<input type="datetime-local" id="newEnd" class="q-input" style="width:25%">
-<button class="primary" onclick="createCompetition()" style="width:100%;padding:12px">إنشاء المسابقة</button>
-</div>
-
-<div class="card">
-<h3>🏁 المسابقات الحالية</h3>
+<!-- عرض المسابقات -->
 <div id="competitionsContainer"></div>
-</div>
 
+<!-- قرعة -->
 <div class="card">
-<h3>🎰 قرعة احترافية</h3>
-<select id="drawComp" class="q-input"></select>
-<select id="drawFilter" class="q-input">
+<h3>🎰 القرعة</h3>
+<select id="drawComp"></select>
+<select id="drawFilter">
 <option value="all">كل المشاركين</option>
-<option value="correct">الإجابات الصحيحة فقط</option>
+<option value="correct">الصحيح فقط</option>
 </select>
-<input type="number" id="drawCount" class="q-input" value="1">
-<button class="primary" onclick="startDraw()" style="width:100%;padding:12px">ابدأ القرعة</button>
+<input type="number" id="drawCount" value="1">
+<button class="primary" onclick="startDraw()">ابدأ</button>
 <div id="slot" class="slot">---</div>
 <div id="drawResult"></div>
 </div>
 
 <script type="module">
 import { db } from './config.js';
-import { collection,getDocs,addDoc,onSnapshot,query,where,updateDoc,doc,deleteDoc,serverTimestamp } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+collection,getDocs,addDoc,onSnapshot,
+query,where,updateDoc,doc,
+deleteDoc,serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let globalAnswers=[];
 
-/* تحميل كل الإجابات */
+/* تحميل الإجابات */
 onSnapshot(collection(db,"Answers"),snap=>{
  globalAnswers=snap.docs.map(d=>d.data());
- updateDashboard();
 });
-
-/* DASHBOARD */
-function updateDashboard(){
- const totalComp = document.querySelectorAll('.accordion').length;
- const totalAnswers = globalAnswers.length;
- const totalUsers = new Set(globalAnswers.map(a=>a.userName)).size;
- const correctCount = globalAnswers.filter(a=>a.isCorrect).length;
- const percent = totalAnswers?Math.round((correctCount/totalAnswers)*100):0;
-
- document.getElementById("dashboardStats").innerHTML=`
- <div class="stat">🏁<br>${totalComp}<br>مسابقة</div>
- <div class="stat">👥<br>${totalUsers}<br>مشارك</div>
- <div class="stat">📝<br>${totalAnswers}<br>إجابة</div>
- <div class="stat">✅<br>${percent}%<br>صحيحة</div>
- `;
-}
 
 /* إنشاء مسابقة */
 window.createCompetition=async()=>{
@@ -100,164 +74,119 @@ window.createCompetition=async()=>{
  if(!title) return alert("اكتب العنوان");
 
  await addDoc(collection(db,"Competitions"),{
-   title,
-   endDate:end||"",
-   visible:true,
-   createdAt:serverTimestamp()
+  title,
+  endDate:end||"",
+  visible:true,
+  createdAt:serverTimestamp()
  });
- document.getElementById("newTitle").value="";
 };
 
-/* تحميل المسابقات */
+/* عرض المسابقات + الأسئلة */
 onSnapshot(collection(db,"Competitions"),async snap=>{
  const container=document.getElementById("competitionsContainer");
  const draw=document.getElementById("drawComp");
  container.innerHTML="";
  draw.innerHTML="";
 
- for(const d of snap.docs){
-  const c=d.data();
-  const compId=d.id;
+ for(const comp of snap.docs){
+  const compId=comp.id;
+  const c=comp.data();
 
   draw.innerHTML+=`<option value="${compId}">${c.title}</option>`;
 
   const qSnap=await getDocs(collection(db,`Competitions/${compId}/Questions`));
-  const qCount=qSnap.size;
+  let questionsHTML="";
 
-  const compAnswers=globalAnswers.filter(a=>a.compId==compId);
-  const users=new Set(compAnswers.map(a=>a.userName)).size;
-  const correct=compAnswers.filter(a=>a.isCorrect).length;
-  const percent=compAnswers.length?Math.round((correct/compAnswers.length)*100):0;
+  for(const q of qSnap.docs){
+   const qData=q.data();
+
+   const answersForQ=globalAnswers.filter(a=>a.questionText===qData.text && a.compId===compId);
+   const correctCount=answersForQ.filter(a=>a.isCorrect).length;
+   const percent=answersForQ.length?Math.round((correctCount/answersForQ.length)*100):0;
+
+   questionsHTML+=`
+   <div class="card" style="margin-top:10px;border-left:5px solid #007AFF">
+     <b>❓ ${qData.text}</b>
+     <div style="font-size:12px">
+       النقاط: ${qData.points||10}
+     </div>
+     <div>الخيارات: ${qData.options.join(" | ")}</div>
+     <div style="color:green">الصحيحة: ${qData.correctOption}</div>
+
+     <div>إجابات: ${answersForQ.length} | صحيحة: ${correctCount}</div>
+     <div class="progress"><div style="width:${percent}%"></div></div>
+
+     <button onclick="editQuestion('${compId}','${q.id}')">✏ تعديل</button>
+     <button onclick="deleteQuestion('${compId}','${q.id}')">🗑 حذف</button>
+   </div>
+   `;
+  }
 
   container.innerHTML+=`
-  <div class="accordion" onclick="togglePanel('${compId}')">
-  🏁 ${c.title} (${users} مشارك)
-  </div>
-  <div class="panel" id="panel-${compId}">
-    <div style="display:flex; justify-content:space-between; align-items:center">
-       <div>
-         <p>📊 إحصائيات: ${qCount} سؤال | ${users} مشارك | ${percent}% نجاح</p>
-         <div class="progress" style="width:200px"><div style="width:${percent}%"></div></div>
-       </div>
-       <div>
-         <button class="warning" onclick="closeCompetition('${compId}')">إنهاء</button>
-         <button class="danger" onclick="deleteCompetition('${compId}')">حذف</button>
-         <button class="success" onclick="duplicateCompetition('${compId}')">نسخ</button>
-       </div>
+  <div class="card">
+    <h3>🏁 ${c.title}</h3>
+    <div>
+      الحالة: ${c.visible!==false?'🟢 مفتوحة':'🔴 مغلقة'}
+      <br>الانتهاء: ${c.endDate||'غير محدد'}
     </div>
 
-    <div class="q-box">
-      <h4>❓ إضافة سؤال للمسابقة</h4>
-      <input type="text" id="qText-${compId}" class="q-input" placeholder="نص السؤال">
-      <div class="opt-row"><input type="radio" name="correct-${compId}" value="0" checked> <input type="text" id="opt-${compId}-0" class="q-input" placeholder="الخيار الأول (الصحيح مثلاً)"></div>
-      <div class="opt-row"><input type="radio" name="correct-${compId}" value="1"> <input type="text" id="opt-${compId}-1" class="q-input" placeholder="الخيار الثاني"></div>
-      <div class="opt-row"><input type="radio" name="correct-${compId}" value="2"> <input type="text" id="opt-${compId}-2" class="q-input" placeholder="الخيار الثالث"></div>
-      <div class="opt-row"><input type="radio" name="correct-${compId}" value="3"> <input type="text" id="opt-${compId}-3" class="q-input" placeholder="الخيار الرابع"></div>
-      <button class="primary" onclick="addQuestion('${compId}')" style="width:100%">حفظ السؤال</button>
-      
-      <div id="qList-${compId}" style="margin-top:15px">
-        <h5>الأسئلة الحالية:</h5>
-        </div>
-    </div>
+    <button onclick="toggleComp('${compId}',${c.visible!==false})">
+      ${c.visible!==false?'إغلاق':'فتح'}
+    </button>
+
+    <button onclick="addQuestionPrompt('${compId}')">➕ إضافة سؤال</button>
+    <button class="danger" onclick="deleteCompetition('${compId}')">حذف</button>
+
+    ${questionsHTML||"<i>لا يوجد أسئلة</i>"}
   </div>
   `;
-  loadQuestions(compId);
  }
- updateDashboard();
 });
 
-/* تحميل الأسئلة لكل مسابقة */
-async function loadQuestions(compId) {
-    const qList = document.getElementById(`qList-${compId}`);
-    const qSnap = await getDocs(collection(db, `Competitions/${compId}/Questions`));
-    let html = "";
-    qSnap.forEach(docSnap => {
-        const q = docSnap.data();
-        html += `
-        <div class="q-list-item">
-            <span>❓ ${q.question}</span>
-            <button class="danger" style="padding:2px 5px; font-size:10px" onclick="deleteQuestion('${compId}','${docSnap.id}')">حذف</button>
-        </div>`;
-    });
-    qList.innerHTML = html || "<small>لا توجد أسئلة مضافة</small>";
-}
-
 /* إضافة سؤال */
-window.addQuestion = async (compId) => {
-    const question = document.getElementById(`qText-${compId}`).value;
-    const options = [
-        document.getElementById(`opt-${compId}-0`).value,
-        document.getElementById(`opt-${compId}-1`).value,
-        document.getElementById(`opt-${compId}-2`).value,
-        document.getElementById(`opt-${compId}-3`).value
-    ];
-    const correctIdx = document.querySelector(`input[name="correct-${compId}"]:checked`).value;
+window.addQuestionPrompt=async(compId)=>{
+ const text=prompt("نص السؤال");
+ const opt1=prompt("الخيار الأول");
+ const opt2=prompt("الخيار الثاني");
+ const correct=prompt("الإجابة الصحيحة");
 
-    if(!question || options[0]=="") return alert("يرجى تعبئة السؤال والخيارات");
+ await addDoc(collection(db,`Competitions/${compId}/Questions`),{
+  text,
+  options:[opt1,opt2],
+  correctOption:correct,
+  points:10,
+  createdAt:serverTimestamp()
+ });
+};
 
-    await addDoc(collection(db, `Competitions/${compId}/Questions`), {
-        question,
-        options,
-        correctIndex: parseInt(correctIdx),
-        createdAt: serverTimestamp()
-    });
-
-    alert("تم إضافة السؤال بنجاح");
-    // مسح الحقول
-    document.getElementById(`qText-${compId}`).value = "";
-    loadQuestions(compId);
+/* تعديل سؤال */
+window.editQuestion=async(compId,qId)=>{
+ const newText=prompt("نص جديد");
+ const newCorrect=prompt("إجابة صحيحة");
+ await updateDoc(doc(db,`Competitions/${compId}/Questions`,qId),{
+  text:newText,
+  correctOption:newCorrect
+ });
 };
 
 /* حذف سؤال */
-window.deleteQuestion = async (compId, qId) => {
-    if(confirm("هل تريد حذف هذا السؤال؟")) {
-        await deleteDoc(doc(db, `Competitions/${compId}/Questions`, qId));
-        loadQuestions(compId);
-    }
+window.deleteQuestion=async(compId,qId)=>{
+ if(confirm("حذف السؤال؟"))
+  await deleteDoc(doc(db,`Competitions/${compId}/Questions`,qId));
 };
 
-/* فتح/إغلاق Accordion */
-window.togglePanel=id=>{
- const panel=document.getElementById("panel-"+id);
- const allPanels = document.querySelectorAll('.panel');
- // إغلاق البقية لفتح واحد فقط (اختياري)
- // allPanels.forEach(p => { if(p.id !== "panel-"+id) p.style.display="none" });
- panel.style.display=panel.style.display==="block"?"none":"block";
-};
-
-/* إنهاء */
-window.closeCompetition=async(id)=>{
- await updateDoc(doc(db,"Competitions",id),{visible:false});
- alert("تم إنهاء المسابقة وإخفاؤها");
+/* إغلاق/فتح */
+window.toggleComp=async(id,status)=>{
+ await updateDoc(doc(db,"Competitions",id),{visible:!status});
 };
 
 /* حذف مسابقة */
 window.deleteCompetition=async(id)=>{
- if(confirm("حذف المسابقة نهائياً؟"))
- await deleteDoc(doc(db,"Competitions",id));
+ if(confirm("حذف المسابقة؟"))
+  await deleteDoc(doc(db,"Competitions",id));
 };
 
-/* نسخ مسابقة */
-window.duplicateCompetition=async(id)=>{
- const q = query(collection(db,"Competitions"),where("__name__","==",id));
- const compSnap = await getDocs(q);
- 
- compSnap.forEach(async d=>{
-  const newComp=await addDoc(collection(db,"Competitions"),{
-    ...d.data(),
-    title:d.data().title+" (نسخة)",
-    createdAt:serverTimestamp()
-  });
-
-  const qs=await getDocs(collection(db,`Competitions/${id}/Questions`));
-  qs.forEach(async qDoc=>{
-    await addDoc(collection(db,`Competitions/${newComp.id}/Questions`), qDoc.data());
-  });
-  alert("تم نسخ المسابقة بجميع أسئلتها");
- });
-};
-
-/* قرعة احترافية */
+/* قرعة */
 window.startDraw=async()=>{
  const compId=document.getElementById("drawComp").value;
  const filter=document.getElementById("drawFilter").value;
@@ -269,7 +198,7 @@ window.startDraw=async()=>{
   .map(a=>a.userName);
 
  names=[...new Set(names)];
- if(names.length==0) return alert("لا يوجد مشاركين يحققون الشروط");
+ if(names.length==0) return alert("لا يوجد مشاركين");
 
  const slot=document.getElementById("slot");
  const result=document.getElementById("drawResult");
@@ -282,18 +211,17 @@ window.startDraw=async()=>{
  setTimeout(async()=>{
   clearInterval(spin);
   const winners=names.sort(()=>0.5-Math.random()).slice(0,count);
-  slot.innerText="🎉 انتهت القرعة";
-  result.innerHTML="<div style='background:#f2f2f7;padding:15px;border-radius:15px;margin-top:10px;text-align:center'><b>الفائزين:<br>"+winners.join("<br>")+"</b></div>";
+  slot.innerText="🎉 انتهت";
+  result.innerHTML="<b>"+winners.join("<br>")+"</b>";
 
   await addDoc(collection(db,"Winners"),{
-    compId,
-    winners,
-    createdAt:serverTimestamp()
+   compId,
+   winners,
+   createdAt:serverTimestamp()
   });
 
  },3000);
 };
-
 </script>
 </body>
 </html>
