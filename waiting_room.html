@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>غرفة الانتظار</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #F2F2F7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .wait-card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 85%; max-width: 400px; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #007AFF; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h2 { color: #1c1c1e; margin-bottom: 10px; }
+        p { color: #8e8e93; font-size: 14px; line-height: 1.6; }
+        .count-badge { background: #007AFF; color: white; padding: 5px 15px; border-radius: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="wait-card">
+        <div class="loader"></div>
+        <h2>عذراً، التطبيق مزدحم حالياً</h2>
+        <p>وصلنا للحد الأقصى للمستخدمين النشطين (85 مستخدم) لضمان سرعة الخدمة وتوفير البيانات.</p>
+        <p>أنت الآن في قائمة الانتظار، سيتم دخوك تلقائياً فور خروج أحد المستخدمين.</p>
+        <div style="margin-top: 20px;">
+            المستخدمون حالياً: <span id="userCount" class="count-badge">..</span>
+        </div>
+    </div>
+
+<script type="module">
+    import { db } from './config.js';
+    import { collection, onSnapshot, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // مراقبة العدد لحظياً
+    const q = collection(db, "ActiveSessions");
+    onSnapshot(q, (snapshot) => {
+        const count = snapshot.size;
+        document.getElementById('userCount').innerText = count;
+
+        // إذا أصبح هناك مكان شاغر، أعد توجيهه للرئيسية
+        if (count < 85) {
+            window.location.href = "index.html";
+        }
+    });
+</script>
+</body>
+</html>
