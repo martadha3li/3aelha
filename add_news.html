@@ -6,25 +6,41 @@
     <title>إدارة الأخبار والتثبيت</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; --ios-red: #FF3B30; --wedding-gold: #FFD700; --death-dark: #3A3A3C; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; --ios-red: #FF3B30; --wedding-gold: #FFD700; --death-dark: #3A3A3C; --success: #34C759; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--ios-bg); margin: 0; padding: 20px; direction: rtl; }
+        
         .header { display: flex; align-items: center; margin-bottom: 20px; }
         .back-btn { background: #e5e5ea; color: #000; width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; }
         .header h1 { font-size: 18px; flex: 1; text-align: center; margin-left: 35px; }
+
         .form-container { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .tab-selector { display: flex; background: #e5e5ea; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
         .tab-item { flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: #8e8e93; }
         .tab-item.active { background: white; color: var(--ios-blue); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
         .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3a3a3c; }
         input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none; }
-        .news-picker { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; }
-        .pick-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f2f2f2; cursor: pointer; }
-        .ai-status { font-size: 12px; color: var(--ios-blue); text-align: center; margin-top: 10px; display: none; }
+        
+        /* قائمة اختيار المنشورات للتثبيت */
+        .news-picker { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; background: #fafafa; }
+        .pick-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #f2f2f2; cursor: pointer; transition: 0.2s; }
+        .pick-item:active { background: #f0f0f5; }
+        .pick-item.wedding { border-right: 5px solid var(--wedding-gold); background: #fffdf0; }
+        .pick-item.death { border-right: 5px solid var(--death-dark); background: #f4f4f4; }
+        .pick-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; background: #eee; }
+        .pick-title { font-size: 13px; font-weight: bold; flex: 1; color: #1c1c1e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pick-badge { font-size: 10px; padding: 2px 6px; border-radius: 50px; background: #eee; color: #666; }
+        .pick-badge.gold { background: var(--wedding-gold); color: #000; }
+        .pick-badge.black { background: var(--death-dark); color: #fff; }
+        .pick-radio { accent-color: var(--ios-blue); width: 18px; height: 18px; }
+
+        .ai-status { font-size: 12px; color: var(--ios-blue); text-align: center; margin-top: 10px; display: none; font-weight: 600; }
+        .size-stats { font-size: 11px; color: var(--success); text-align: center; margin-top: 5px; font-weight: bold; }
         .hidden { display: none !important; }
         .publish-btn { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .ai-btn { background: linear-gradient(135deg, #007AFF, #5856D6); }
-        #sizeStats { font-size: 11px; color: #34c759; text-align: center; margin-top: 5px; font-weight: bold; }
+        .remove-pin-btn { width: 100%; padding: 12px; background: #fff; color: var(--ios-red); border: 1.5px solid var(--ios-red); border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -55,9 +71,9 @@
                 <input type="text" id="postTitle" placeholder="اكتب العنوان هنا...">
             </div>
             <div class="input-group">
-                <label>صورة الخبر</label>
+                <label>صورة الخبر (سيتم ضغطها آلياً)</label>
                 <input type="file" id="postFile" accept="image/*">
-                <div id="sizeStats"></div>
+                <div id="sizeStats" class="size-stats"></div>
             </div>
             <div class="input-group">
                 <label>التفاصيل</label>
@@ -68,18 +84,31 @@
 
         <div id="aiForm" class="hidden">
             <div style="text-align: center; padding: 10px 0;">
-                <p style="font-size: 13px; color: #666;">ارفع صورة "بوست الواتساب" لسحب النص تلقائياً</p>
-                <input type="file" id="aiFileInput" accept="image/*">
-                <div id="aiLoading" class="ai-status">⏳ جاري تحليل الصورة...</div>
+                <p style="font-size: 13px; color: #666;">ارفع صورة بوست الواتساب لاستخراج النص وتعبئته تلقائياً</p>
+                <div class="input-group">
+                    <label>اختر صورة البوست</label>
+                    <input type="file" id="aiFileInput" accept="image/*">
+                </div>
+                <div id="aiLoading" class="ai-status">⏳ جاري قراءة النص وتحليله...</div>
                 <button onclick="processAIImage()" class="publish-btn ai-btn">تحليل الصورة 🔍</button>
             </div>
         </div>
 
         <div id="pinnedForm" class="hidden">
-            <label>اختر المنشور لتثبيته:</label>
+            <label>اختر المنشور من القائمة لتثبيته أو إلغاء تثبيته:</label>
             <div id="newsPicker" class="news-picker">جاري التحميل...</div>
-            <button onclick="handlePinAction('pin')" class="publish-btn">تفعيل التثبيت</button>
-            <button onclick="handlePinAction('unpin')" style="background:none; color:red; border:none; width:100%; margin-top:10px;">إلغاء التثبيت</button>
+            
+            <div id="pinActions">
+                <div class="input-group">
+                    <label>تثبيت كـ:</label>
+                    <select id="pinType">
+                        <option value="wedding">كرت زواج ذهبي 💍</option>
+                        <option value="death">كرت وفاة رمادي 🖤</option>
+                    </select>
+                </div>
+                <button onclick="handlePinAction('pin')" class="publish-btn">تفعيل التثبيت العلوي</button>
+                <button onclick="handlePinAction('unpin')" class="remove-pin-btn">إلغاء التثبيت من الأعلى</button>
+            </div>
         </div>
     </div>
 
@@ -87,7 +116,22 @@
         import { db, auth } from './config.js';
         import { collection, addDoc, getDocs, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- دالة ضغط الصور مع الإحصائيات ---
+        let selectedNewsId = null;
+
+        // 1. التبديل بين التبويبات
+        window.switchTab = (mode) => {
+            document.getElementById('tabNormal').classList.toggle('active', mode === 'normal');
+            document.getElementById('tabAI').classList.toggle('active', mode === 'ai');
+            document.getElementById('tabPinned').classList.toggle('active', mode === 'pinned');
+            
+            document.getElementById('normalForm').classList.toggle('hidden', mode !== 'normal');
+            document.getElementById('aiForm').classList.toggle('hidden', mode !== 'ai');
+            document.getElementById('pinnedForm').classList.toggle('hidden', mode !== 'pinned');
+            
+            if(mode === 'pinned') loadNewsForPicker();
+        };
+
+        // 2. ضغط الصور لتقليل المساحة
         async function compressImage(file) {
             return new Promise((resolve) => {
                 const originalSize = (file.size / 1024).toFixed(2);
@@ -104,67 +148,112 @@
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // ضغط 60%
                         const newSize = (dataUrl.length * (3/4) / 1024).toFixed(2);
-                        document.getElementById('sizeStats').innerText = `📊 الحجم: ${originalSize}KB ➔ ${newSize}KB (تم توفير ${(100 - (newSize/originalSize*100)).toFixed(0)}%)`;
+                        document.getElementById('sizeStats').innerText = `📊 الحجم الأصلي: ${originalSize}KB | بعد الضغط: ${newSize}KB (توفير ${Math.round(100 - (newSize/originalSize*100))}%)`;
                         resolve(dataUrl);
                     };
                 };
             });
         }
 
-        // --- منطق النشر المطور ---
+        // 3. معالجة الصورة بالذكاء الاصطناعي
+        window.processAIImage = async () => {
+            const file = document.getElementById('aiFileInput').files[0];
+            const status = document.getElementById('aiLoading');
+            if (!file) return alert("يرجى اختيار صورة أولاً");
+
+            status.style.display = "block";
+            try {
+                const result = await Tesseract.recognize(file, 'ara', { logger: m => console.log(m) });
+                const text = result.data.text;
+
+                document.getElementById('postBody').value = text;
+                const lines = text.split('\n').filter(l => l.trim() !== '');
+                if (lines.length > 0) document.getElementById('postTitle').value = lines[0].substring(0, 50);
+
+                if (text.includes("زواج") || text.includes("افراح")) document.getElementById('postType').value = "wedding";
+                else if (text.includes("وفاة") || text.includes("انتقل")) document.getElementById('postType').value = "death";
+
+                alert("✅ تمت القراءة بنجاح! راجع البيانات في التبويب الأول.");
+                switchTab('normal');
+            } catch (e) { alert("فشل في تحليل الصورة"); } finally { status.style.display = "none"; }
+        };
+
+        // 4. تحميل الأخبار للتثبيت (مصلح)
+        async function loadNewsForPicker() {
+            const picker = document.getElementById('newsPicker');
+            picker.innerHTML = "<p style='text-align:center; padding:20px; font-size:12px; color:#888;'>⏳ جاري جلب الأخبار...</p>";
+            try {
+                const q = query(collection(db, "News"), orderBy("publishDate", "desc"));
+                const snap = await getDocs(q);
+                picker.innerHTML = "";
+                snap.forEach(d => {
+                    const data = d.data();
+                    const type = data.type || 'normal';
+                    const div = document.createElement('div');
+                    div.className = `pick-item ${type}`;
+                    div.onclick = () => { selectedNewsId = d.id; div.querySelector('input').checked = true; };
+                    div.innerHTML = `
+                        <input type="radio" name="pick" class="pick-radio">
+                        <img src="${data.img || 'https://via.placeholder.com/50'}" class="pick-img">
+                        <div class="pick-title">
+                            ${data.title}
+                            <span class="pick-badge ${type === 'wedding' ? 'gold' : (type === 'death' ? 'black' : '')}">
+                                ${type === 'wedding' ? 'زواج 💍' : (type === 'death' ? 'وفاة 🖤' : 'عادي 📄')}
+                            </span>
+                        </div>
+                    `;
+                    picker.appendChild(div);
+                });
+            } catch(e) { picker.innerHTML = "<p style='text-align:center; color:red;'>فشل التحميل</p>"; }
+        }
+
+        // 5. زر النشر النهائي
         document.getElementById('mainBtn').onclick = async () => {
             const title = document.getElementById('postTitle').value;
             const body = document.getElementById('postBody').value;
-            const file = document.getElementById('postFile').files[0];
             const type = document.getElementById('postType').value;
+            const fileInput = document.getElementById('postFile');
 
             if(!title || !body) return alert("يرجى إكمال البيانات");
-            
-            let img = "https://via.placeholder.com/500x300";
-            if(file) {
-                document.getElementById('mainBtn').innerText = "⏳ جاري المعالجة...";
-                img = await compressImage(file);
+
+            let finalImg = "https://via.placeholder.com/500x300";
+            if(fileInput.files[0]) {
+                document.getElementById('mainBtn').innerText = "⏳ جاري الضغط...";
+                finalImg = await compressImage(fileInput.files[0]);
             }
 
             try {
                 await addDoc(collection(db, "News"), {
-                    title, body, img, type,
+                    title, body, img: finalImg, type,
                     publishDate: Date.now(),
                     authorId: auth.currentUser.uid,
                     visible: true
                 });
                 alert("تم النشر بنجاح ✅");
                 window.location.href = "news.html";
-            } catch(e) { alert("خطأ في النشر"); }
+            } catch(e) { alert("حدث خطأ في النشر"); }
         };
 
-        // --- الذكاء الاصطناعي ---
-        window.processAIImage = async () => {
-            const file = document.getElementById('aiFileInput').files[0];
-            const status = document.getElementById('aiLoading');
-            if(!file) return alert("اختر صورة");
-            status.style.display = "block";
+        // 6. التعامل مع التثبيت
+        window.handlePinAction = async (action) => {
+            if(!selectedNewsId) return alert("يرجى اختيار منشور أولاً");
             try {
-                const result = await Tesseract.recognize(file, 'ara');
-                document.getElementById('postBody').value = result.data.text;
-                document.getElementById('postTitle').value = result.data.text.split('\n')[0].substring(0,50);
-                alert("✅ تمت القراءة!");
-                switchTab('normal');
-            } catch(e) { alert("فشل التحليل"); } finally { status.style.display="none"; }
+                const newType = (action === 'pin') ? document.getElementById('pinType').value : 'normal';
+                await updateDoc(doc(db, "News", selectedNewsId), { type: newType });
+                alert(action === 'pin' ? "تم التثبيت بنجاح" : "تم إلغاء التثبيت");
+                loadNewsForPicker();
+            } catch(e) { alert("فشل التحديث"); }
         };
 
-        window.switchTab = (mode) => {
-            document.getElementById('normalForm').classList.toggle('hidden', mode !== 'normal');
-            document.getElementById('aiForm').classList.toggle('hidden', mode !== 'ai');
-            document.getElementById('pinnedForm').classList.toggle('hidden', mode !== 'pinned');
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            if(mode === 'normal') document.getElementById('tabNormal').classList.add('active');
-            if(mode === 'ai') document.getElementById('tabAI').classList.add('active');
-            if(mode === 'pinned') { document.getElementById('tabPinned').classList.add('active'); loadNewsForPicker(); }
+        window.updateDefaultTitle = () => {
+            const type = document.getElementById('postType').value;
+            const titleInput = document.getElementById('postTitle');
+            if(type === 'wedding') titleInput.value = "دعوة زواج: ";
+            else if(type === 'death') titleInput.value = "إنا لله وإنا إليه راجعون: ";
+            else titleInput.value = "";
         };
-        // بقية الدوال (loadNewsForPicker, handlePinAction) تظل كما هي في كودك الأصلي
     </script>
 </body>
 </html>
