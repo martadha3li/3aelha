@@ -6,16 +6,18 @@
 <title>إدارة المسابقات</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#f2f2f7;padding:20px;}
-.card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,.05);}
-input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:1px solid #ddd;}
-button{padding:8px 12px;border:none;border-radius:10px;cursor:pointer;}
-.primary{background:#007AFF;color:#fff;}
-.success{background:#34C759;color:#fff;}
-.danger{background:#FF3B30;color:#fff;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
-.winner-box{font-size:20px;margin-top:15px;color:#34C759;font-weight:bold;}
+body{margin:0;font-family:sans-serif;background:#f2f2f7;padding:20px}
+.card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,.05)}
+input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:1px solid #ddd}
+button{padding:8px 12px;border:none;border-radius:10px;cursor:pointer}
+.primary{background:#007AFF;color:#fff}
+.success{background:#34C759;color:#fff}
+.danger{background:#FF3B30;color:#fff}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px}
+.slot-box{font-size:28px;font-weight:bold;color:#FF9500;height:80px;display:flex;align-items:center;justify-content:center;border:3px solid #FF9500;border-radius:20px;margin-top:15px;background:#111;color:#fff}
+.winner{color:#34C759;font-size:20px;font-weight:bold;margin-top:10px}
+.badge{padding:4px 8px;border-radius:8px;font-size:12px;color:#fff;cursor:pointer}
 </style>
 </head>
 <body>
@@ -24,11 +26,17 @@ th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
 
 <!-- إضافة مسابقة -->
 <div class="card">
-<h3>➕ إضافة مسابقة جديدة</h3>
+<h3>➕ إضافة مسابقة</h3>
 <input type="text" id="compTitle" placeholder="عنوان المسابقة">
 <label>تاريخ الانتهاء (اختياري)</label>
 <input type="datetime-local" id="compEnd">
 <button class="primary" onclick="createCompetition()">نشر المسابقة</button>
+</div>
+
+<!-- إدارة المسابقات -->
+<div class="card">
+<h3>📋 إدارة المسابقات</h3>
+<div id="competitionsList"></div>
 </div>
 
 <!-- إضافة سؤال -->
@@ -39,23 +47,23 @@ th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
 <input type="text" id="opt1" placeholder="الخيار الأول">
 <input type="text" id="opt2" placeholder="الخيار الثاني">
 <input type="text" id="opt3" placeholder="الخيار الثالث">
-<label>الإجابة الصحيحة</label>
 <select id="correctOpt">
-<option value="1">الأول</option>
-<option value="2">الثاني</option>
-<option value="3">الثالث</option>
+<option value="0">الأول</option>
+<option value="1">الثاني</option>
+<option value="2">الثالث</option>
 </select>
-<input type="number" id="points" placeholder="النقاط" value="10">
+<input type="number" id="points" value="10">
 <button class="success" onclick="addQuestion()">إضافة السؤال</button>
 </div>
 
 <!-- القرعة -->
 <div class="card">
-<h3>🎰 عمل قرعة</h3>
+<h3>🎰 قرعة احترافية</h3>
 <select id="drawComp"></select>
 <input type="number" id="winnerCount" value="1" min="1">
-<button class="primary" onclick="runDraw()">بدء القرعة</button>
-<div id="drawResult" class="winner-box"></div>
+<button class="primary" onclick="startDraw()">بدء القرعة</button>
+<div id="slotBox" class="slot-box">---</div>
+<div id="drawWinners"></div>
 </div>
 
 <!-- الترتيب -->
@@ -65,11 +73,12 @@ th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
 <thead><tr><th>#</th><th>الاسم</th><th>النقاط</th></tr></thead>
 <tbody id="leaderboard"></tbody>
 </table>
+<button class="primary" onclick="exportExcel()">تصدير Excel</button>
 </div>
 
-<!-- جدول الإجابات -->
+<!-- الإجابات -->
 <div class="card">
-<h3>📋 جميع الإجابات</h3>
+<h3>📊 جميع الإجابات</h3>
 <table>
 <thead>
 <tr>
@@ -86,105 +95,137 @@ th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
 </table>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <script type="module">
 import { db } from './config.js';
-import { collection, addDoc, onSnapshot, getDocs, query, where, serverTimestamp } 
+import { collection, addDoc, onSnapshot, getDocs, query, where, updateDoc, deleteDoc, doc, serverTimestamp } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* تحميل المسابقات */
 onSnapshot(collection(db,"Competitions"), snap=>{
  const select=document.getElementById("compSelect");
  const draw=document.getElementById("drawComp");
+ const list=document.getElementById("competitionsList");
+
  select.innerHTML="";
  draw.innerHTML="";
- snap.forEach(doc=>{
-   const c=doc.data();
-   select.innerHTML+=`<option value="${doc.id}">${c.title}</option>`;
-   draw.innerHTML+=`<option value="${doc.id}">${c.title}</option>`;
+ list.innerHTML="";
+
+ snap.forEach(d=>{
+   const c=d.data();
+
+   select.innerHTML+=`<option value="${d.id}">${c.title}</option>`;
+   draw.innerHTML+=`<option value="${d.id}">${c.title}</option>`;
+
+   list.innerHTML+=`
+   <div style="margin-bottom:8px">
+     <b>${c.title}</b>
+     <span class="badge success" onclick="toggleComp('${d.id}',${c.visible!==false})">
+       ${c.visible!==false?'إغلاق':'فتح'}
+     </span>
+     <span class="badge danger" onclick="deleteComp('${d.id}')">حذف</span>
+   </div>`;
  });
 });
 
 /* إنشاء مسابقة */
-window.createCompetition=async ()=>{
+window.createCompetition=async()=>{
  const title=document.getElementById("compTitle").value;
  const end=document.getElementById("compEnd").value;
-
  if(!title){alert("اكتب العنوان");return;}
 
  await addDoc(collection(db,"Competitions"),{
    title:title,
    endDate:end||"",
+   visible:true,
    createdAt:serverTimestamp()
  });
+ alert("تم الإنشاء");
+};
 
- alert("تم إنشاء المسابقة");
- document.getElementById("compTitle").value="";
+/* إغلاق / فتح */
+window.toggleComp=async(id,status)=>{
+ await updateDoc(doc(db,"Competitions",id),{visible:!status});
+};
+
+/* حذف */
+window.deleteComp=async(id)=>{
+ if(confirm("تأكيد الحذف؟"))
+ await deleteDoc(doc(db,"Competitions",id));
 };
 
 /* إضافة سؤال */
-window.addQuestion=async ()=>{
+window.addQuestion=async()=>{
  const compId=document.getElementById("compSelect").value;
  const text=document.getElementById("qText").value;
- const o1=document.getElementById("opt1").value;
- const o2=document.getElementById("opt2").value;
- const o3=document.getElementById("opt3").value;
- const correctIndex=document.getElementById("correctOpt").value;
+ const options=[
+  document.getElementById("opt1").value,
+  document.getElementById("opt2").value,
+  document.getElementById("opt3").value
+ ].filter(x=>x!="");
+
+ const correctIndex=parseInt(document.getElementById("correctOpt").value);
  const pts=parseInt(document.getElementById("points").value)||10;
 
- if(!text||!o1||!o2){alert("أكمل البيانات");return;}
-
- const options=[o1,o2,o3].filter(x=>x!="");
- const correctOption=options[correctIndex-1];
+ if(!text||options.length<2){alert("أكمل البيانات");return;}
 
  await addDoc(collection(db,`Competitions/${compId}/Questions`),{
    text:text,
    options:options,
-   correctOption:correctOption,
+   correctOption:options[correctIndex],
    showAt:new Date().toISOString(),
    points:pts
  });
-
- alert("تم إضافة السؤال");
+ alert("تمت إضافة السؤال");
 };
 
-/* القرعة */
-window.runDraw=async ()=>{
+/* قرعة متحركة */
+window.startDraw=async()=>{
  const compId=document.getElementById("drawComp").value;
  const count=parseInt(document.getElementById("winnerCount").value)||1;
 
- const q=query(collection(db,"Answers"),where("compId","==",compId),where("isCorrect","==",true));
+ const q=query(collection(db,"Answers"),
+  where("compId","==",compId),
+  where("isCorrect","==",true)
+ );
  const snap=await getDocs(q);
 
- let participants=[];
- let unique=new Set();
+ let names=[...new Set(snap.docs.map(d=>d.data().userName))];
+ if(names.length==0){alert("لا يوجد مشاركين");return;}
 
- snap.forEach(doc=>{
-   const name=doc.data().userName;
-   if(!unique.has(name)){
-     participants.push(name);
-     unique.add(name);
-   }
- });
+ const slot=document.getElementById("slotBox");
+ const winnersDiv=document.getElementById("drawWinners");
+ winnersDiv.innerHTML="";
 
- if(participants.length==0){
-   alert("لا يوجد مشاركين صحيحين");
-   return;
- }
+ let spin=setInterval(()=>{
+   slot.innerText=names[Math.floor(Math.random()*names.length)];
+ },100);
 
- const shuffled=participants.sort(()=>0.5-Math.random());
- const winners=shuffled.slice(0,count);
+ setTimeout(async()=>{
+   clearInterval(spin);
+   const shuffled=names.sort(()=>0.5-Math.random());
+   const winners=shuffled.slice(0,count);
+   slot.innerText="🎉 انتهت القرعة";
+   winnersDiv.innerHTML="<div class='winner'>"+winners.join("<br>")+"</div>";
 
- document.getElementById("drawResult").innerHTML="🎉 الفائزون:<br>"+winners.join("<br>");
+   await addDoc(collection(db,"Winners"),{
+     compId:compId,
+     winners:winners,
+     createdAt:serverTimestamp()
+   });
+
+ },3000);
 };
 
-/* عرض الإجابات + الترتيب */
+/* عرض الإجابات + ترتيب */
 onSnapshot(collection(db,"Answers"), snap=>{
  let scores={};
  const table=document.getElementById("answersTable");
  table.innerHTML="";
 
- snap.forEach(doc=>{
-   const a=doc.data();
+ snap.forEach(d=>{
+   const a=d.data();
    if(!scores[a.userName]) scores[a.userName]=0;
    scores[a.userName]+=a.pointsAwarded||0;
 
@@ -209,6 +250,19 @@ onSnapshot(collection(db,"Answers"), snap=>{
    lb.innerHTML+=`<tr><td>${i+1}</td><td>${row[0]}</td><td>${row[1]}</td></tr>`;
  });
 });
+
+/* تصدير Excel */
+window.exportExcel=async()=>{
+ const snap=await getDocs(collection(db,"Answers"));
+ let data=[];
+ snap.forEach(d=>{
+   data.push(d.data());
+ });
+ const ws=XLSX.utils.json_to_sheet(data);
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,"Answers");
+ XLSX.writeFile(wb,"competitions.xlsx");
+};
 </script>
 
 </body>
