@@ -11,6 +11,20 @@ export async function monitorSession(uid) {
     const snapshot = await getCountFromServer(collection(db, "ActiveSessions"));
     const currentCount = snapshot.data().count;
 
+// داخل دالة monitorSession
+if (currentCount >= MAX_USERS) {
+    // جلب بيانات المستخدم لفحص رتبته
+    const userSnap = await getDoc(doc(db, "Users", uid));
+    const role = userSnap.data()?.role;
+
+    // إذا لم يكن مديراً، يذهب للانتظار
+    if (role !== 'admin') {
+        window.location.href = "waiting_room.html";
+        return;
+    }
+}
+
+    
     // 2. إذا تجاوز العدد 85 وكان المستخدم ليس لديه جلسة نشطة
     if (currentCount >= MAX_USERS) {
         // التحقق إذا كان المستخدم مسجلاً بالفعل (ربما قام بعمل Refresh)
