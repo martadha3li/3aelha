@@ -8,84 +8,191 @@
 <style>
 body{margin:0;font-family:sans-serif;background:#f2f2f7;padding:20px;}
 .card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,.05);}
-table{width:100%;border-collapse:collapse;}
-th,td{padding:8px;border-bottom:1px solid #eee;text-align:right;}
-.badge{padding:6px 10px;border-radius:10px;font-size:12px;color:#fff;cursor:pointer;}
-.primary{background:#007AFF;}
-.success{background:#34C759;}
-.danger{background:#FF3B30;}
+input,select{width:100%;padding:8px;margin:5px 0;border-radius:10px;border:1px solid #ddd;}
+button{padding:8px 12px;border:none;border-radius:10px;cursor:pointer;}
+.primary{background:#007AFF;color:#fff;}
+.success{background:#34C759;color:#fff;}
+.danger{background:#FF3B30;color:#fff;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:6px;border-bottom:1px solid #eee;text-align:right;font-size:13px;}
+.winner-box{font-size:20px;margin-top:15px;color:#34C759;font-weight:bold;}
 </style>
 </head>
 <body>
 
 <h2>🎯 إدارة المسابقات</h2>
 
+<!-- إضافة مسابقة -->
+<div class="card">
+<h3>➕ إضافة مسابقة جديدة</h3>
+<input type="text" id="compTitle" placeholder="عنوان المسابقة">
+<label>تاريخ الانتهاء (اختياري)</label>
+<input type="datetime-local" id="compEnd">
+<button class="primary" onclick="createCompetition()">نشر المسابقة</button>
+</div>
+
+<!-- إضافة سؤال -->
+<div class="card">
+<h3>❓ إضافة سؤال</h3>
+<select id="compSelect"></select>
+<input type="text" id="qText" placeholder="نص السؤال">
+<input type="text" id="opt1" placeholder="الخيار الأول">
+<input type="text" id="opt2" placeholder="الخيار الثاني">
+<input type="text" id="opt3" placeholder="الخيار الثالث">
+<label>الإجابة الصحيحة</label>
+<select id="correctOpt">
+<option value="1">الأول</option>
+<option value="2">الثاني</option>
+<option value="3">الثالث</option>
+</select>
+<input type="number" id="points" placeholder="النقاط" value="10">
+<button class="success" onclick="addQuestion()">إضافة السؤال</button>
+</div>
+
+<!-- القرعة -->
+<div class="card">
+<h3>🎰 عمل قرعة</h3>
+<select id="drawComp"></select>
+<input type="number" id="winnerCount" value="1" min="1">
+<button class="primary" onclick="runDraw()">بدء القرعة</button>
+<div id="drawResult" class="winner-box"></div>
+</div>
+
+<!-- الترتيب -->
 <div class="card">
 <h3>🏆 الترتيب العام</h3>
 <table>
 <thead><tr><th>#</th><th>الاسم</th><th>النقاط</th></tr></thead>
-<tbody id="leaderboardBody"></tbody>
+<tbody id="leaderboard"></tbody>
 </table>
 </div>
 
+<!-- جدول الإجابات -->
 <div class="card">
-<h3>📊 الإحصائيات</h3>
-<div id="statsBox"></div>
-</div>
-
-<div class="card">
-<h3>📋 كل الإجابات</h3>
+<h3>📋 جميع الإجابات</h3>
 <table>
 <thead>
 <tr>
 <th>الاسم</th>
-<th>الجوال</th>
 <th>المسابقة</th>
 <th>السؤال</th>
-<th>إجابته</th>
+<th>الإجابة</th>
 <th>الحالة</th>
 <th>النقاط</th>
 <th>التاريخ</th>
 </tr>
 </thead>
-<tbody id="resultsBody"></tbody>
+<tbody id="answersTable"></tbody>
 </table>
 </div>
 
 <script type="module">
 import { db } from './config.js';
-import { collection, onSnapshot, query, orderBy, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, onSnapshot, getDocs, query, where, serverTimestamp } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-function calculateLevel(points){
- if(points>=300) return "🥇 Gold";
- if(points>=100) return "🥈 Silver";
- return "🥉 Bronze";
-}
+/* تحميل المسابقات */
+onSnapshot(collection(db,"Competitions"), snap=>{
+ const select=document.getElementById("compSelect");
+ const draw=document.getElementById("drawComp");
+ select.innerHTML="";
+ draw.innerHTML="";
+ snap.forEach(doc=>{
+   const c=doc.data();
+   select.innerHTML+=`<option value="${doc.id}">${c.title}</option>`;
+   draw.innerHTML+=`<option value="${doc.id}">${c.title}</option>`;
+ });
+});
 
+/* إنشاء مسابقة */
+window.createCompetition=async ()=>{
+ const title=document.getElementById("compTitle").value;
+ const end=document.getElementById("compEnd").value;
+
+ if(!title){alert("اكتب العنوان");return;}
+
+ await addDoc(collection(db,"Competitions"),{
+   title:title,
+   endDate:end||"",
+   createdAt:serverTimestamp()
+ });
+
+ alert("تم إنشاء المسابقة");
+ document.getElementById("compTitle").value="";
+};
+
+/* إضافة سؤال */
+window.addQuestion=async ()=>{
+ const compId=document.getElementById("compSelect").value;
+ const text=document.getElementById("qText").value;
+ const o1=document.getElementById("opt1").value;
+ const o2=document.getElementById("opt2").value;
+ const o3=document.getElementById("opt3").value;
+ const correctIndex=document.getElementById("correctOpt").value;
+ const pts=parseInt(document.getElementById("points").value)||10;
+
+ if(!text||!o1||!o2){alert("أكمل البيانات");return;}
+
+ const options=[o1,o2,o3].filter(x=>x!="");
+ const correctOption=options[correctIndex-1];
+
+ await addDoc(collection(db,`Competitions/${compId}/Questions`),{
+   text:text,
+   options:options,
+   correctOption:correctOption,
+   showAt:new Date().toISOString(),
+   points:pts
+ });
+
+ alert("تم إضافة السؤال");
+};
+
+/* القرعة */
+window.runDraw=async ()=>{
+ const compId=document.getElementById("drawComp").value;
+ const count=parseInt(document.getElementById("winnerCount").value)||1;
+
+ const q=query(collection(db,"Answers"),where("compId","==",compId),where("isCorrect","==",true));
+ const snap=await getDocs(q);
+
+ let participants=[];
+ let unique=new Set();
+
+ snap.forEach(doc=>{
+   const name=doc.data().userName;
+   if(!unique.has(name)){
+     participants.push(name);
+     unique.add(name);
+   }
+ });
+
+ if(participants.length==0){
+   alert("لا يوجد مشاركين صحيحين");
+   return;
+ }
+
+ const shuffled=participants.sort(()=>0.5-Math.random());
+ const winners=shuffled.slice(0,count);
+
+ document.getElementById("drawResult").innerHTML="🎉 الفائزون:<br>"+winners.join("<br>");
+};
+
+/* عرض الإجابات + الترتيب */
 onSnapshot(collection(db,"Answers"), snap=>{
-
  let scores={};
- let total=0;
- let correct=0;
-
- const body=document.getElementById("resultsBody");
- body.innerHTML="";
+ const table=document.getElementById("answersTable");
+ table.innerHTML="";
 
  snap.forEach(doc=>{
    const a=doc.data();
-
-   total++;
-   if(a.isCorrect) correct++;
-
    if(!scores[a.userName]) scores[a.userName]=0;
    scores[a.userName]+=a.pointsAwarded||0;
 
    const time=a.timestamp?.toDate()?.toLocaleString('ar-EG')||"";
 
-   body.innerHTML+=`
+   table.innerHTML+=`
    <tr>
    <td>${a.userName}</td>
-   <td>${a.userPhone||"-"}</td>
    <td>${a.compTitle}</td>
    <td>${a.questionText}</td>
    <td>${a.selectedOption}</td>
@@ -95,26 +202,14 @@ onSnapshot(collection(db,"Answers"), snap=>{
    </tr>`;
  });
 
- // Leaderboard
- const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
- const lb=document.getElementById("leaderboardBody");
+ const lb=document.getElementById("leaderboard");
  lb.innerHTML="";
+ const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
  sorted.forEach((row,i)=>{
-   lb.innerHTML+=`
-   <tr>
-   <td>${i+1}</td>
-   <td>${row[0]}</td>
-   <td>${row[1]} ${calculateLevel(row[1])}</td>
-   </tr>`;
+   lb.innerHTML+=`<tr><td>${i+1}</td><td>${row[0]}</td><td>${row[1]}</td></tr>`;
  });
-
- // Stats
- document.getElementById("statsBox").innerHTML=`
- إجمالي الإجابات: ${total}<br>
- الصحيحة: ${correct}<br>
- نسبة الدقة: ${total?((correct/total)*100).toFixed(1):0}%`;
-
 });
 </script>
+
 </body>
 </html>
