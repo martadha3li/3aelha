@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المواقيت الذكية</title>
+    <title>إدارة المواقيت - التحليل الذكي</title>
     <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --success: #34c759; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
         body { background: var(--ios-bg); font-family: -apple-system, sans-serif; padding: 20px; text-align: center; }
-        .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #ddd; }
-        .upload-zone { border: 2px dashed var(--ios-blue); border-radius: 15px; padding: 30px; cursor: pointer; background: #fff; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: center; font-size: 13px; }
-        input { width: 60px; border: 1px solid #ccc; border-radius: 5px; text-align: center; padding: 5px; }
-        .btn { width: 100%; padding: 16px; border-radius: 14px; font-weight: bold; border: none; cursor: pointer; margin-top: 15px; font-size: 16px; transition: 0.3s; }
+        .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .upload-zone { border: 2px dashed var(--ios-blue); border-radius: 15px; padding: 30px; cursor: pointer; position: relative; }
+        #preview { max-width: 100%; border-radius: 12px; margin-top: 15px; display: none; border: 1px solid #ddd; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; font-size: 16px; }
         .btn-primary { background: var(--ios-blue); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        #preview { max-width: 100%; border-radius: 12px; margin-top: 15px; display: none; border: 1px solid #ccc; }
+        .btn-success { background: #34c759; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; font-size: 14px; }
+        input { width: 55px; border: 1px solid #ddd; border-radius: 6px; text-align: center; padding: 5px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>الماسح الضوئي الذكي 📸</h2>
+        <h3>المعالجة الذكية لجدول المواقيت 📸</h3>
         <div class="upload-zone" onclick="document.getElementById('imageInput').click()">
-            <input type="file" id="imageInput" accept="image/*" hidden onchange="previewImage(this)">
-            <p id="statusText">انقر لرفع صورة الجدول الشهري</p>
+            <input type="file" id="imageInput" accept="image/*" hidden onchange="handlePreview(this)">
+            <p id="statusMsg">انقر لرفع صورة الجدول (يفضل أن تكون واضحة)</p>
             <img id="preview">
         </div>
-        <button id="analyzeBtn" class="btn btn-primary" style="display: none;">تحليل الصورة بالذكاء الاصطناعي ✨</button>
+        <button id="analyzeBtn" class="btn btn-primary" style="display: none;">تحليل الصورة الآن ✨</button>
     </div>
 
     <div id="resultArea" class="card" style="display: none;">
-        <h3>نتائج التحليل (يمكنك التعديل يدوياً)</h3>
+        <h4>تأكيد البيانات المستخرجة</h4>
         <div id="tableContainer" style="overflow-x: auto;"></div>
         <button id="saveBtn" class="btn btn-success">حفظ الجدول في Firebase 💾</button>
     </div>
@@ -40,17 +40,20 @@
         import { db } from './config.js';
         import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const API_KEY = "YOUR_GEMINI_API_KEY"; // ضع مفتاحك هنا
-        let extractedData = [];
+        // ملاحظة: تأكد أن المفتاح يدعم Gemini 1.5 Flash
+        const API_KEY = "ضع_مفتاحك_هنا"; 
+        let currentExtractedData = [];
 
-        window.previewImage = (input) => {
+        window.handlePreview = (input) => {
             const file = input.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    document.getElementById('preview').src = e.target.result;
-                    document.getElementById('preview').style.display = 'block';
+                    const img = document.getElementById('preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
                     document.getElementById('analyzeBtn').style.display = 'block';
+                    document.getElementById('statusMsg').innerText = "تم اختيار الصورة ✅";
                 };
                 reader.readAsDataURL(file);
             }
@@ -58,46 +61,50 @@
 
         document.getElementById('analyzeBtn').onclick = async () => {
             const btn = document.getElementById('analyzeBtn');
-            btn.innerText = "جاري التحليل... ⏳";
+            btn.innerText = "جاري التحليل العميق... 🚀";
             btn.disabled = true;
 
-            const base64Data = document.getElementById('preview').src.split(',')[1];
+            const base64Image = document.getElementById('preview').src.split(',')[1];
 
-            const prompt = "Extract the prayer times from this table. Return ONLY a JSON array of objects. Each object MUST have these keys: day (string), date (number), fajr, dhuhr, asr, maghrib, isha (all strings in HH:MM format). Correct any OCR errors based on logical time flow.";
+            // برومبت صارم لضمان الحصول على JSON فقط بدون نصوص جانبية
+            const prompt = `Extract prayer times from this image. 
+            Return ONLY a valid JSON array of objects. 
+            Format: [{"day":"السبت","date":1,"fajr":"04:50","dhuhr":"12:00","asr":"15:20","maghrib":"18:10","isha":"19:30"}]
+            Rules: Use 24-hour format. Ensure no text before or after the JSON.`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: "POST",
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Data } }] }]
+                        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }],
+                        generationConfig: { response_mime_type: "application/json" } // إجبار الموديل على JSON
                     })
                 });
 
-                const data = await response.json();
-                const text = data.candidates[0].content.parts[0].text;
-                extractedData = JSON.parse(text.replace(/```json|```/g, "").trim());
+                const result = await response.json();
+                const jsonContent = result.candidates[0].content.parts[0].text;
+                currentExtractedData = JSON.parse(jsonContent);
                 
-                renderPreviewTable();
+                renderTable();
             } catch (error) {
-                alert("حدث خطأ في التحليل. تأكد من وضوح الصورة ومن مفتاح الـ API.");
                 console.error(error);
+                alert("حدث خطأ. تأكد من إعدادات API Key وصلاحية الـ Flash 1.5.");
             } finally {
-                btn.innerText = "تحليل الصورة بالذكاء الاصطناعي ✨";
+                btn.innerText = "تحليل الصورة الآن ✨";
                 btn.disabled = false;
             }
         };
 
-        function renderPreviewTable() {
-            let html = `<table><tr><th>اليوم</th><th>فجر</th><th>ظهر</th><th>عصر</th><th>مغرب</th><th>عشاء</th></tr>`;
-            extractedData.forEach((row, i) => {
+        function renderTable() {
+            let html = `<table><tr><th>اليوم</th><th>فجر</th><th>ظهر</th><th>عصر</th><th>مغرب</th></tr>`;
+            currentExtractedData.forEach((row, i) => {
                 html += `<tr>
                     <td>${row.day} ${row.date}</td>
-                    <td><input value="${row.fajr}" onchange="updateVal(${i},'fajr',this.value)"></td>
-                    <td><input value="${row.dhuhr}" onchange="updateVal(${i},'dhuhr',this.value)"></td>
-                    <td><input value="${row.asr}" onchange="updateVal(${i},'asr',this.value)"></td>
-                    <td><input value="${row.maghrib}" onchange="updateVal(${i},'maghrib',this.value)"></td>
-                    <td><input value="${row.isha}" onchange="updateVal(${i},'isha',this.value)"></td>
+                    <td><input value="${row.fajr}" onchange="updateRow(${i},'fajr',this.value)"></td>
+                    <td><input value="${row.dhuhr}" onchange="updateRow(${i},'dhuhr',this.value)"></td>
+                    <td><input value="${row.asr}" onchange="updateRow(${i},'asr',this.value)"></td>
+                    <td><input value="${row.maghrib}" onchange="updateRow(${i},'maghrib',this.value)"></td>
                 </tr>`;
             });
             html += `</table>`;
@@ -105,19 +112,18 @@
             document.getElementById('resultArea').style.display = 'block';
         }
 
-        window.updateVal = (index, key, val) => { extractedData[index][key] = val; };
+        window.updateRow = (idx, key, val) => { currentExtractedData[idx][key] = val; };
 
         document.getElementById('saveBtn').onclick = async () => {
             const now = new Date();
             const docId = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
             try {
                 await setDoc(doc(db, "Schedules", docId), {
-                    days: extractedData,
-                    created_at: serverTimestamp(),
-                    location: "Al-Ahsa"
+                    days: currentExtractedData,
+                    created_at: serverTimestamp()
                 });
-                alert("تم حفظ الجدول بنجاح في Firebase! ✅");
-            } catch (e) { alert("فشل الحفظ في قاعدة البيانات."); }
+                alert("تم الحفظ والمزامنة بنجاح! ✅");
+            } catch (e) { alert("خطأ في قاعدة البيانات."); }
         };
     </script>
 </body>
