@@ -3,37 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مواقيت الصلاة - الأحساء</title>
+    <title>مواقيت الأحساء</title>
     <style>
         body { 
-            background: #000; font-family: -apple-system, sans-serif; margin: 0; color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
+            background: #000; font-family: -apple-system, sans-serif; color: white;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
         }
-        .main-card {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-            border-radius: 30px; padding: 30px; width: 85%; text-align: center; border: 0.5px solid rgba(255,255,255,0.2);
+        .container {
+            width: 90%; max-width: 400px; padding: 25px; border-radius: 40px;
+            background: linear-gradient(145deg, #1c1c1e, #000);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 0.5px solid #333;
         }
-        .next-prayer { font-size: 1.2rem; color: #007AFF; margin-bottom: 5px; }
-        .timer { font-size: 3.5rem; font-weight: bold; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
-        .prayer-row {
-            display: flex; justify-content: space-between; padding: 15px 10px;
-            border-bottom: 0.5px solid rgba(255,255,255,0.1); font-size: 1.1rem;
+        .timer-box { margin-bottom: 30px; text-align: center; }
+        .next-label { color: #007AFF; font-weight: 500; font-size: 14px; text-transform: uppercase; }
+        .countdown { font-size: 50px; font-weight: bold; letter-spacing: -1px; margin: 10px 0; }
+        .row {
+            display: flex; justify-content: space-between; padding: 18px 0;
+            border-bottom: 0.5px solid #2c2c2e; transition: 0.3s;
         }
-        .active { background: rgba(0, 122, 255, 0.2); border-radius: 12px; font-weight: bold; }
+        .row span:last-child { font-weight: bold; color: #aaa; }
+        .active { color: #fff !important; background: rgba(0, 122, 255, 0.1); border-radius: 15px; padding: 18px 10px; border-bottom: none; }
+        .active span:last-child { color: #007AFF !important; }
     </style>
 </head>
 <body>
 
-    <div class="main-card">
-        <div class="next-prayer" id="nextName">الصلاة القادمة</div>
-        <div class="timer" id="countdown">00:00:00</div>
-        
+    <div class="container">
+        <div class="timer-box">
+            <div class="next-label" id="nextName">جاري التحميل...</div>
+            <div class="countdown" id="countdown">00:00:00</div>
+        </div>
+
         <div id="prayerList">
-            <div class="prayer-row" id="row_fajr"><span>الفجر</span><span id="t_fajr">--:--</span></div>
-            <div class="prayer-row" id="row_dhuhr"><span>الظهر</span><span id="t_dhuhr">--:--</span></div>
-            <div class="prayer-row" id="row_asr"><span>العصر</span><span id="t_asr">--:--</span></div>
-            <div class="prayer-row" id="row_maghrib"><span>المغرب</span><span id="t_maghrib">--:--</span></div>
-            <div class="prayer-row" id="row_isha"><span>العشاء</span><span id="t_isha">--:--</span></div>
+            <div class="row" id="row_fajr"><span>الفجر</span><span id="t_fajr">--:--</span></div>
+            <div class="row" id="row_dhuhr"><span>الظهر</span><span id="t_dhuhr">--:--</span></div>
+            <div class="row" id="row_asr"><span>العصر</span><span id="t_asr">--:--</span></div>
+            <div class="row" id="row_maghrib"><span>المغرب</span><span id="t_maghrib">--:--</span></div>
+            <div class="row" id="row_isha"><span>العشاء</span><span id="t_isha">--:--</span></div>
         </div>
     </div>
 
@@ -41,36 +47,68 @@
         import { db } from './config.js';
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        let currentTimes = {};
+
         async function init() {
-            // طلب إذن التنبيهات
             if (Notification.permission !== "granted") Notification.requestPermission();
 
             const now = new Date();
             const docId = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
             
-            // جلب البيانات من جدولك المرفوع
             const snap = await getDoc(doc(db, "Schedules", docId));
             if (snap.exists()) {
                 const days = snap.data().days;
-                const todayData = days.find(d => parseInt(d.date) === now.getDate()) || days[now.getDate()-1];
-                updateUI(todayData);
+                const today = days.find(d => parseInt(d.date) === now.getDate());
+                if (today) renderTimes(today);
             }
         }
 
-        function updateUI(times) {
+        function renderTimes(times) {
+            currentTimes = times;
             document.getElementById('t_fajr').innerText = times.fajr;
             document.getElementById('t_dhuhr').innerText = times.dhuhr;
             document.getElementById('t_asr').innerText = times.asr;
             document.getElementById('t_maghrib').innerText = times.maghrib;
             document.getElementById('t_isha').innerText = times.isha;
             
-            startCountdown(times);
+            startLogic();
         }
 
-        function startCountdown(times) {
-            // منطق حساب الوقت المتبقي وتفعيل التنبيهات
+        function startLogic() {
             setInterval(() => {
-                // حساب الفرق وتحديث id="countdown"
+                const now = new Date();
+                const timePoints = [
+                    { name: "الفجر", time: currentTimes.fajr, id: "row_fajr" },
+                    { name: "الظهر", time: currentTimes.dhuhr, id: "row_dhuhr" },
+                    { name: "العصر", time: currentTimes.asr, id: "row_asr" },
+                    { name: "المغرب", time: currentTimes.maghrib, id: "row_maghrib" },
+                    { name: "العشاء", time: currentTimes.isha, id: "row_isha" }
+                ];
+
+                // البحث عن الصلاة القادمة
+                let next = timePoints.find(p => {
+                    const [h, m] = p.time.split(':');
+                    const pDate = new Date(); pDate.setHours(h, m, 0);
+                    return pDate > now;
+                }) || timePoints[0];
+
+                // تحديث العداد
+                const [nh, nm] = next.time.split(':');
+                const target = new Date(); target.setHours(nh, nm, 0);
+                if (target < now) target.setDate(target.getDate() + 1);
+                
+                const diff = target - now;
+                const hh = Math.floor(diff/3600000).toString().padStart(2,'0');
+                const mm = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
+                const ss = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
+                
+                document.getElementById('countdown').innerText = `${hh}:${mm}:${ss}`;
+                document.getElementById('nextName').innerText = `الصلاة القادمة: ${next.name}`;
+
+                // تنبيه قبل 5 دقائق
+                if (diff <= 300000 && diff > 299000) {
+                    new Notification("تذكير الصلاة", { body: `اقترب موعد صلاة ${next.name}` });
+                }
             }, 1000);
         }
 
