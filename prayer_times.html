@@ -3,85 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أوقات الصلاة | تقويم الزهراء</title>
-    <link rel="stylesheet" href="style.css">
+    <title>مواقيت الصلاة - الأحساء</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin:0; padding:0; }
-        .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
-        h1 { text-align: center; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #ddd; }
-        th { background-color: #007AFF; color: #fff; }
-        .city-icons img { width: 24px; height: 24px; vertical-align: middle; margin-left: 5px; }
-        .diff { font-size: 0.9em; color: #555; }
+        body { 
+            background: #000; font-family: -apple-system, sans-serif; margin: 0; color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
+        }
+        .main-card {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
+            border-radius: 30px; padding: 30px; width: 85%; text-align: center; border: 0.5px solid rgba(255,255,255,0.2);
+        }
+        .next-prayer { font-size: 1.2rem; color: #007AFF; margin-bottom: 5px; }
+        .timer { font-size: 3.5rem; font-weight: bold; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+        .prayer-row {
+            display: flex; justify-content: space-between; padding: 15px 10px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.1); font-size: 1.1rem;
+        }
+        .active { background: rgba(0, 122, 255, 0.2); border-radius: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>أوقات الصلاة - الأحساء و المدن الأخرى</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>الصلاة</th>
-                    <th>الأحساء</th>
-                    <th>الدمام <span class="diff">(±<span id="diff_dh"></span> دقيقة)</span></th>
-                    <th>الرياض <span class="diff">(±<span id="diff_ry"></span> دقيقة)</span></th>
-                </tr>
-            </thead>
-            <tbody id="prayer-times-body">
-                <!-- سيتم تعبئة الجدول ديناميكياً بواسطة JS -->
-            </tbody>
-        </table>
+
+    <div class="main-card">
+        <div class="next-prayer" id="nextName">الصلاة القادمة</div>
+        <div class="timer" id="countdown">00:00:00</div>
+        
+        <div id="prayerList">
+            <div class="prayer-row" id="row_fajr"><span>الفجر</span><span id="t_fajr">--:--</span></div>
+            <div class="prayer-row" id="row_dhuhr"><span>الظهر</span><span id="t_dhuhr">--:--</span></div>
+            <div class="prayer-row" id="row_asr"><span>العصر</span><span id="t_asr">--:--</span></div>
+            <div class="prayer-row" id="row_maghrib"><span>المغرب</span><span id="t_maghrib">--:--</span></div>
+            <div class="prayer-row" id="row_isha"><span>العشاء</span><span id="t_isha">--:--</span></div>
+        </div>
     </div>
 
-    <script>
-        // أوقات الصلاة الأساسية للأحساء (توقيت تقويم الزهراء)
-        const prayerTimesAhsaa = {
-            Fajr: "04:45",
-            Dhuhr: "12:15",
-            Asr: "15:45",
-            Maghrib: "18:30",
-            Isha: "20:00"
-        };
+    <script type="module">
+        import { db } from './config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // فروق المدن بالنسبة للأحساء بالدقائق
-        const cityDiff = {
-            Dammam: 2,   // الدمام +2 دقيقة
-            Riyadh: -3   // الرياض -3 دقيقة
-        };
+        async function init() {
+            // طلب إذن التنبيهات
+            if (Notification.permission !== "granted") Notification.requestPermission();
 
-        const tbody = document.getElementById('prayer-times-body');
-        const diffDh = document.getElementById('diff_dh');
-        const diffRy = document.getElementById('diff_ry');
-
-        diffDh.textContent = cityDiff.Dammam;
-        diffRy.textContent = cityDiff.Riyadh;
-
-        for (let prayer in prayerTimesAhsaa) {
-            const timeAh = prayerTimesAhsaa[prayer];
-            const timeDh = adjustMinutes(timeAh, cityDiff.Dammam);
-            const timeRy = adjustMinutes(timeAh, cityDiff.Riyadh);
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${prayer}</td>
-                <td>${timeAh} <span class="city-icons"><img src="icons/ahsa.png" alt="الأحساء"></span></td>
-                <td>${timeDh} <span class="city-icons"><img src="icons/dammam.png" alt="الدمام"></span></td>
-                <td>${timeRy} <span class="city-icons"><img src="icons/riyadh.png" alt="الرياض"></span></td>
-            `;
-            tbody.appendChild(row);
+            const now = new Date();
+            const docId = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            // جلب البيانات من جدولك المرفوع
+            const snap = await getDoc(doc(db, "Schedules", docId));
+            if (snap.exists()) {
+                const days = snap.data().days;
+                const todayData = days.find(d => parseInt(d.date) === now.getDate()) || days[now.getDate()-1];
+                updateUI(todayData);
+            }
         }
 
-        // دالة لضبط الوقت بالدقائق
-        function adjustMinutes(timeStr, diff) {
-            let [h, m] = timeStr.split(':').map(Number);
-            m += diff;
-            if (m >= 60) { h += 1; m -= 60; }
-            if (m < 0) { h -= 1; m += 60; }
-            if (h >= 24) h -= 24;
-            if (h < 0) h += 24;
-            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        function updateUI(times) {
+            document.getElementById('t_fajr').innerText = times.fajr;
+            document.getElementById('t_dhuhr').innerText = times.dhuhr;
+            document.getElementById('t_asr').innerText = times.asr;
+            document.getElementById('t_maghrib').innerText = times.maghrib;
+            document.getElementById('t_isha').innerText = times.isha;
+            
+            startCountdown(times);
         }
+
+        function startCountdown(times) {
+            // منطق حساب الوقت المتبقي وتفعيل التنبيهات
+            setInterval(() => {
+                // حساب الفرق وتحديث id="countdown"
+            }, 1000);
+        }
+
+        init();
     </script>
 </body>
 </html>
