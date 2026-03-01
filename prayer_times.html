@@ -1,182 +1,87 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مواقيت الصلاة</title>
-
-<style>
-:root{
-    --primary:#0A84FF;
-    --glass:rgba(255,255,255,0.15);
-}
-body{
-    margin:0;
-    font-family:-apple-system;
-    background:linear-gradient(160deg,#0f2027,#203a43,#2c5364);
-    color:white;
-    text-align:center;
-    padding-top:90px;
-}
-.card{
-    width:92%;
-    max-width:420px;
-    margin:15px auto;
-    background:var(--glass);
-    backdrop-filter:blur(20px);
-    border-radius:25px;
-    padding:15px;
-}
-.prayer-row{
-    display:flex;
-    justify-content:space-between;
-    padding:14px;
-    border-bottom:1px solid rgba(255,255,255,0.1);
-}
-.prayer-row.active{
-    background:rgba(10,132,255,0.3);
-    border-radius:15px;
-}
-.badge{
-    display:inline-block;
-    padding:6px 15px;
-    border-radius:20px;
-    background:rgba(255,255,255,0.2);
-    font-size:13px;
-}
-.countdown{
-    font-size:14px;
-    opacity:.9;
-    margin-top:5px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أوقات الصلاة | تقويم الزهراء</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin:0; padding:0; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+        h1 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #ddd; }
+        th { background-color: #007AFF; color: #fff; }
+        .city-icons img { width: 24px; height: 24px; vertical-align: middle; margin-left: 5px; }
+        .diff { font-size: 0.9em; color: #555; }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>أوقات الصلاة - الأحساء و المدن الأخرى</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>الصلاة</th>
+                    <th>الأحساء</th>
+                    <th>الدمام <span class="diff">(±<span id="diff_dh"></span> دقيقة)</span></th>
+                    <th>الرياض <span class="diff">(±<span id="diff_ry"></span> دقيقة)</span></th>
+                </tr>
+            </thead>
+            <tbody id="prayer-times-body">
+                <!-- سيتم تعبئة الجدول ديناميكياً بواسطة JS -->
+            </tbody>
+        </table>
+    </div>
 
-<div class="badge">📍 <span id="cityName">جارِ تحديد الموقع...</span></div>
-<div id="hijriDate" style="margin-top:10px"></div>
+    <script>
+        // أوقات الصلاة الأساسية للأحساء (توقيت تقويم الزهراء)
+        const prayerTimesAhsaa = {
+            Fajr: "04:45",
+            Dhuhr: "12:15",
+            Asr: "15:45",
+            Maghrib: "18:30",
+            Isha: "20:00"
+        };
 
-<div class="card">
-<div id="prayerContainer"></div>
-<div class="countdown" id="nextPrayerBox"></div>
-</div>
+        // فروق المدن بالنسبة للأحساء بالدقائق
+        const cityDiff = {
+            Dammam: 2,   // الدمام +2 دقيقة
+            Riyadh: -3   // الرياض -3 دقيقة
+        };
 
-<div class="card">
-<h4>📿 مناسبة اليوم</h4>
-<div id="todayEvent">لا توجد مناسبة</div>
-</div>
+        const tbody = document.getElementById('prayer-times-body');
+        const diffDh = document.getElementById('diff_dh');
+        const diffRy = document.getElementById('diff_ry');
 
-<div class="card">
-<h4>🗓 المناسبة القادمة</h4>
-<div id="nextEvent">--</div>
-</div>
+        diffDh.textContent = cityDiff.Dammam;
+        diffRy.textContent = cityDiff.Riyadh;
 
-<script type="module">
+        for (let prayer in prayerTimesAhsaa) {
+            const timeAh = prayerTimesAhsaa[prayer];
+            const timeDh = adjustMinutes(timeAh, cityDiff.Dammam);
+            const timeRy = adjustMinutes(timeAh, cityDiff.Riyadh);
 
-let todayHijriDay = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{day:'numeric'}).format(new Date());
-let todayMonth = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{month:'long'}).format(new Date());
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${prayer}</td>
+                <td>${timeAh} <span class="city-icons"><img src="icons/ahsa.png" alt="الأحساء"></span></td>
+                <td>${timeDh} <span class="city-icons"><img src="icons/dammam.png" alt="الدمام"></span></td>
+                <td>${timeRy} <span class="city-icons"><img src="icons/riyadh.png" alt="الرياض"></span></td>
+            `;
+            tbody.appendChild(row);
+        }
 
-let localMonth = localStorage.getItem("calendar_"+todayMonth);
-
-if(localMonth){
-let monthData = JSON.parse(localMonth);
-let today = monthData.find(d=>d.hijri==todayHijriDay);
-
-if(today){
-document.getElementById("prayerContainer").innerHTML = `
-<div class="prayer-row"><span>الفجر</span><span>${today.fajr}</span></div>
-<div class="prayer-row"><span>الظهر</span><span>${today.dhuhr}</span></div>
-<div class="prayer-row"><span>المغرب</span><span>${today.maghrib}</span></div>
-`;
-return; // لا يحتاج API
-}
-}
-
-
-    
-import { db } from './config.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
-day:'numeric',month:'long',year:'numeric'
-}).format(new Date());
-document.getElementById('hijriDate').innerText = hijri;
-
-function adjustTime(timeStr, offset){
-if(!timeStr) return "--:--";
-let [h,m] = timeStr.split(':').map(Number);
-let d = new Date();
-d.setHours(h);
-d.setMinutes(m + (offset||0));
-return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-}
-
-function getNextPrayer(times){
-let now=new Date();
-for(let p of times){
-let t=new Date();
-let [h,m]=p.time.split(':');
-t.setHours(h,m);
-if(t>now) return {name:p.name,time:p.time};
-}
-return null;
-}
-
-async function loadPrayerTimes(lat,lon){
-
-let geo = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=ar`);
-let geoData = await geo.json();
-document.getElementById('cityName').innerText =
-geoData.address.city || geoData.address.town || geoData.address.village || "غير معروف";
-
-let api = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=99&methodSettings[fajr]=18.5&methodSettings[maghrib]=4&methodSettings[isha]=14.5`);
-let data = await api.json();
-let apiTimes = data.data.timings;
-
-const adminSnap = await getDoc(doc(db,"Settings","PrayerOffsets"));
-const off = adminSnap.exists()? adminSnap.data():{};
-
-let prayers = [
-{name:"الفجر",time:adjustTime(apiTimes.Fajr,off.fajr)},
-{name:"الظهر",time:adjustTime(apiTimes.Dhuhr,off.dhuhr)},
-{name:"العصر",time:adjustTime(apiTimes.Asr,off.asr)},
-{name:"المغرب",time:adjustTime(apiTimes.Maghrib,off.maghrib)},
-{name:"العشاء",time:adjustTime(apiTimes.Isha,off.isha)}
-];
-
-let container=document.getElementById("prayerContainer");
-container.innerHTML="";
-prayers.forEach(p=>{
-let row=document.createElement("div");
-row.className="prayer-row";
-row.innerHTML=`<span>${p.name}</span><span>${p.time}</span>`;
-container.appendChild(row);
-});
-
-let next=getNextPrayer(prayers);
-if(next){
-document.getElementById("nextPrayerBox").innerText=
-"الصلاة القادمة: "+next.name+" عند "+next.time;
-}
-}
-
-navigator.geolocation.getCurrentPosition(
-pos=>loadPrayerTimes(pos.coords.latitude,pos.coords.longitude),
-()=>loadPrayerTimes(25.383,49.586) // fallback الأحساء
-);
-
-// ===== المناسبات =====
-const eventsSnap = await getDoc(doc(db,"Settings","HijriEvents"));
-if(eventsSnap.exists()){
-let events = eventsSnap.data().events || [];
-let today = hijri;
-let todayEvent = events.find(e=>e.date===today);
-if(todayEvent) document.getElementById("todayEvent").innerText=todayEvent.title;
-
-let upcoming = events.find(e=>new Date(e.gregorian)>new Date());
-if(upcoming) document.getElementById("nextEvent").innerText=upcoming.title;
-}
-
-</script>
+        // دالة لضبط الوقت بالدقائق
+        function adjustMinutes(timeStr, diff) {
+            let [h, m] = timeStr.split(':').map(Number);
+            m += diff;
+            if (m >= 60) { h += 1; m -= 60; }
+            if (m < 0) { h -= 1; m += 60; }
+            if (h >= 24) h -= 24;
+            if (h < 0) h += 24;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        }
+    </script>
 </body>
 </html>
