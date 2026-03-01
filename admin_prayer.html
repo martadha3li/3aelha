@@ -1,63 +1,84 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة توقيت الصلاة</title>
-    <style>
-        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
-        body { background: var(--ios-bg); font-family: -apple-system, sans-serif; padding: 20px; padding-top: 80px; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 0.5px solid #ddd; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #eee; }
-        .row:last-child { border-bottom: none; }
-        input[type="number"] { width: 60px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; }
-        .btn-save { width: 100%; background: var(--ios-blue); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 20px; }
-    </style>
+<meta charset="UTF-8">
+<title>لوحة إدارة مواقيت الصلاة</title>
+<style>
+body{font-family:-apple-system;background:#f2f2f7;padding:20px}
+.card{background:white;padding:15px;border-radius:15px;margin-bottom:15px}
+input,button{padding:10px;border-radius:10px;border:1px solid #ccc}
+button{background:#0A84FF;color:white;border:none;width:100%;margin-top:10px}
+</style>
 </head>
 <body>
 
-<script type="module" src="header.js"></script>
-<script type="module" src="navbar.js"></script>
-
 <div class="card">
-    <h3 style="margin-top:0">تعديل الدقائق (إضافة أو نقص)</h3>
-    <div class="row"><span>الفجر</span><input type="number" id="fajrOff" value="0"></div>
-    <div class="row"><span>الظهر</span><input type="number" id="dhuhrOff" value="0"></div>
-    <div class="row"><span>العصر</span><input type="number" id="asrOff" value="0"></div>
-    <div class="row"><span>المغرب</span><input type="number" id="maghribOff" value="0"></div>
-    <div class="row"><span>العشاء</span><input type="number" id="ishaOff" value="0"></div>
+<h3>تعديل الدقائق</h3>
+<input type="number" id="fajrOff" placeholder="الفجر">
+<input type="number" id="dhuhrOff" placeholder="الظهر">
+<input type="number" id="asrOff" placeholder="العصر">
+<input type="number" id="maghribOff" placeholder="المغرب">
+<input type="number" id="ishaOff" placeholder="العشاء">
+<button id="saveOffsets">حفظ التعديلات</button>
 </div>
 
-<button class="btn-save" id="saveAdminBtn">حفظ التعديلات للأحساء</button>
+<div class="card">
+<h3>إضافة مناسبة هجرية</h3>
+<input type="text" id="eventDate" placeholder="مثال: 10 رمضان 1447">
+<input type="text" id="eventTitle" placeholder="عنوان المناسبة">
+<button id="addEvent">حفظ المناسبة</button>
+</div>
+
+<div class="card">
+<h3>رفع صورة تقويم شهر (اختياري)</h3>
+<input type="file" id="calendarImage" accept="image/*">
+<button id="analyzeImage">تحليل الصورة</button>
+<div id="analysisResult"></div>
+</div>
 
 <script type="module">
-    import { db } from './config.js';
-    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from './config.js';
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const docRef = doc(db, "Settings", "PrayerOffsets");
+// حفظ التعديلات
+document.getElementById("saveOffsets").onclick=async()=>{
+await setDoc(doc(db,"Settings","PrayerOffsets"),{
+fajr:+fajrOff.value||0,
+dhuhr:+dhuhrOff.value||0,
+asr:+asrOff.value||0,
+maghrib:+maghribOff.value||0,
+isha:+ishaOff.value||0
+});
+alert("تم الحفظ ✅");
+};
 
-    // تحميل القيم الحالية
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-        const d = snap.data();
-        document.getElementById('fajrOff').value = d.fajr || 0;
-        document.getElementById('dhuhrOff').value = d.dhuhr || 0;
-        document.getElementById('asrOff').value = d.asr || 0;
-        document.getElementById('maghribOff').value = d.maghrib || 0;
-        document.getElementById('ishaOff').value = d.isha || 0;
-    }
+// إضافة مناسبة
+document.getElementById("addEvent").onclick=async()=>{
+let snap=await getDoc(doc(db,"Settings","HijriEvents"));
+let events=snap.exists()?snap.data().events:[];
+events.push({
+date:eventDate.value,
+title:eventTitle.value,
+gregorian:new Date().toISOString()
+});
+await setDoc(doc(db,"Settings","HijriEvents"),{events});
+alert("تمت إضافة المناسبة");
+};
 
-    // حفظ القيم الجديدة
-    document.getElementById('saveAdminBtn').onclick = async () => {
-        await setDoc(docRef, {
-            fajr: parseInt(document.getElementById('fajrOff').value),
-            dhuhr: parseInt(document.getElementById('dhuhrOff').value),
-            asr: parseInt(document.getElementById('asrOff').value),
-            maghrib: parseInt(document.getElementById('maghribOff').value),
-            isha: parseInt(document.getElementById('ishaOff').value)
-        });
-        alert("تم تحديث التقويم بنجاح ✅");
-    };
+// تحليل صورة (OCR باستخدام Tesseract)
+document.getElementById("analyzeImage").onclick=async()=>{
+let file=document.getElementById("calendarImage").files[0];
+if(!file) return alert("اختر صورة");
+
+const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.esm.min.js');
+const worker = await createWorker('ara');
+const { data:{ text } } = await worker.recognize(file);
+await worker.terminate();
+
+document.getElementById("analysisResult").innerText=text;
+
+// هنا يمكنك كتابة خوارزمية لاستخراج المواقيت من النص
+};
 </script>
 </body>
 </html>
