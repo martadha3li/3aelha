@@ -2,39 +2,67 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تسجيل الدخول | منصة العائلة</title>
-    <link rel="stylesheet" href="style.css">
     <style>
-        .login-container {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; padding: 20px; background: #f8f9fa;
-        }
-        .login-card {
-            background: white; width: 100%; max-width: 400px; padding: 30px;
-            border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center;
-        }
-        .logo-img { width: 80px; margin-bottom: 20px; border-radius: 15px; }
-        .form-group { margin-bottom: 20px; text-align: right; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; font-size: 14px; }
-        .form-input {
-            width: 100%; padding: 12px 15px; border: 1px solid #ddd;
-            border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s;
-        }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+        :root { --primary: #007aff; --bg: #f2f2f7; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, sans-serif; background: var(--bg); }
         
-        /* تنسيق رابط نسيان كلمة المرور */
-        .forgot-link {
-            display: block; text-align: left; margin-top: -15px; margin-bottom: 20px;
-            font-size: 12px; color: #8e8e93; text-decoration: none; font-weight: 600;
+        /* ضبط الحاوية لتكون مرنة مع الجوال */
+        .login-container {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 15px; box-sizing: border-box;
         }
-        .forgot-link:hover { color: var(--primary); }
+        
+        .login-card {
+            background: white; width: 100%; max-width: 380px; padding: 30px 25px;
+            border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center; box-sizing: border-box;
+        }
+
+        .logo-img { width: 75px; height: 75px; margin-bottom: 15px; border-radius: 18px; object-fit: cover; }
+        h2 { margin: 0 0 8px 0; color: #1c1c1e; font-size: 22px; }
+        .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 25px; }
+
+        .form-group { margin-bottom: 18px; text-align: right; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #3a3a3c; font-size: 13px; }
+        
+        .form-input {
+            width: 100%; padding: 14px; border: 1.5px solid #efeff4;
+            border-radius: 14px; font-size: 16px; box-sizing: border-box;
+            outline: none; transition: 0.3s; background: #f9f9fb;
+        }
+        .form-input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
+
+        .forgot-link {
+            display: block; text-align: left; margin-top: -12px; margin-bottom: 20px;
+            font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600;
+        }
 
         .btn-login {
-            width: 100%; padding: 14px; background: var(--primary); color: white;
-            border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+            width: 100%; padding: 15px; background: var(--primary); color: white;
+            border: none; border-radius: 14px; font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: 0.2s;
         }
-        .error-msg { color: #ff3b30; font-size: 12px; margin-top: 10px; display: none; }
+        .btn-login:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* تنسيق زر جوجل */
+        .separator { margin: 20px 0; display: flex; align-items: center; color: #ccc; font-size: 12px; }
+        .separator::before, .separator::after { content: ""; flex: 1; height: 1px; background: #eee; margin: 0 10px; }
+
+        .btn-google {
+            width: 100%; padding: 12px; background: white; color: #3c4043;
+            border: 1.5px solid #dadce0; border-radius: 14px; font-size: 14px;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 10px; transition: 0.2s;
+        }
+        .btn-google img { width: 18px; }
+        .btn-google:hover { background: #f8f9fa; }
+
+        .error-msg { color: #ff3b30; font-size: 12px; margin-top: 12px; display: none; background: #fff2f1; padding: 8px; border-radius: 8px; }
+        
+        .footer-text { margin-top: 25px; font-size: 14px; color: #8e8e93; }
+        .footer-text a { color: var(--primary); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -42,65 +70,93 @@
     <div class="login-container">
         <div class="login-card">
             <img src="logo.png" class="logo-img" alt="Logo">
-            <h2 style="margin-bottom: 10px; color: var(--primary);">مرحباً بك</h2>
-            <p style="color: gray; font-size: 13px; margin-bottom: 25px;">سجل دخولك للمتابعة إلى المنصة</p>
+            <h2>مرحباً بك</h2>
+            <p class="subtitle">سجل دخولك للمتابعة إلى منصة العائلة</p>
 
             <div class="form-group">
                 <label>البريد الإلكتروني</label>
-                <input type="email" id="email" class="form-input" placeholder="example@mail.com">
+                <input type="email" id="email" class="form-input" placeholder="name@example.com">
             </div>
 
             <div class="form-group">
                 <label>كلمة المرور</label>
-                <input type="password" id="password" class="form-input" placeholder="********">
+                <input type="password" id="password" class="form-input" placeholder="••••••••">
             </div>
 
             <a href="forgot.html" class="forgot-link">نسيت كلمة المرور؟</a>
 
-            <button id="loginBtn" class="btn-login" onclick="handleLogin()">دخول</button>
+            <button id="loginBtn" class="btn-login">دخول</button>
+
+            <div class="separator">أو للمتابعة باستخدام</div>
+            
+            <button id="googleBtn" class="btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                الدخول بواسطة Google
+            </button>
+
             <div id="errorMsg" class="error-msg"></div>
 
-            <p style="margin-top: 20px; font-size: 13px; color: #666;">
-                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: bold;">إنشاء حساب</a>
+            <p class="footer-text">
+                ليس لديك حساب؟ <a href="register.html">إنشاء حساب</a>
             </p>
         </div>
     </div>
 
     <script type="module">
         import { auth } from './config.js';
-        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            signInWithEmailAndPassword, 
+            GoogleAuthProvider, 
+            signInWithPopup 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        window.handleLogin = async () => {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const btn = document.getElementById('loginBtn');
-            const err = document.getElementById('errorMsg');
+        const emailInput = document.getElementById('email');
+        const passInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const googleBtn = document.getElementById('googleBtn');
+        const errorDiv = document.getElementById('errorMsg');
 
-            if(!email || !password) {
-                showError("يرجى إدخال كافة البيانات");
-                return;
-            }
+        // دالة عرض الخطأ
+        const showError = (msg) => {
+            errorDiv.innerText = msg;
+            errorDiv.style.display = "block";
+        };
 
-            btn.disabled = true;
-            btn.innerText = "جاري التحقق...";
-            err.style.display = "none";
+        // 1. تسجيل الدخول التقليدي
+        loginBtn.onclick = async () => {
+            const email = emailInput.value.trim();
+            const password = passInput.value.trim();
+
+            if(!email || !password) return showError("يرجى إدخال البريد وكلمة المرور");
+
+            loginBtn.disabled = true;
+            loginBtn.innerText = "جاري التحقق...";
+            errorDiv.style.display = "none";
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 window.location.replace("news.html");
             } catch (error) {
-                console.error(error);
-                showError("خطأ في البريد أو كلمة المرور");
-                btn.disabled = false;
-                btn.innerText = "دخول";
+                showError("خطأ: تأكد من البيانات المدخلة");
+                loginBtn.disabled = false;
+                loginBtn.innerText = "دخول";
             }
         };
 
-        function showError(msg) {
-            const err = document.getElementById('errorMsg');
-            err.innerText = msg;
-            err.style.display = "block";
-        }
+        // 2. تسجيل الدخول بجوجل
+        googleBtn.onclick = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                googleBtn.disabled = true;
+                const result = await signInWithPopup(auth, provider);
+                // تم تسجيل الدخول بنجاح
+                window.location.replace("news.html");
+            } catch (error) {
+                console.error(error);
+                showError("فشل تسجيل الدخول باستخدام Google");
+                googleBtn.disabled = false;
+            }
+        };
     </script>
 </body>
 </html>
