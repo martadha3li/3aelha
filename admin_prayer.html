@@ -2,83 +2,135 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>لوحة إدارة مواقيت الصلاة</title>
+<title>إدارة التقويم الشهري</title>
 <style>
 body{font-family:-apple-system;background:#f2f2f7;padding:20px}
 .card{background:white;padding:15px;border-radius:15px;margin-bottom:15px}
-input,button{padding:10px;border-radius:10px;border:1px solid #ccc}
-button{background:#0A84FF;color:white;border:none;width:100%;margin-top:10px}
+select,input,button{padding:10px;border-radius:10px;border:1px solid #ccc;margin:5px 0}
+button{background:#0A84FF;color:white;border:none}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:13px}
+th,td{border:1px solid #ddd;padding:6px;text-align:center}
+th{background:#eee}
+td input{width:100%;border:none;text-align:center}
+.saveBtn{width:100%;margin-top:15px}
 </style>
 </head>
 <body>
 
 <div class="card">
-<h3>تعديل الدقائق</h3>
-<input type="number" id="fajrOff" placeholder="الفجر">
-<input type="number" id="dhuhrOff" placeholder="الظهر">
-<input type="number" id="asrOff" placeholder="العصر">
-<input type="number" id="maghribOff" placeholder="المغرب">
-<input type="number" id="ishaOff" placeholder="العشاء">
-<button id="saveOffsets">حفظ التعديلات</button>
-</div>
+<h3>إدارة تقويم شهر هجري كامل</h3>
 
-<div class="card">
-<h3>إضافة مناسبة هجرية</h3>
-<input type="text" id="eventDate" placeholder="مثال: 10 رمضان 1447">
-<input type="text" id="eventTitle" placeholder="عنوان المناسبة">
-<button id="addEvent">حفظ المناسبة</button>
-</div>
+<select id="hijriMonth">
+<option value="محرم">محرم</option>
+<option value="صفر">صفر</option>
+<option value="ربيع الأول">ربيع الأول</option>
+<option value="ربيع الثاني">ربيع الثاني</option>
+<option value="جمادى الأولى">جمادى الأولى</option>
+<option value="جمادى الآخرة">جمادى الآخرة</option>
+<option value="رجب">رجب</option>
+<option value="شعبان">شعبان</option>
+<option value="رمضان">رمضان</option>
+<option value="شوال">شوال</option>
+<option value="ذو القعدة">ذو القعدة</option>
+<option value="ذو الحجة">ذو الحجة</option>
+</select>
 
-<div class="card">
-<h3>رفع صورة تقويم شهر (اختياري)</h3>
 <input type="file" id="calendarImage" accept="image/*">
-<button id="analyzeImage">تحليل الصورة</button>
-<div id="analysisResult"></div>
+<button onclick="analyzeImage()">تحليل الصورة</button>
+
+<div id="tableContainer"></div>
+<button class="saveBtn" onclick="saveMonth()">حفظ الشهر كامل</button>
+
 </div>
 
 <script type="module">
 import { db } from './config.js';
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// حفظ التعديلات
-document.getElementById("saveOffsets").onclick=async()=>{
-await setDoc(doc(db,"Settings","PrayerOffsets"),{
-fajr:+fajrOff.value||0,
-dhuhr:+dhuhrOff.value||0,
-asr:+asrOff.value||0,
-maghrib:+maghribOff.value||0,
-isha:+ishaOff.value||0
-});
-alert("تم الحفظ ✅");
-};
+window.monthData=[];
 
-// إضافة مناسبة
-document.getElementById("addEvent").onclick=async()=>{
-let snap=await getDoc(doc(db,"Settings","HijriEvents"));
-let events=snap.exists()?snap.data().events:[];
-events.push({
-date:eventDate.value,
-title:eventTitle.value,
-gregorian:new Date().toISOString()
-});
-await setDoc(doc(db,"Settings","HijriEvents"),{events});
-alert("تمت إضافة المناسبة");
-};
+window.analyzeImage = async function(){
 
-// تحليل صورة (OCR باستخدام Tesseract)
-document.getElementById("analyzeImage").onclick=async()=>{
 let file=document.getElementById("calendarImage").files[0];
 if(!file) return alert("اختر صورة");
 
-const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.esm.min.js');
+const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.esm.min.js');
 const worker = await createWorker('ara');
 const { data:{ text } } = await worker.recognize(file);
 await worker.terminate();
 
-document.getElementById("analysisResult").innerText=text;
+/* 
+نفترض أن كل سطر بالتقويم يحتوي:
+هجري | ميلادي | يوم | امساك | صبح | ظهر | مغرب | منتصف | مناسبة
+*/
 
-// هنا يمكنك كتابة خوارزمية لاستخراج المواقيت من النص
+let lines = text.split('\n').filter(l=>l.trim().length>20);
+
+monthData = lines.map(line=>{
+let parts=line.split(/\s+/);
+return {
+hijri:parts[0]||"",
+gregorian:parts[1]||"",
+dayName:parts[2]||"",
+imsak:parts[3]||"",
+fajr:parts[4]||"",
+dhuhr:parts[5]||"",
+maghrib:parts[6]||"",
+midnight:parts[7]||"",
+event:parts.slice(8).join(" ")||""
 };
+});
+
+renderTable();
+}
+
+function renderTable(){
+
+let html=`<table>
+<tr>
+<th>هجري</th>
+<th>ميلادي</th>
+<th>اليوم</th>
+<th>امساك</th>
+<th>صبح</th>
+<th>ظهر</th>
+<th>مغرب</th>
+<th>منتصف</th>
+<th>مناسبة</th>
+</tr>`;
+
+monthData.forEach((d,i)=>{
+html+=`
+<tr>
+<td><input value="${d.hijri}" onchange="monthData[${i}].hijri=this.value"></td>
+<td><input value="${d.gregorian}" onchange="monthData[${i}].gregorian=this.value"></td>
+<td><input value="${d.dayName}" onchange="monthData[${i}].dayName=this.value"></td>
+<td><input value="${d.imsak}" onchange="monthData[${i}].imsak=this.value"></td>
+<td><input value="${d.fajr}" onchange="monthData[${i}].fajr=this.value"></td>
+<td><input value="${d.dhuhr}" onchange="monthData[${i}].dhuhr=this.value"></td>
+<td><input value="${d.maghrib}" onchange="monthData[${i}].maghrib=this.value"></td>
+<td><input value="${d.midnight}" onchange="monthData[${i}].midnight=this.value"></td>
+<td><input value="${d.event}" onchange="monthData[${i}].event=this.value"></td>
+</tr>`;
+});
+
+html+=`</table>`;
+document.getElementById("tableContainer").innerHTML=html;
+}
+
+window.saveMonth = async function(){
+
+let month=document.getElementById("hijriMonth").value;
+
+await setDoc(doc(db,"MonthlyCalendars",month),{
+data:monthData,
+savedAt:new Date()
+});
+
+localStorage.setItem("calendar_"+month,JSON.stringify(monthData));
+
+alert("تم حفظ الشهر بنجاح ✅");
+}
 </script>
 </body>
 </html>
