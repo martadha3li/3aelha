@@ -47,27 +47,62 @@ td input{width:100%;border:none;text-align:center}
 import { db } from './config.js';
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-window.monthData=[];
+window.monthData = [];
 
+// عناصر الواجهة
+const analyzeBtn = document.querySelector("button[onclick='analyzeImage()']");
+const saveBtn = document.querySelector(".saveBtn");
+saveBtn.disabled = true;
+
+const progressBox = document.createElement("div");
+progressBox.style.marginTop = "10px";
+document.querySelector(".card").appendChild(progressBox);
+
+// ===== تحليل الصورة =====
 window.analyzeImage = async function(){
 
-let file=document.getElementById("calendarImage").files[0];
-if(!file) return alert("اختر صورة");
+let file = document.getElementById("calendarImage").files[0];
+if(!file) return alert("اختر صورة أولاً");
+
+analyzeBtn.disabled = true;
+saveBtn.disabled = true;
+progressBox.innerHTML = "🔄 جاري تحميل محرك التحليل...";
 
 const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.esm.min.js');
-const worker = await createWorker('ara');
+
+const worker = await createWorker({
+logger: m => {
+if(m.status === "recognizing text"){
+progressBox.innerHTML = "📊 نسبة التحليل: " + Math.round(m.progress*100) + "%";
+}
+}
+});
+
+await worker.loadLanguage('ara');
+await worker.initialize('ara');
+
+progressBox.innerHTML = "📸 جاري قراءة الصورة...";
+
 const { data:{ text } } = await worker.recognize(file);
+
 await worker.terminate();
 
-/* 
-نفترض أن كل سطر بالتقويم يحتوي:
-هجري | ميلادي | يوم | امساك | صبح | ظهر | مغرب | منتصف | مناسبة
-*/
+progressBox.innerHTML = "✅ انتهى التحليل — جاري بناء الجدول...";
 
-let lines = text.split('\n').filter(l=>l.trim().length>20);
+processText(text);
+
+analyzeBtn.disabled = false;
+saveBtn.disabled = false;
+}
+
+// ===== تحويل النص إلى جدول =====
+function processText(text){
+
+let lines = text.split('\n').filter(l=>l.trim().length>15);
 
 monthData = lines.map(line=>{
-let parts=line.split(/\s+/);
+let parts=line.trim().split(/\s+/);
+
 return {
 hijri:parts[0]||"",
 gregorian:parts[1]||"",
@@ -84,6 +119,7 @@ event:parts.slice(8).join(" ")||""
 renderTable();
 }
 
+// ===== عرض الجدول =====
 function renderTable(){
 
 let html=`<table>
@@ -115,21 +151,27 @@ html+=`
 });
 
 html+=`</table>`;
-document.getElementById("tableContainer").innerHTML=html;
+document.getElementById("tableContainer").innerHTML = html;
+progressBox.innerHTML = "📋 يمكنك الآن مراجعة البيانات ثم الضغط حفظ";
 }
 
+// ===== حفظ الشهر =====
 window.saveMonth = async function(){
 
-let month=document.getElementById("hijriMonth").value;
+let month = document.getElementById("hijriMonth").value;
 
 await setDoc(doc(db,"MonthlyCalendars",month),{
 data:monthData,
 savedAt:new Date()
 });
 
+// حفظ محلي
 localStorage.setItem("calendar_"+month,JSON.stringify(monthData));
 
 alert("تم حفظ الشهر بنجاح ✅");
+
+// تحديث مباشر لصفحة المواقيت إن كانت مفتوحة
+localStorage.setItem("refresh_prayer_page","yes");
 }
 </script>
 </body>
