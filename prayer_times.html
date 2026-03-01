@@ -6,40 +6,41 @@
     <title>مواقيت الأحساء</title>
     <style>
         body { 
-            background: #000; font-family: -apple-system, sans-serif; color: white;
+            background: #09090b; font-family: -apple-system, sans-serif; color: white;
             display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
         }
-        .container {
-            width: 90%; max-width: 400px; padding: 25px; border-radius: 40px;
-            background: linear-gradient(145deg, #1c1c1e, #000);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 0.5px solid #333;
+        .widget {
+            width: 90%; max-width: 380px; padding: 30px; border-radius: 35px;
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
-        .timer-box { margin-bottom: 30px; text-align: center; }
-        .next-label { color: #007AFF; font-weight: 500; font-size: 14px; text-transform: uppercase; }
-        .countdown { font-size: 50px; font-weight: bold; letter-spacing: -1px; margin: 10px 0; }
-        .row {
-            display: flex; justify-content: space-between; padding: 18px 0;
-            border-bottom: 0.5px solid #2c2c2e; transition: 0.3s;
+        .header { text-align: center; margin-bottom: 30px; }
+        .next-name { color: #007AFF; font-size: 14px; font-weight: 600; letter-spacing: 1px; }
+        .timer { font-size: 55px; font-weight: bold; margin: 5px 0; font-variant-numeric: tabular-nums; }
+        .prayer-item {
+            display: flex; justify-content: space-between; padding: 18px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 17px; transition: 0.3s;
         }
-        .row span:last-child { font-weight: bold; color: #aaa; }
-        .active { color: #fff !important; background: rgba(0, 122, 255, 0.1); border-radius: 15px; padding: 18px 10px; border-bottom: none; }
-        .active span:last-child { color: #007AFF !important; }
+        .active-prayer {
+            background: rgba(0, 122, 255, 0.15); border-radius: 15px; border-bottom: none;
+            color: #007AFF; font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="timer-box">
-            <div class="next-label" id="nextName">جاري التحميل...</div>
-            <div class="countdown" id="countdown">00:00:00</div>
+    <div class="widget">
+        <div class="header">
+            <div id="nextLabel" class="next-name">جاري المزامنة...</div>
+            <div id="timerDisplay" class="timer">00:00:00</div>
         </div>
 
-        <div id="prayerList">
-            <div class="row" id="row_fajr"><span>الفجر</span><span id="t_fajr">--:--</span></div>
-            <div class="row" id="row_dhuhr"><span>الظهر</span><span id="t_dhuhr">--:--</span></div>
-            <div class="row" id="row_asr"><span>العصر</span><span id="t_asr">--:--</span></div>
-            <div class="row" id="row_maghrib"><span>المغرب</span><span id="t_maghrib">--:--</span></div>
-            <div class="row" id="row_isha"><span>العشاء</span><span id="t_isha">--:--</span></div>
+        <div id="list">
+            <div class="prayer-item" id="fajr_row"><span>الفجر</span><span id="fajr_t">--:--</span></div>
+            <div class="prayer-item" id="dhuhr_row"><span>الظهر</span><span id="dhuhr_t">--:--</span></div>
+            <div class="prayer-item" id="asr_row"><span>العصر</span><span id="asr_t">--:--</span></div>
+            <div class="prayer-item" id="maghrib_row"><span>المغرب</span><span id="maghrib_t">--:--</span></div>
+            <div class="prayer-item" id="isha_row"><span>العشاء</span><span id="isha_t">--:--</span></div>
         </div>
     </div>
 
@@ -47,72 +48,73 @@
         import { db } from './config.js';
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        let currentTimes = {};
+        let schedule = null;
 
-        async function init() {
-            if (Notification.permission !== "granted") Notification.requestPermission();
+        async function startApp() {
+            // طلب إذن التنبيهات فوراً
+            if (Notification.permission === "default") await Notification.requestPermission();
 
-            const now = new Date();
-            const docId = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            const d = new Date();
+            const id = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
             
-            const snap = await getDoc(doc(db, "Schedules", docId));
+            const snap = await getDoc(doc(db, "Schedules", id));
             if (snap.exists()) {
-                const days = snap.data().days;
-                const today = days.find(d => parseInt(d.date) === now.getDate());
-                if (today) renderTimes(today);
+                const dayData = snap.data().days.find(x => parseInt(x.date) === d.getDate());
+                if (dayData) setupUI(dayData);
             }
         }
 
-        function renderTimes(times) {
-            currentTimes = times;
-            document.getElementById('t_fajr').innerText = times.fajr;
-            document.getElementById('t_dhuhr').innerText = times.dhuhr;
-            document.getElementById('t_asr').innerText = times.asr;
-            document.getElementById('t_maghrib').innerText = times.maghrib;
-            document.getElementById('t_isha').innerText = times.isha;
-            
-            startLogic();
+        function setupUI(data) {
+            schedule = data;
+            document.getElementById('fajr_t').innerText = data.fajr;
+            document.getElementById('dhuhr_t').innerText = data.dhuhr;
+            document.getElementById('asr_t').innerText = data.asr;
+            document.getElementById('maghrib_t').innerText = data.maghrib;
+            document.getElementById('isha_t').innerText = data.isha;
+            runClock();
         }
 
-        function startLogic() {
+        function runClock() {
             setInterval(() => {
                 const now = new Date();
-                const timePoints = [
-                    { name: "الفجر", time: currentTimes.fajr, id: "row_fajr" },
-                    { name: "الظهر", time: currentTimes.dhuhr, id: "row_dhuhr" },
-                    { name: "العصر", time: currentTimes.asr, id: "row_asr" },
-                    { name: "المغرب", time: currentTimes.maghrib, id: "row_maghrib" },
-                    { name: "العشاء", time: currentTimes.isha, id: "row_isha" }
+                const prayers = [
+                    { n: "الفجر", t: schedule.fajr, id: "fajr_row" },
+                    { n: "الظهر", t: schedule.dhuhr, id: "dhuhr_row" },
+                    { n: "العصر", t: schedule.asr, id: "asr_row" },
+                    { n: "المغرب", t: schedule.maghrib, id: "maghrib_row" },
+                    { n: "العشاء", t: schedule.isha, id: "isha_row" }
                 ];
 
-                // البحث عن الصلاة القادمة
-                let next = timePoints.find(p => {
-                    const [h, m] = p.time.split(':');
-                    const pDate = new Date(); pDate.setHours(h, m, 0);
-                    return pDate > now;
-                }) || timePoints[0];
+                let next = prayers.find(p => {
+                    const [h, m] = p.t.split(':');
+                    return new Date().setHours(h, m, 0) > now;
+                }) || prayers[0];
 
                 // تحديث العداد
-                const [nh, nm] = next.time.split(':');
-                const target = new Date(); target.setHours(nh, nm, 0);
+                const [nh, nm] = next.t.split(':');
+                let target = new Date(); target.setHours(nh, nm, 0);
                 if (target < now) target.setDate(target.getDate() + 1);
                 
                 const diff = target - now;
                 const hh = Math.floor(diff/3600000).toString().padStart(2,'0');
                 const mm = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
                 const ss = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
-                
-                document.getElementById('countdown').innerText = `${hh}:${mm}:${ss}`;
-                document.getElementById('nextName').innerText = `الصلاة القادمة: ${next.name}`;
 
-                // تنبيه قبل 5 دقائق
-                if (diff <= 300000 && diff > 299000) {
-                    new Notification("تذكير الصلاة", { body: `اقترب موعد صلاة ${next.name}` });
+                document.getElementById('timerDisplay').innerText = `${hh}:${mm}:${ss}`;
+                document.getElementById('nextLabel').innerText = `الصلاة القادمة: ${next.n}`;
+
+                // تمييز الصلاة الحالية
+                prayers.forEach(p => document.getElementById(p.id).classList.remove('active-prayer'));
+                document.getElementById(next.id).classList.add('active-prayer');
+
+                // التنبيه الذكي (قبل دقيقتين)
+                if (diff > 119000 && diff < 121000) {
+                    new Notification("حان وقت الصلاة", { body: `صلاة ${next.n} بعد قليل` });
                 }
             }, 1000);
         }
 
-        init();
+        startApp();
     </script>
 </body>
 </html>
