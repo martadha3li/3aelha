@@ -2,59 +2,32 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>منصة العائلة | جاري التحميل</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #ffffff; /* يمكنك تغييرها للونك المفضل */
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            background-color: #ffffff; overflow: hidden;
+            font-family: -apple-system, system-ui, sans-serif;
         }
-
-        .splash-container {
-            text-align: center;
-            animation: fadeIn 1.5s ease-in-out;
-        }
-
-        .logo-splash {
-            width: 150px; /* تحكم في حجم الشعار من هنا */
-            height: auto;
-            margin-bottom: 20px;
-            border-radius: 30px; /* إذا كان الشعار يحتاج زوايا ناعمة */
-        }
-
+        .splash-container { text-align: center; animation: fadeIn 1s ease-in-out; }
+        .logo-splash { width: 140px; height: auto; margin-bottom: 20px; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
         .loader {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary, #007aff);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+            width: 35px; height: 35px; border: 3px solid #f3f3f3;
+            border-top: 3px solid #007aff; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 20px auto;
         }
+        .welcome-text { color: #007aff; font-weight: bold; font-size: 18px; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .welcome-text {
-            color: var(--primary, #007aff);
-            font-weight: bold;
-            font-size: 18px;
-            letter-spacing: 1px;
+        /* ستايل البانر المحدث لضمان الظهور */
+        #installBanner {
+            display:none; position: fixed; bottom: 20px; left: 15px; right: 15px; 
+            background: white; padding: 15px; border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 9999; 
+            align-items: center; gap: 12px; border: 1.5px solid #007aff;
         }
     </style>
 </head>
@@ -62,84 +35,73 @@
 
     <div class="splash-container">
         <img src="logo.png" alt="شعار العائلة" class="logo-splash">
-        
         <div class="welcome-text">منصة العائلة</div>
         <div class="loader"></div>
+    </div>
+
+    <div id="installBanner">
+        <img src="logo.png" alt="Logo" style="width: 45px; height: 45px; border-radius: 10px;">
+        <div style="flex: 1;">
+            <b style="display: block; font-size: 14px; text-align: right;">ثبت التطبيق على هاتفك</b>
+            <span style="font-size: 11px; color: #666; display: block; text-align: right;">للوصول السريع والحصول على التنبيهات</span>
+        </div>
+        <button id="btnInstall" style="background: #007aff; color: white; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px;">تثبيت</button>
+        <button onclick="document.getElementById('installBanner').style.display='none'" style="background: none; border: none; font-size: 18px; color: #ccc; cursor: pointer;">✕</button>
     </div>
 
     <script type="module">
         import { auth } from './config.js';
 
-        // وظيفة التحقق والتوجيه التلقائي
-        window.onload = () => {
-            // ننتظر 2.5 ثانية ليعيش المستخدم تجربة الشعار ثم نوجهه
-            setTimeout(() => {
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        // إذا كان مسجل دخول بالفعل يذهب للأخبار مباشرة
-                        window.location.replace("news.html");
-                    } else {
-                        // إذا لم يسجل يذهب لصفحة الدخول الجديدة
-                        window.location.replace("login.html");
-                    }
-                });
-            }, 2500); // 2500 ميلي ثانية تعني ثانيتين ونصف
-        };
+        // 1. التوجيه التلقائي (Redirect)
+        // قمنا بتقليل الوقت لضمان عدم ملل المستخدم ولحل مشكلة التعليق
+        setTimeout(() => {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    window.location.replace("news.html");
+                } else {
+                    window.location.replace("login.html");
+                }
+            });
+        }, 3000); 
 
-let deferredPrompt;
-const installBanner = document.getElementById('installBanner');
-const btnInstall = document.getElementById('btnInstall');
+        // 2. معالجة التثبيت (PWA)
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const btnInstall = document.getElementById('btnInstall');
 
-// 1. تسجيل الـ Service Worker (مهم لعمل الـ PWA)
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(() => {
-        console.log('Service Worker Registered');
-    });
-}
-
-// 2. الإمساك بحدث التثبيت
-window.addEventListener('beforeinstallprompt', (e) => {
-    // منع المتصفح من إظهار النافذة التلقائية
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // التحقق إذا كان المستخدم قد سجل دخوله أول مرة من هذا الجهاز
-    const hasSeenPrompt = localStorage.getItem('installPrompted');
-    
-    if (!hasSeenPrompt) {
-        // إظهار البانر المخصص لدينا
-        installBanner.style.display = 'flex';
-    }
-});
-
-// 3. عند الضغط على زر التثبيت
-btnInstall.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt(); // إظهار نافذة المتصفح الأصلية
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-            installBanner.style.display = 'none';
+        // تسجيل السيرفس وركر
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW error:", err));
         }
-        deferredPrompt = null;
-        
-        // حفظ في الذاكرة أننا عرضنا الطلب للمستخدم لكي لا يزعجه مرة أخرى
-        localStorage.setItem('installPrompted', 'true');
-    }
-});
-        
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // منع النافذة التلقائية
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // إظهار البانر الخاص بنا (فقط إذا لم يتم تثبيته سابقاً)
+            if (!localStorage.getItem('appInstalled')) {
+                installBanner.style.display = 'flex';
+            }
+        });
+
+        btnInstall.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    localStorage.setItem('appInstalled', 'true');
+                    installBanner.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // إخفاء البانر إذا تم التثبيت بالفعل
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('appInstalled', 'true');
+            installBanner.style.display = 'none';
+        });
     </script>
-    <div id="installBanner" style="display:none; position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 9999; display: flex; align-items: center; gap: 15px; border: 2px solid #5856d6;">
-    <img src="logo.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 10px;">
-    <div style="flex: 1;">
-        <b style="display: block; font-size: 14px;">ثبت التطبيق على سطح المكتب</b>
-        <span style="font-size: 12px; color: #666;">للوصول السريع  </span>
-    </div>
-    <button id="btnInstall" style="background: #5856d6; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer;">تثبيت الآن</button>
-    <button onclick="document.getElementById('installBanner').style.display='none'" style="background: none; border: none; font-size: 18px; color: #999;">✕</button>
-</div>
 </body>
 </html>
-
-
