@@ -72,6 +72,28 @@ body{
 </div>
 
 <script type="module">
+
+let todayHijriDay = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{day:'numeric'}).format(new Date());
+let todayMonth = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{month:'long'}).format(new Date());
+
+let localMonth = localStorage.getItem("calendar_"+todayMonth);
+
+if(localMonth){
+let monthData = JSON.parse(localMonth);
+let today = monthData.find(d=>d.hijri==todayHijriDay);
+
+if(today){
+document.getElementById("prayerContainer").innerHTML = `
+<div class="prayer-row"><span>الفجر</span><span>${today.fajr}</span></div>
+<div class="prayer-row"><span>الظهر</span><span>${today.dhuhr}</span></div>
+<div class="prayer-row"><span>المغرب</span><span>${today.maghrib}</span></div>
+`;
+return; // لا يحتاج API
+}
+}
+
+
+    
 import { db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
