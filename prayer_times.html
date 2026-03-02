@@ -1,120 +1,215 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مواقيت الأحساء</title>
-    <style>
-        body { 
-            background: #09090b; font-family: -apple-system, sans-serif; color: white;
-            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
-        }
-        .widget {
-            width: 90%; max-width: 380px; padding: 30px; border-radius: 35px;
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-        }
-        .header { text-align: center; margin-bottom: 30px; }
-        .next-name { color: #007AFF; font-size: 14px; font-weight: 600; letter-spacing: 1px; }
-        .timer { font-size: 55px; font-weight: bold; margin: 5px 0; font-variant-numeric: tabular-nums; }
-        .prayer-item {
-            display: flex; justify-content: space-between; padding: 18px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 17px; transition: 0.3s;
-        }
-        .active-prayer {
-            background: rgba(0, 122, 255, 0.15); border-radius: 15px; border-bottom: none;
-            color: #007AFF; font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مواقيت الصلاة</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A84FF">
+
+<script src="https://cdn.jsdelivr.net/npm/praytimes@2.3.1/prayTimes.min.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:-apple-system,BlinkMacSystemFont;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+padding:20px;
+}
+
+.header{
+text-align:center;
+margin-bottom:20px;
+}
+
+.city{
+font-size:14px;
+opacity:.9;
+}
+
+.countdown{
+margin-top:8px;
+font-size:16px;
+color:#FFD700;
+}
+
+.card{
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(20px);
+border-radius:20px;
+padding:15px;
+margin-bottom:20px;
+box-shadow:0 8px 20px rgba(0,0,0,0.3);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:14px;
+}
+
+th,td{
+padding:10px;
+text-align:center;
+}
+
+th{
+background:rgba(255,255,255,0.15);
+border-radius:10px;
+}
+
+.prayer-row.active{
+background:rgba(255,215,0,0.2);
+border-radius:10px;
+}
+
+.month-btn{
+background:#0A84FF;
+border:none;
+padding:10px;
+border-radius:10px;
+color:white;
+width:100%;
+margin-top:10px;
+}
+
+#monthTable{
+display:none;
+margin-top:15px;
+}
+</style>
 </head>
+
 <body>
 
-    <div class="widget">
-        <div class="header">
-            <div id="nextLabel" class="next-name">جاري المزامنة...</div>
-            <div id="timerDisplay" class="timer">00:00:00</div>
-        </div>
+<div class="header">
+<h2>مواقيت الصلاة</h2>
+<div class="city" id="cityName">جارٍ تحديد الموقع...</div>
+<div class="countdown" id="countdown"></div>
+</div>
 
-        <div id="list">
-            <div class="prayer-item" id="fajr_row"><span>الفجر</span><span id="fajr_t">--:--</span></div>
-            <div class="prayer-item" id="dhuhr_row"><span>الظهر</span><span id="dhuhr_t">--:--</span></div>
-            <div class="prayer-item" id="asr_row"><span>العصر</span><span id="asr_t">--:--</span></div>
-            <div class="prayer-item" id="maghrib_row"><span>المغرب</span><span id="maghrib_t">--:--</span></div>
-            <div class="prayer-item" id="isha_row"><span>العشاء</span><span id="isha_t">--:--</span></div>
-        </div>
-    </div>
+<div class="card">
+<div id="todayTable"></div>
+<button class="month-btn" onclick="toggleMonth()">عرض الشهر الهجري كامل</button>
+<div id="monthTable"></div>
+</div>
 
-    <script type="module">
-        import { db } from './config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script>
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('service-worker.js');
+}
 
-        let schedule = null;
+const prayTimes = new PrayTimes('Jafari');
+prayTimes.adjust({fajr:18.5, maghrib:4, isha:14.5});
 
-        async function startApp() {
-            // طلب إذن التنبيهات فوراً
-            if (Notification.permission === "default") await Notification.requestPermission();
+const cities={
+ahsa:{name:"الأحساء",lat:25.383,lng:49.586},
+dammam:{name:"الدمام",lat:26.4207,lng:50.0888},
+riyadh:{name:"الرياض",lat:24.7136,lng:46.6753}
+};
 
-            const d = new Date();
-            const id = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            const snap = await getDoc(doc(db, "Schedules", id));
-            if (snap.exists()) {
-                const dayData = snap.data().days.find(x => parseInt(x.date) === d.getDate());
-                if (dayData) setupUI(dayData);
-            }
-        }
+function calculate(lat,lng,date){
+return prayTimes.getTimes(date,[lat,lng],3);
+}
 
-        function setupUI(data) {
-            schedule = data;
-            document.getElementById('fajr_t').innerText = data.fajr;
-            document.getElementById('dhuhr_t').innerText = data.dhuhr;
-            document.getElementById('asr_t').innerText = data.asr;
-            document.getElementById('maghrib_t').innerText = data.maghrib;
-            document.getElementById('isha_t').innerText = data.isha;
-            runClock();
-        }
+function calculateMidnight(maghrib,fajr){
+let [mh,mm]=maghrib.split(':').map(Number);
+let [fh,fm]=fajr.split(':').map(Number);
+let m=new Date(); m.setHours(mh,mm);
+let f=new Date(); f.setDate(f.getDate()+1); f.setHours(fh,fm);
+let mid=new Date(m.getTime()+((f-m)/2));
+return mid.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
 
-        function runClock() {
-            setInterval(() => {
-                const now = new Date();
-                const prayers = [
-                    { n: "الفجر", t: schedule.fajr, id: "fajr_row" },
-                    { n: "الظهر", t: schedule.dhuhr, id: "dhuhr_row" },
-                    { n: "العصر", t: schedule.asr, id: "asr_row" },
-                    { n: "المغرب", t: schedule.maghrib, id: "maghrib_row" },
-                    { n: "العشاء", t: schedule.isha, id: "isha_row" }
-                ];
+function renderToday(gps){
 
-                let next = prayers.find(p => {
-                    const [h, m] = p.t.split(':');
-                    return new Date().setHours(h, m, 0) > now;
-                }) || prayers[0];
+let today=new Date();
 
-                // تحديث العداد
-                const [nh, nm] = next.t.split(':');
-                let target = new Date(); target.setHours(nh, nm, 0);
-                if (target < now) target.setDate(target.getDate() + 1);
-                
-                const diff = target - now;
-                const hh = Math.floor(diff/3600000).toString().padStart(2,'0');
-                const mm = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
-                const ss = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
+let a=calculate(cities.ahsa.lat,cities.ahsa.lng,today);
+let d=calculate(cities.dammam.lat,cities.dammam.lng,today);
+let r=calculate(cities.riyadh.lat,cities.riyadh.lng,today);
+let g=calculate(gps.lat,gps.lng,today);
 
-                document.getElementById('timerDisplay').innerText = `${hh}:${mm}:${ss}`;
-                document.getElementById('nextLabel').innerText = `الصلاة القادمة: ${next.n}`;
+let midnight=calculateMidnight(a.maghrib,a.fajr);
 
-                // تمييز الصلاة الحالية
-                prayers.forEach(p => document.getElementById(p.id).classList.remove('active-prayer'));
-                document.getElementById(next.id).classList.add('active-prayer');
+document.getElementById("todayTable").innerHTML=`
+<table>
+<tr>
+<th>الصلاة</th>
+<th>الأحساء</th>
+<th>الدمام</th>
+<th>الرياض</th>
+<th>موقعك</th>
+</tr>
+<tr><td>الفجر</td><td>${a.fajr}</td><td>${d.fajr}</td><td>${r.fajr}</td><td>${g.fajr}</td></tr>
+<tr><td>الظهر</td><td>${a.dhuhr}</td><td>${d.dhuhr}</td><td>${r.dhuhr}</td><td>${g.dhuhr}</td></tr>
+<tr><td>العصر</td><td>${a.asr}</td><td>${d.asr}</td><td>${r.asr}</td><td>${g.asr}</td></tr>
+<tr><td>المغرب</td><td>${a.maghrib}</td><td>${d.maghrib}</td><td>${r.maghrib}</td><td>${g.maghrib}</td></tr>
+<tr><td>العشاء</td><td>${a.isha}</td><td>${d.isha}</td><td>${r.isha}</td><td>${g.isha}</td></tr>
+<tr><td>منتصف الليل</td><td>${midnight}</td><td>-</td><td>-</td><td>-</td></tr>
+</table>
+`;
 
-                // التنبيه الذكي (قبل دقيقتين)
-                if (diff > 119000 && diff < 121000) {
-                    new Notification("حان وقت الصلاة", { body: `صلاة ${next.n} بعد قليل` });
-                }
-            }, 1000);
-        }
+startCountdown(a);
+}
 
-        startApp();
-    </script>
+function startCountdown(times){
+let prayers=[
+{n:"الفجر",t:times.fajr},
+{n:"الظهر",t:times.dhuhr},
+{n:"العصر",t:times.asr},
+{n:"المغرب",t:times.maghrib},
+{n:"العشاء",t:times.isha}
+];
+
+function update(){
+let now=new Date();
+for(let p of prayers){
+let [h,m]=p.t.split(':').map(Number);
+let pt=new Date(); pt.setHours(h,m,0);
+if(pt>now){
+let diff=Math.floor((pt-now)/1000);
+let hrs=Math.floor(diff/3600);
+let mins=Math.floor((diff%3600)/60);
+let secs=diff%60;
+document.getElementById("countdown").innerText=
+"الصلاة القادمة: "+p.n+" بعد "+hrs+":"+mins+":"+secs;
+break;
+}
+}
+}
+setInterval(update,1000);
+}
+
+function toggleMonth(){
+let box=document.getElementById("monthTable");
+if(box.style.display==="none"){
+renderMonth();
+box.style.display="block";
+}else{
+box.style.display="none";
+}
+}
+
+function renderMonth(){
+let today=new Date();
+let html="<table><tr><th>اليوم</th><th>فجر</th><th>مغرب</th></tr>";
+for(let i=1;i<=30;i++){
+let date=new Date(today.getFullYear(),today.getMonth(),i);
+let t=calculate(cities.ahsa.lat,cities.ahsa.lng,date);
+html+=`<tr><td>${i}</td><td>${t.fajr}</td><td>${t.maghrib}</td></tr>`;
+}
+html+="</table>";
+document.getElementById("monthTable").innerHTML=html;
+}
+
+navigator.geolocation.getCurrentPosition(pos=>{
+document.getElementById("cityName").innerText="موقعك الجغرافي";
+renderToday({lat:pos.coords.latitude,lng:pos.coords.longitude});
+});
+</script>
+
 </body>
 </html>
