@@ -4,104 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة مواقيت الصلاة</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body {
-            font-family: system-ui, sans-serif;
-            background: #f5f6fa;
-            padding: 2rem;
-            color: #222;
-        }
-        .card {
-            border-radius: 1.2rem;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-            margin-bottom: 2rem;
-            padding: 1.8rem;
-        }
-        input[type="number"], input[type="text"] {
-            width: 85px;
-            text-align: center;
-        }
-        .auth-card {
-            max-width: 420px;
-            margin: 0 auto 3rem;
-        }
-        .action-icon {
-            cursor: pointer;
-            margin: 0 8px;
-            font-size: 1.2rem;
-        }
-        .edit-icon   { color: #0d6efd; }
-        .delete-icon { color: #dc3545; }
+        body { background:#f8f9fa; padding:2rem; font-family:system-ui; }
+        .card { border-radius:1rem; box-shadow:0 4px 16px rgba(0,0,0,0.1); }
+        .auth-box { max-width:420px; margin:0 auto; }
+        .hidden { display:none !important; }
+        .action-icon { cursor:pointer; margin:0 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
 
-    <!-- تسجيل الدخول -->
-    <div class="card auth-card" id="loginCard">
-        <h4 class="mb-4">تسجيل دخول المشرف</h4>
+    <!-- شاشة تسجيل الدخول -->
+    <div class="card p-4 auth-box" id="loginScreen">
+        <h4 class="text-center mb-4">تسجيل دخول المشرف</h4>
         <div class="mb-3">
             <label class="form-label">البريد الإلكتروني</label>
-            <input id="email" type="email" class="form-control">
+            <input id="email" type="email" class="form-control" placeholder="example@domain.com">
         </div>
         <div class="mb-3">
             <label class="form-label">كلمة المرور</label>
             <input id="password" type="password" class="form-control">
         </div>
-        <button class="btn btn-primary w-100" onclick="login()">دخول</button>
-        <p id="authMsg" class="mt-3 text-danger"></p>
+        <button class="btn btn-primary w-100 mb-3" onclick="login()">دخول</button>
+        <p id="loginMessage" class="text-danger text-center"></p>
     </div>
 
-    <!-- المحتوى الرئيسي (يظهر بعد تسجيل الدخول) -->
-    <div id="adminPanel" style="display:none;">
+    <!-- المحتوى الرئيسي (يظهر بعد الدخول فقط) -->
+    <div id="adminContent" class="hidden">
 
-        <div class="card">
-            <h5>التعديل العام (جميع الأيام)</h5>
-            <div class="d-flex flex-wrap gap-3 align-items-center">
-                <div>الفجر <input type="number" id="gfajr"></div>
-                <div>الظهر <input type="number" id="gdhuhr"></div>
-                <div>العصر <input type="number" id="gasr"></div>
-                <div>المغرب <input type="number" id="gmaghrib"></div>
-                <div>العشاء <input type="number" id="gisha"></div>
+        <div class="card mb-4 p-4">
+            <h5>تعديل عام (يطبق على كل الأيام)</h5>
+            <div class="row g-3">
+                <div class="col-6 col-md-4">الفجر <input type="number" id="gfajr" class="form-control"></div>
+                <div class="col-6 col-md-4">الظهر <input type="number" id="gdhuhr" class="form-control"></div>
+                <div class="col-6 col-md-4">العصر <input type="number" id="gasr" class="form-control"></div>
+                <div class="col-6 col-md-4">المغرب <input type="number" id="gmaghrib" class="form-control"></div>
+                <div class="col-6 col-md-4">العشاء <input type="number" id="gisha" class="form-control"></div>
             </div>
             <button class="btn btn-success mt-3" onclick="saveGlobal()">حفظ التعديل العام</button>
         </div>
 
-        <div class="card">
-            <h5>تعديل يوم معين</h5>
-            <div class="d-flex flex-wrap gap-3 align-items-center">
-                <div>رقم اليوم <input type="number" id="day" min="1" max="31"></div>
-                <div>فجر <input type="number" id="dfajr"></div>
-                <div>ظهر <input type="number" id="ddhuhr"></div>
-                <div>عصر <input type="number" id="dasr"></div>
-                <div>مغرب <input type="number" id="dmaghrib"></div>
-                <div>عشاء <input type="number" id="disha"></div>
+        <div class="card mb-4 p-4">
+            <h5>تعديل يوم محدد</h5>
+            <div class="row g-3">
+                <div class="col-4">رقم اليوم <input type="number" id="day" min="1" max="31" class="form-control"></div>
+                <div class="col-4">فجر <input type="number" id="dfajr" class="form-control"></div>
+                <div class="col-4">مغرب <input type="number" id="dmaghrib" class="form-control"></div>
             </div>
-            <button class="btn btn-primary mt-3" onclick="saveDay()">حفظ اليوم</button>
+            <button class="btn btn-primary mt-3" onclick="saveDay()">حفظ تعديل اليوم</button>
         </div>
 
-        <div class="card">
-            <h5>التعديلات المسجلة حالياً</h5>
-            <h6 class="mt-4">التعديل العام:</h6>
+        <div class="card p-4">
+            <h5>التعديلات الحالية</h5>
             <div id="globalView" class="mb-4"></div>
-
-            <h6>التعديلات اليومية:</h6>
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered" id="dailyTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>اليوم</th>
-                            <th>فجر</th><th>ظهر</th><th>عصر</th>
-                            <th>مغرب</th><th>عشاء</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+            <table class="table table-bordered table-hover" id="dailyTable">
+                <thead class="table-dark">
+                    <tr><th>اليوم</th><th>فجر</th><th>مغرب</th><th>إجراء</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
 
     </div>
@@ -112,122 +77,107 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // استبدل بالقيم الفعلية أو استورد من config.js
-    import { firebaseConfig } from './config.js';
-
+    // ← هنا يجب أن تضع firebaseConfig الخاص بك
+    const firebaseConfig = { /* ... */ };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let adjustments = { global:{}, daily:{} };
+    let adjustments = { global: {}, daily: {} };
 
-    async function loadData() {
+    async function loadAdjustments() {
         const snap = await getDoc(doc(db, "Settings", "Adjustments"));
-        if (snap.exists()) {
-            adjustments = snap.data() || { global:{}, daily:{} };
-            renderAdjustments();
-        }
+        if (snap.exists()) adjustments = snap.data();
+        renderAdjustments();
     }
 
     function renderAdjustments() {
         const g = adjustments.global;
         document.getElementById("globalView").innerHTML = `
-            • الفجر: ${g.fajr||0} دقيقة 
-            • الظهر: ${g.dhuhr||0} دقيقة 
-            • العصر: ${g.asr||0} دقيقة 
-            • المغرب: ${g.maghrib||0} دقيقة 
-            • العشاء: ${g.isha||0} دقيقة
+            <strong>التعديل العام:</strong><br>
+            الفجر: ${g.fajr||0} د | الظهر: ${g.dhuhr||0} د | العصر: ${g.asr||0} د<br>
+            المغرب: ${g.maghrib||0} د | العشاء: ${g.isha||0} د
         `;
 
         const tbody = document.querySelector("#dailyTable tbody");
         tbody.innerHTML = "";
-        Object.entries(adjustments.daily).forEach(([day, vals]) => {
+        Object.entries(adjustments.daily || {}).forEach(([day, data]) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${day}</td>
-                <td>${vals.fajr||0}</td>
-                <td>${vals.dhuhr||0}</td>
-                <td>${vals.asr||0}</td>
-                <td>${vals.maghrib||0}</td>
-                <td>${vals.isha||0}</td>
+                <td>${data.fajr || 0}</td>
+                <td>${data.maghrib || 0}</td>
                 <td>
-                    <i class="fa-solid fa-pen-to-square action-icon edit-icon" onclick="editDay('${day}')"></i>
-                    <i class="fa-solid fa-trash-can action-icon delete-icon" onclick="deleteDay('${day}')"></i>
-                </td>
-            `;
+                    <i class="fas fa-edit action-icon text-primary" onclick="editDay('${day}')"></i>
+                    <i class="fas fa-trash action-icon text-danger" onclick="deleteDay('${day}')"></i>
+                </td>`;
             tbody.appendChild(tr);
         });
     }
 
-    window.login = async () => {
+    window.login = async function() {
         const email = document.getElementById("email").value.trim();
-        const pass  = document.getElementById("password").value;
-        const msg   = document.getElementById("authMsg");
+        const pass = document.getElementById("password").value;
+        const msg = document.getElementById("loginMessage");
 
         try {
             await signInWithEmailAndPassword(auth, email, pass);
-            msg.textContent = "";
+            msg.className = "text-success";
+            msg.textContent = "جاري التحميل...";
         } catch (err) {
-            msg.textContent = err.message.includes("wrong-password") ? "كلمة المرور غير صحيحة" : "حدث خطأ، حاول مرة أخرى";
+            msg.textContent = "خطأ: " + (err.code === "auth/wrong-password" ? "كلمة مرور خاطئة" : "تحقق من البيانات");
         }
     };
 
     onAuthStateChanged(auth, user => {
         if (user) {
-            document.getElementById("loginCard").style.display = "none";
-            document.getElementById("adminPanel").style.display = "block";
-            loadData();
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("adminContent").classList.remove("hidden");
+            loadAdjustments();
         } else {
-            document.getElementById("loginCard").style.display = "block";
-            document.getElementById("adminPanel").style.display = "none";
+            document.getElementById("loginScreen").classList.remove("hidden");
+            document.getElementById("adminContent").classList.add("hidden");
         }
     });
 
     window.saveGlobal = async () => {
         adjustments.global = {
-            fajr:    Number(document.getElementById("gfajr").value)    || 0,
-            dhuhr:   Number(document.getElementById("gdhuhr").value)   || 0,
-            asr:     Number(document.getElementById("gasr").value)     || 0,
+            fajr: Number(document.getElementById("gfajr").value) || 0,
+            dhuhr: Number(document.getElementById("gdhuhr").value) || 0,
+            asr: Number(document.getElementById("gasr").value) || 0,
             maghrib: Number(document.getElementById("gmaghrib").value) || 0,
-            isha:    Number(document.getElementById("gisha").value)    || 0
+            isha: Number(document.getElementById("gisha").value) || 0
         };
         await setDoc(doc(db, "Settings", "Adjustments"), adjustments, {merge:true});
-        alert("تم حفظ التعديل العام");
-        loadData();
+        alert("تم الحفظ");
+        loadAdjustments();
     };
 
     window.saveDay = async () => {
-        const day = document.getElementById("day").value.trim();
-        if (!day || day < 1 || day > 31) return alert("رقم اليوم غير صالح");
-
+        const day = document.getElementById("day").value;
+        if (!day || day < 1 || day > 31) return alert("رقم يوم غير صالح");
+        adjustments.daily = adjustments.daily || {};
         adjustments.daily[day] = {
-            fajr:    Number(document.getElementById("dfajr").value)    || 0,
-            dhuhr:   Number(document.getElementById("ddhuhr").value)   || 0,
-            asr:     Number(document.getElementById("dasr").value)     || 0,
-            maghrib: Number(document.getElementById("dmaghrib").value) || 0,
-            isha:    Number(document.getElementById("disha").value)    || 0
+            fajr: Number(document.getElementById("dfajr").value) || 0,
+            maghrib: Number(document.getElementById("dmaghrib").value) || 0
         };
-
         await setDoc(doc(db, "Settings", "Adjustments"), adjustments, {merge:true});
-        alert("تم حفظ تعديل اليوم");
-        loadData();
+        alert("تم حفظ اليوم");
+        loadAdjustments();
     };
 
     window.editDay = day => {
-        const d = adjustments.daily[day] || {};
-        document.getElementById("day").value     = day;
-        document.getElementById("dfajr").value    = d.fajr    || "";
-        document.getElementById("ddhuhr").value   = d.dhuhr   || "";
-        document.getElementById("dasr").value     = d.asr     || "";
+        const d = adjustments.daily?.[day] || {};
+        document.getElementById("day").value = day;
+        document.getElementById("dfajr").value = d.fajr || "";
         document.getElementById("dmaghrib").value = d.maghrib || "";
-        document.getElementById("disha").value    = d.isha    || "";
     };
 
     window.deleteDay = async day => {
-        if (!confirm(`هل أنت متأكد من حذف تعديل اليوم ${day}؟`)) return;
-        delete adjustments.daily[day];
+        if (!confirm("حذف تعديل اليوم " + day + "؟")) return;
+        if (adjustments.daily) delete adjustments.daily[day];
         await setDoc(doc(db, "Settings", "Adjustments"), adjustments, {merge:true});
-        loadData();
+        loadAdjustments();
     };
 </script>
 </body>
