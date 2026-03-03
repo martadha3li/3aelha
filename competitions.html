@@ -8,26 +8,59 @@
 <style>
 body{margin:0;font-family:sans-serif;background:#f2f2f7;padding:20px}
 .card{background:#fff;padding:20px;border-radius:20px;margin-bottom:20px}
-.option{padding:8px;background:#eee;border-radius:10px;margin:5px 0;cursor:pointer}
-.correct{background:#34C759;color:#fff}
-.wrong{background:#FF3B30;color:#fff}
-.answered{opacity:.5}
+.option{
+  padding:10px;
+  background:#eee;
+  border-radius:10px;
+  margin:5px 0;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#ddd}
+.correct{background:#34C759!important;color:#fff}
+.wrong{background:#FF3B30!important;color:#fff}
+.disabled{pointer-events:none;opacity:.6}
+.answered-label{
+  margin-top:10px;
+  background:#007AFF;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:10px;
+  font-size:13px;
+  display:inline-block;
+}
 </style>
 </head>
 <body>
 
 <h2>🏁 المسابقات</h2>
 <div id="competitions"></div>
-<div> <a href=news.html> عودة </a></div>
+
 <script type="module">
 import { db } from './config.js';
 import {
 collection,getDocs,onSnapshot,
-addDoc,serverTimestamp
+addDoc,serverTimestamp,
+query,where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const userName=localStorage.getItem("fullName");
+if(!userName){
+ alert("يجب تسجيل الدخول");
+}
 
+let userAnswersCache=[];
+
+/* تحميل إجابات المستخدم لمنع التكرار */
+async function loadUserAnswers(){
+ const q=query(collection(db,"Answers"),where("userName","==",userName));
+ const snap=await getDocs(q);
+ userAnswersCache=snap.docs.map(d=>d.data());
+}
+
+await loadUserAnswers();
+
+/* تحميل المسابقات */
 onSnapshot(collection(db,"Competitions"),async snap=>{
  const container=document.getElementById("competitions");
  container.innerHTML="";
@@ -38,18 +71,49 @@ onSnapshot(collection(db,"Competitions"),async snap=>{
 
   const compId=comp.id;
   const qSnap=await getDocs(collection(db,`Competitions/${compId}/Questions`));
-  let qHTML="";
+
+  let questionsHTML="";
 
   for(const q of qSnap.docs){
    const qData=q.data();
 
-   qHTML+=`
-   <div class="card">
-    <b>${qData.text}</b>
-    ${qData.options.map(opt=>
-     `<div class="option" onclick="answer('${compId}','${qData.text}','${opt}','${qData.correctOption}',${qData.points||10},this)">
-       ${opt}
-      </div>`).join("")}
+   // هل المستخدم أجاب مسبقاً؟
+   const existingAnswer=userAnswersCache.find(a=>
+    a.compId===compId &&
+    a.questionText===qData.text
+   );
+
+   let optionsHTML="";
+
+   qData.options.forEach(opt=>{
+
+    let className="option";
+    let disabled="";
+    
+    if(existingAnswer){
+      disabled="disabled";
+
+      if(opt===existingAnswer.correctOption){
+        className+=" correct";
+      }
+      else if(opt===existingAnswer.selectedOption && !existingAnswer.isCorrect){
+        className+=" wrong";
+      }
+    }
+
+    optionsHTML+=`
+    <div class="${className} ${disabled}"
+      onclick="answerQuestion('${compId}','${qData.text}','${opt}','${qData.correctOption}',${qData.points||10},this)">
+      ${opt}
+    </div>
+    `;
+   });
+
+   questionsHTML+=`
+   <div class="card ${existingAnswer?'disabled':''}">
+     <b>❓ ${qData.text}</b>
+     ${optionsHTML}
+     ${existingAnswer?'<div class="answered-label">✔ تمت الإجابة مسبقاً</div>':''}
    </div>
    `;
   }
@@ -57,18 +121,49 @@ onSnapshot(collection(db,"Competitions"),async snap=>{
   container.innerHTML+=`
   <div class="card">
     <h3>${c.title}</h3>
-    ${qHTML}
+    ${questionsHTML||"<i>لا يوجد أسئلة</i>"}
   </div>
   `;
  }
 });
 
-window.answer=async(compId,question,selected,correct,points,el)=>{
+/* عند الإجابة */
+window.answerQuestion=async(compId,question,selected,correct,points,el)=>{
+
+ const already=userAnswersCache.find(a=>
+  a.compId===compId &&
+  a.questionText===question
+ );
+
+ if(already){
+  alert("لقد أجبت على هذا السؤال مسبقاً");
+  return;
+ }
+
  const isCorrect=selected===correct;
 
- el.classList.add(isCorrect?'correct':'wrong');
- el.parentElement.classList.add("answered");
+ // تلوين مباشر
+ const options=el.parentElement.querySelectorAll(".option");
+ options.forEach(o=>o.classList.add("disabled"));
 
+ if(isCorrect){
+  el.classList.add("correct");
+ }else{
+  el.classList.add("wrong");
+  options.forEach(o=>{
+   if(o.innerText===correct){
+    o.classList.add("correct");
+   }
+  });
+ }
+
+ // إضافة تنبيه
+ const label=document.createElement("div");
+ label.className="answered-label";
+ label.innerText="✔ تمت الإجابة";
+ el.parentElement.appendChild(label);
+
+ // حفظ في فايربيس
  await addDoc(collection(db,"Answers"),{
   userName,
   compId,
@@ -79,7 +174,17 @@ window.answer=async(compId,question,selected,correct,points,el)=>{
   pointsAwarded:isCorrect?points:0,
   timestamp:serverTimestamp()
  });
+
+ // تحديث الكاش
+ userAnswersCache.push({
+  compId,
+  questionText:question,
+  selectedOption:selected,
+  correctOption:correct,
+  isCorrect
+ });
 };
+
 </script>
 </body>
 </html>
