@@ -6,155 +6,103 @@
     <title>تسجيل الدخول | منصة العائلة</title>
     <style>
         :root { --primary: #007aff; --bg: #f2f2f7; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, sans-serif; background: var(--bg); }
-        
-        /* ضبط الحاوية لتكون مرنة مع الجوال */
-        .login-container {
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; padding: 15px; box-sizing: border-box;
-        }
-        
-        .login-card {
-            background: white; width: 100%; max-width: 380px; padding: 30px 25px;
-            border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            text-align: center; box-sizing: border-box;
-        }
-
-        .logo-img { width: 75px; height: 75px; margin-bottom: 15px; border-radius: 18px; object-fit: cover; }
-        h2 { margin: 0 0 8px 0; color: #1c1c1e; font-size: 22px; }
-        .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 25px; }
-
-        .form-group { margin-bottom: 18px; text-align: right; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; color: #3a3a3c; font-size: 13px; }
-        
-        .form-input {
-            width: 100%; padding: 14px; border: 1.5px solid #efeff4;
-            border-radius: 14px; font-size: 16px; box-sizing: border-box;
-            outline: none; transition: 0.3s; background: #f9f9fb;
-        }
-        .form-input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
-
-        .forgot-link {
-            display: block; text-align: left; margin-top: -12px; margin-bottom: 20px;
-            font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600;
-        }
-
-        .btn-login {
-            width: 100%; padding: 15px; background: var(--primary); color: white;
-            border: none; border-radius: 14px; font-size: 16px; font-weight: bold;
-            cursor: pointer; transition: 0.2s;
-        }
-        .btn-login:active { transform: scale(0.98); opacity: 0.9; }
-
-        /* تنسيق زر جوجل */
-        .separator { margin: 20px 0; display: flex; align-items: center; color: #ccc; font-size: 12px; }
-        .separator::before, .separator::after { content: ""; flex: 1; height: 1px; background: #eee; margin: 0 10px; }
-
-        .btn-google {
-            width: 100%; padding: 12px; background: white; color: #3c4043;
-            border: 1.5px solid #dadce0; border-radius: 14px; font-size: 14px;
-            font-weight: 600; cursor: pointer; display: flex; align-items: center;
-            justify-content: center; gap: 10px; transition: 0.2s;
-        }
-        .btn-google img { width: 18px; }
-        .btn-google:hover { background: #f8f9fa; }
-
-        .error-msg { color: #ff3b30; font-size: 12px; margin-top: 12px; display: none; background: #fff2f1; padding: 8px; border-radius: 8px; }
-        
-        .footer-text { margin-top: 25px; font-size: 14px; color: #8e8e93; }
-        .footer-text a { color: var(--primary); text-decoration: none; font-weight: bold; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background: white; width: 90%; max-width: 380px; padding: 40px 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+        .hidden { display: none; }
+        .logo-img { width: 80px; margin-bottom: 20px; border-radius: 20px; }
+        h2 { margin-bottom: 10px; font-size: 22px; }
+        p { color: #8e8e93; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
+        .form-input { width: 100%; padding: 15px; border: 1.5px solid #eee; border-radius: 15px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 20px; text-align: center; background: #f9f9fb; }
+        .form-input:focus { border-color: var(--primary); background: white; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-main:disabled { background: #ccc; }
+        .status-icon { font-size: 50px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <div class="login-card">
-            <img src="logo.png" class="logo-img" alt="Logo">
-            <h2>مرحباً بك</h2>
-            <p class="subtitle">سجل دخولك للمتابعة إلى منصة العائلة</p>
+    <div id="requestStep" class="card">
+        <img src="logo.png" class="logo-img">
+        <h2>تسجيل دخول سريع</h2>
+        <p>أدخل بريدك الإلكتروني وسنرسل لك رابطاً يمكنك من خلاله الدخول فوراً بدون كلمة مرور.</p>
+        
+        <input type="email" id="email" class="form-input" placeholder="name@example.com">
+        <button id="sendBtn" class="btn-main" onclick="sendLoginLink()">إرسال رابط الدخول</button>
+    </div>
 
-            <div class="form-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" id="email" class="form-input" placeholder="name@example.com">
-            </div>
+    <div id="waitStep" class="card hidden">
+        <div class="status-icon">📧</div>
+        <h2>تفقد بريدك الآن</h2>
+        <p id="msgText">لقد أرسلنا رابط الدخول إلى بريدك. يرجى الضغط على الرابط في الرسالة للمتابعة.</p>
+        <button class="btn-main" style="background: #e5e5ea; color: #000;" onclick="location.reload()">العودة للخلف</button>
+    </div>
 
-            <div class="form-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="password" class="form-input" placeholder="••••••••">
-            </div>
-
-            <a href="forgot.html" class="forgot-link">نسيت كلمة المرور؟</a>
-
-            <button id="loginBtn" class="btn-login">دخول</button>
-
-            <div class="separator">أو للمتابعة باستخدام</div>
-            
-            <button id="googleBtn" class="btn-google">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                الدخول بواسطة Google
-            </button>
-
-            <div id="errorMsg" class="error-msg"></div>
-
-            <p class="footer-text">
-                ليس لديك حساب؟ <a href="register.html">إنشاء حساب</a>
-            </p>
-        </div>
+    <div id="loadingStep" class="card hidden">
+        <div class="status-icon">🔄</div>
+        <h2>جاري التحقق...</h2>
+        <p>يرجى الانتظار لحظة بينما نقوم بتسجيل دخولك.</p>
     </div>
 
     <script type="module">
         import { auth } from './config.js';
-        import { 
-            signInWithEmailAndPassword, 
-            GoogleAuthProvider, 
-            signInWithPopup 
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const emailInput = document.getElementById('email');
-        const passInput = document.getElementById('password');
-        const loginBtn = document.getElementById('loginBtn');
-        const googleBtn = document.getElementById('googleBtn');
-        const errorDiv = document.getElementById('errorMsg');
+        const requestStep = document.getElementById('requestStep');
+        const waitStep = document.getElementById('waitStep');
+        const loadingStep = document.getElementById('loadingStep');
 
-        // دالة عرض الخطأ
-        const showError = (msg) => {
-            errorDiv.innerText = msg;
-            errorDiv.style.display = "block";
-        };
+        // 1. وظيفة إرسال الرابط
+        window.sendLoginLink = async () => {
+            const email = document.getElementById('email').value.trim();
+            if (!email) return alert("يرجى إدخال البريد الإلكتروني");
 
-        // 1. تسجيل الدخول التقليدي
-        loginBtn.onclick = async () => {
-            const email = emailInput.value.trim();
-            const password = passInput.value.trim();
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerText = "جاري الإرسال...";
 
-            if(!email || !password) return showError("يرجى إدخال البريد وكلمة المرور");
-
-            loginBtn.disabled = true;
-            loginBtn.innerText = "جاري التحقق...";
-            errorDiv.style.display = "none";
+            const actionCodeSettings = {
+                // الرابط الذي سيعود إليه المستخدم (يجب أن يكون رابط صفحة Login نفسها)
+                url: window.location.href, 
+                handleCodeInApp: true,
+            };
 
             try {
-                await signInWithEmailAndPassword(auth, email, password);
-                window.location.replace("news.html");
+                await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+                // حفظ البريد في الذاكرة المحلية لأننا سنحتاجه عند العودة
+                window.localStorage.setItem('emailForSignIn', email);
+                
+                requestStep.classList.add('hidden');
+                waitStep.classList.remove('hidden');
             } catch (error) {
-                showError("خطأ: تأكد من البيانات المدخلة");
-                loginBtn.disabled = false;
-                loginBtn.innerText = "دخول";
+                console.error(error);
+                alert("حدث خطأ أثناء الإرسال: " + error.message);
+                sendBtn.disabled = false;
+                sendBtn.innerText = "إرسال رابط الدخول";
             }
         };
 
-        // 2. تسجيل الدخول بجوجل
-        googleBtn.onclick = async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                googleBtn.disabled = true;
-                const result = await signInWithPopup(auth, provider);
-                // تم تسجيل الدخول بنجاح
-                window.location.replace("news.html");
-            } catch (error) {
-                console.error(error);
-                showError("فشل تسجيل الدخول باستخدام Google");
-                googleBtn.disabled = false;
+        // 2. وظيفة التحقق عند فتح الصفحة (هل المستخدم قادم من رابط الإيميل؟)
+        window.onload = async () => {
+            if (isSignInWithEmailLink(auth, window.location.href)) {
+                requestStep.classList.add('hidden');
+                loadingStep.classList.remove('hidden');
+
+                let email = window.localStorage.getItem('emailForSignIn');
+                
+                // إذا فتح المستخدم الرابط من جهاز مختلف، نطلب منه تأكيد البريد
+                if (!email) {
+                    email = window.prompt('يرجى إدخال بريدك الإلكتروني للتأكيد:');
+                }
+
+                try {
+                    await signInWithEmailLink(auth, email, window.location.href);
+                    window.localStorage.removeItem('emailForSignIn'); // تنظيف الذاكرة
+                    window.location.replace("news.html"); // التوجه للصفحة الرئيسية
+                } catch (error) {
+                    console.error(error);
+                    alert("الرابط غير صالح أو انتهت صلاحيته.");
+                    window.location.reload();
+                }
             }
         };
     </script>
