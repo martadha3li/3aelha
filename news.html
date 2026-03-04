@@ -48,6 +48,17 @@
         .dropdown { position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; overflow: hidden; }
         .dropdown button { padding: 10px 15px; border: none; background: none; text-align: right; font-size: 13px; border-bottom: 1px solid #f2f2f2; cursor: pointer; width: 100%; }
         .dropdown button:hover { background: #f9f9f9; }
+
+        /* نافذة طلب الاسم لمرة واحدة */
+        #nameOverlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .name-card {
+            background: white; width: 85%; max-width: 350px; padding: 30px; 
+            border-radius: 25px; text-align: center; box-shadow: var(--shadow);
+        }
     </style>
 </head>
 <body>
@@ -62,47 +73,93 @@
         <div class="modal-content" id="modalBody"></div>
     </div>
 
+    <div id="nameOverlay">
+        <div class="name-card">
+            <h2 style="font-size: 20px; margin-bottom: 10px;">أهلاً بك في العائلة 👋</h2>
+            <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 20px;">يرجى كتابة اسمك الثلاثي ليتمكن الجميع من معرفتك</p>
+            <input type="text" id="newUserNameInput" placeholder="اكتب اسمك هنا..." 
+                   style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #ddd; text-align: center; font-size: 16px; margin-bottom: 20px; outline: none; box-sizing: border-box;">
+            <button id="saveNameBtn" style="width: 100%; padding: 14px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px;">حفظ ومتابعة</button>
+        </div>
+    </div>
+
 <script type="module">
-
-import { monitorSession } from './check_access.js';
-
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        monitorSession(user.uid); // سيفحص العدد قبل السماح بالبقاء في الصفحة
-        // ... بقية كود الصفحة
-    }
-});
-
-    
     import { auth, db } from './config.js';
-    import { collection, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { monitorSession } from './check_access.js';
 
     let userUID, userName = "عضو", isAdmin = false;
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             userUID = user.uid;
+            monitorSession(userUID); 
+
             try {
                 const userSnap = await getDoc(doc(db, "Users", userUID));
                 if (userSnap.exists()) {
                     const data = userSnap.data();
-                    userName = data.fullName || "عضو";
-                    isAdmin = (data.role || "").toLowerCase().includes('admin') || (data.role || "").includes('مدير');
+                    if (data.fullName) {
+                        // المستخدم لديه اسم، نقوم بتحميل الصفحة بشكل طبيعي
+                        userName = data.fullName;
+                        isAdmin = (data.role || "").toLowerCase().includes('admin') || (data.role || "").includes('مدير');
+                        loadPosts();
+                    } else {
+                        // مسجل دخول ولكن بدون اسم (حالة Magic Link لأول مرة)
+                        showNameRequest();
+                    }
+                } else {
+                    // السجل غير موجود نهائياً في Users
+                    showNameRequest();
                 }
             } catch (err) {
                 console.error("Error fetching user data:", err);
             }
-            loadPosts(); // تحميل الأخبار بعد التأكد من هوية المستخدم
         } else { 
             window.location.href = "login.html"; 
         }
     });
 
+    // إظهار نافذة طلب الاسم
+    function showNameRequest() {
+        document.getElementById('nameOverlay').style.display = 'flex';
+    }
+
+    // وظيفة حفظ الاسم الأولية
+    window.saveFirstTimeName = async () => {
+        const nameInput = document.getElementById('newUserNameInput').value.trim();
+        const btn = document.getElementById('saveNameBtn');
+
+        if (nameInput.length < 3) return alert("يرجى كتابة اسمك الثلاثي بشكل صحيح");
+
+        btn.disabled = true;
+        btn.innerText = "جاري الحفظ...";
+
+        try {
+            await setDoc(doc(db, "Users", userUID), {
+                fullName: nameInput,
+                email: auth.currentUser.email,
+                role: "member",
+                createdAt: serverTimestamp()
+            }, { merge: true });
+
+            userName = nameInput;
+            document.getElementById('nameOverlay').style.display = 'none';
+            loadPosts(); // تحميل الأخبار بعد حفظ الاسم
+        } catch (e) {
+            alert("حدث خطأ أثناء حفظ الاسم");
+            btn.disabled = false;
+            btn.innerText = "حفظ ومتابعة";
+        }
+    };
+    
+    // ربط زر الحفظ بالدالة
+    document.getElementById('saveNameBtn').onclick = window.saveFirstTimeName;
+
     function loadPosts() {
         const feed = document.getElementById('newsFeed');
         const pinned = document.getElementById('pinnedArea');
         
-        // جلب الأخبار بترتيب التاريخ التنازلي
         onSnapshot(query(collection(db, "News"), orderBy("publishDate", "desc")), (snap) => {
             feed.innerHTML = ""; 
             pinned.innerHTML = "";
@@ -112,7 +169,6 @@ auth.onAuthStateChanged((user) => {
                 const postId = docSnap.id;
                 const type = post.type || 'normal';
 
-                // عرض الأخبار المثبتة (زواج أو وفاة)
                 if (type === 'wedding' || type === 'death') {
                     const pin = document.createElement('div');
                     pin.className = type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
@@ -121,7 +177,6 @@ auth.onAuthStateChanged((user) => {
                     pinned.appendChild(pin);
                 }
 
-                // عرض الخبر العادي
                 const card = document.createElement('div');
                 card.className = "post-card";
                 card.onclick = () => window.showPostFull(postId);
@@ -149,14 +204,12 @@ auth.onAuthStateChanged((user) => {
         });
     }
 
-    // وظيفة عرض الخبر بالكامل في المودال
     window.showPostFull = async (id) => {
         const snap = await getDoc(doc(db, "News", id));
         if (!snap.exists()) return;
         const post = snap.data();
         const hasLiked = post.likedBy?.includes(userUID);
         
-        // زيادة عدد المشاهدات
         updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
         let commsHTML = post.comments?.sort((a,b) => b.date - a.date).map(c => `
@@ -191,7 +244,7 @@ auth.onAuthStateChanged((user) => {
         const newComment = { text: inp.value, userName, userId: userUID, date: Date.now() };
         await updateDoc(doc(db, "News", id), { comments: arrayUnion(newComment) });
         inp.value = ""; 
-        window.showPostFull(id); // تحديث المودال لرؤية التعليق الجديد
+        window.showPostFull(id);
     };
 
     window.like = async (id, liked) => {
@@ -207,9 +260,7 @@ auth.onAuthStateChanged((user) => {
 
     window.delNews = async (id) => { if (confirm("هل أنت متأكد من حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id)); };
     
-    // إغلاق القوائم المنسدلة عند الضغط في أي مكان
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
 </html>
-
