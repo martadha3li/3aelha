@@ -7,102 +7,142 @@
     <style>
         :root { --primary: #007aff; --bg: #f2f2f7; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background: white; width: 90%; max-width: 380px; padding: 40px 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+        .card { background: white; width: 90%; max-width: 380px; padding: 30px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
         .hidden { display: none; }
-        .logo-img { width: 80px; margin-bottom: 20px; border-radius: 20px; }
-        h2 { margin-bottom: 10px; font-size: 22px; }
-        p { color: #8e8e93; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
-        .form-input { width: 100%; padding: 15px; border: 1.5px solid #eee; border-radius: 15px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 20px; text-align: center; background: #f9f9fb; }
-        .form-input:focus { border-color: var(--primary); background: white; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-main:disabled { background: #ccc; }
-        .status-icon { font-size: 50px; margin-bottom: 15px; }
+        .logo-img { width: 70px; margin-bottom: 15px; border-radius: 18px; }
+        .form-input { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 15px; text-align: center; background: #f9f9fb; }
+        
+        /* الأزرار */
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .btn-google { width: 100%; padding: 12px; background: white; color: #555; border: 1px solid #ddd; border-radius: 14px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-link { background: none; border: 1px solid var(--primary); color: var(--primary); }
+        
+        .divider { margin: 20px 0; display: flex; align-items: center; text-align: center; color: #ccc; font-size: 12px; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #eee; }
+        .divider:not(:empty)::before { margin-left: .5em; }
+        .divider:not(:empty)::after { margin-right: .5em; }
+
+        .link-text { color: var(--primary); cursor: pointer; font-weight: bold; font-size: 13px; text-decoration: none; }
+        #statusMsg { color: #ff3b30; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="requestStep" class="card">
+    <div class="card">
         <img src="logo.png" class="logo-img">
-        <h2>تسجيل دخول سريع</h2>
-        <p>أدخل بريدك الإلكتروني وسنرسل لك رابطاً يمكنك من خلاله الدخول فوراً بدون كلمة مرور.</p>
+        <h2 id="stepTitle">تسجيل الدخول</h2>
         
-        <input type="email" id="email" class="form-input" placeholder="name@example.com">
-        <button id="sendBtn" class="btn-main" onclick="sendLoginLink()">إرسال رابط الدخول</button>
-    </div>
+        <div id="classicLogin">
+            <input type="text" id="email" class="form-input" placeholder="البريد الإلكتروني أو الجوال">
+            <input type="password" id="password" class="form-input" placeholder="كلمة المرور">
+            <div style="text-align: left; margin-bottom: 15px;">
+                <span class="link-text" onclick="handleForgotPassword()">نسيت كلمة المرور؟</span>
+            </div>
+            <button id="loginBtn" class="btn-main" onclick="handleLogin()">دخول</button>
+            
+            <div class="divider">أو</div>
+            
+            <button class="btn-google" onclick="handleGoogleSignIn()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18">
+                الدخول عبر جوجل
+            </button>
 
-    <div id="waitStep" class="card hidden">
-        <div class="status-icon">📧</div>
-        <h2>تفقد بريدك الآن</h2>
-        <p id="msgText">لقد أرسلنا رابط الدخول إلى بريدك. يرجى الضغط على الرابط في الرسالة للمتابعة.</p>
-        <button class="btn-main" style="background: #e5e5ea; color: #000;" onclick="location.reload()">العودة للخلف</button>
-    </div>
+            <p style="margin-top: 20px; font-size: 13px; color: #666;">
+                لا تتذكر كلمة المرور؟ <br>
+                <span class="link-text" onclick="toggleMode('magic')">أرسل لي رابط دخول مباشر</span>
+            </p>
+        </div>
 
-    <div id="loadingStep" class="card hidden">
-        <div class="status-icon">🔄</div>
-        <h2>جاري التحقق...</h2>
-        <p>يرجى الانتظار لحظة بينما نقوم بتسجيل دخولك.</p>
+        <div id="magicLogin" class="hidden">
+            <p style="font-size: 13px; color: #666;">أدخل بريدك لإرسال رابط الدخول السريع</p>
+            <input type="email" id="magicEmail" class="form-input" placeholder="name@example.com">
+            <button id="magicBtn" class="btn-main btn-link" onclick="handleMagicLink()">إرسال الرابط</button>
+            <p><span class="link-text" onclick="toggleMode('classic')">العودة للطريقة التقليدية</span></p>
+        </div>
+
+        <div id="statusMsg"></div>
     </div>
 
     <script type="module">
         import { auth } from './config.js';
-        import { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            signInWithEmailAndPassword, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            sendPasswordResetEmail,
+            sendSignInLinkToEmail
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const requestStep = document.getElementById('requestStep');
-        const waitStep = document.getElementById('waitStep');
-        const loadingStep = document.getElementById('loadingStep');
+        const msg = document.getElementById('statusMsg');
 
-        // 1. وظيفة إرسال الرابط
-        window.sendLoginLink = async () => {
+        // --- 1. الدخول التقليدي ---
+        window.handleLogin = async () => {
             const email = document.getElementById('email').value.trim();
-            if (!email) return alert("يرجى إدخال البريد الإلكتروني");
+            const password = document.getElementById('password').value;
+            if(!email || !password) return alert("يرجى إكمال البيانات");
 
-            const sendBtn = document.getElementById('sendBtn');
-            sendBtn.disabled = true;
-            sendBtn.innerText = "جاري الإرسال...";
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.href = "news.html";
+            } catch (error) {
+                msg.innerText = "خطأ: البريد أو كلمة المرور غير صحيحة";
+            }
+        };
+
+        // --- 2. الدخول عبر جوجل ---
+        window.handleGoogleSignIn = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                window.location.href = "news.html";
+            } catch (error) {
+                msg.innerText = "فشل تسجيل الدخول عبر جوجل";
+            }
+        };
+
+        // --- 3. نسيان كلمة المرور ---
+        window.handleForgotPassword = async () => {
+            const email = document.getElementById('email').value.trim();
+            if(!email) return alert("يرجى كتابة البريد الإلكتروني أولاً في الخانة المخصصة");
+            
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك");
+            } catch (error) {
+                msg.innerText = "تأكد من صحة البريد الإلكتروني";
+            }
+        };
+
+        // --- 4. رابط الدخول المباشر (Passwordless) ---
+        window.handleMagicLink = async () => {
+            const email = document.getElementById('magicEmail').value.trim();
+            if(!email) return alert("يرجى إدخال البريد");
 
             const actionCodeSettings = {
-                // الرابط الذي سيعود إليه المستخدم (يجب أن يكون رابط صفحة Login نفسها)
-                url: window.location.href, 
+                url: window.location.origin + '/news.html', // عدل المسار حسب موقعك
                 handleCodeInApp: true,
             };
 
             try {
                 await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-                // حفظ البريد في الذاكرة المحلية لأننا سنحتاجه عند العودة
                 window.localStorage.setItem('emailForSignIn', email);
-                
-                requestStep.classList.add('hidden');
-                waitStep.classList.remove('hidden');
+                alert("تم إرسال رابط الدخول! تفقد بريدك الآن");
             } catch (error) {
                 console.error(error);
-                alert("حدث خطأ أثناء الإرسال: " + error.message);
-                sendBtn.disabled = false;
-                sendBtn.innerText = "إرسال رابط الدخول";
+                msg.innerText = "خطأ في إرسال الرابط: " + error.code;
             }
         };
 
-        // 2. وظيفة التحقق عند فتح الصفحة (هل المستخدم قادم من رابط الإيميل؟)
-        window.onload = async () => {
-            if (isSignInWithEmailLink(auth, window.location.href)) {
-                requestStep.classList.add('hidden');
-                loadingStep.classList.remove('hidden');
-
-                let email = window.localStorage.getItem('emailForSignIn');
-                
-                // إذا فتح المستخدم الرابط من جهاز مختلف، نطلب منه تأكيد البريد
-                if (!email) {
-                    email = window.prompt('يرجى إدخال بريدك الإلكتروني للتأكيد:');
-                }
-
-                try {
-                    await signInWithEmailLink(auth, email, window.location.href);
-                    window.localStorage.removeItem('emailForSignIn'); // تنظيف الذاكرة
-                    window.location.replace("news.html"); // التوجه للصفحة الرئيسية
-                } catch (error) {
-                    console.error(error);
-                    alert("الرابط غير صالح أو انتهت صلاحيته.");
-                    window.location.reload();
-                }
+        // التبديل بين الواجهات
+        window.toggleMode = (mode) => {
+            if(mode === 'magic') {
+                document.getElementById('classicLogin').classList.add('hidden');
+                document.getElementById('magicLogin').classList.remove('hidden');
+                document.getElementById('stepTitle').innerText = "دخول سريع";
+            } else {
+                document.getElementById('magicLogin').classList.add('hidden');
+                document.getElementById('classicLogin').classList.remove('hidden');
+                document.getElementById('stepTitle').innerText = "تسجيل الدخول";
             }
         };
     </script>
