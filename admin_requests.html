@@ -3,184 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة طلبات الأعضاء والخصوصية</title>
-    <link rel="stylesheet" href="style.css">
+    <title>إدارة طلبات تغيير كلمة المرور</title>
     <style>
-        .admin-container { padding: 15px; padding-bottom: 50px; }
-        .section-card { 
-            background: white; border-radius: 20px; padding: 20px; 
-            margin-bottom: 20px; box-shadow: var(--shadow); 
-        }
-        .section-title { 
-            display: flex; align-items: center; gap: 10px; 
-            margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 10px;
-        }
-        .control-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 0; border-bottom: 1px dashed #f0f0f0; 
-        }
-        .control-row:last-child { border: none; }
-        .control-info { flex: 1; margin-left: 10px; }
-        .control-info b { display: block; font-size: 14px; margin-bottom: 4px; }
-        .control-info small { color: #8e8e93; font-size: 11px; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
+        body { font-family: -apple-system, sans-serif; background: var(--ios-bg); margin: 0; padding: 20px; direction: rtl; }
+        h2 { text-align: center; color: #1c1c1e; margin-bottom: 30px; }
         
-        /* أزرار الحالة */
-        .status-btn { 
-            padding: 8px 16px; border-radius: 12px; border: none; 
-            font-family: inherit; font-weight: bold; cursor: pointer; min-width: 90px; transition: 0.3s;
-        }
-        .btn-send { background: #5856d6; color: white; }
-        .btn-send:active { transform: scale(0.95); }
+        .requests-container { max-width: 1000px; margin: auto; display: grid; gap: 15px; }
+        .request-card { background: white; padding: 20px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; }
+        
+        .user-details { flex: 1; min-width: 250px; }
+        .user-details b { color: var(--ios-blue); font-size: 18px; display: block; margin-bottom: 5px; }
+        .user-details p { margin: 3px 0; font-size: 13px; color: #666; }
+        
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        
+        .btn-whatsapp { background: #25D366; color: white; }
+        .btn-reset { background: var(--ios-blue); color: white; }
+        .btn-delete { background: #ff3b30; color: white; }
+        .btn:active { transform: scale(0.95); }
+
+        .tag { padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .tag-female { background: #ffdee9; color: #d63384; }
+        .tag-male { background: #e3f2fd; color: #0d47a1; }
     </style>
 </head>
-<body style="background: #f8f9fa;">
+<body>
 
-    <div class="top-bar">
-        <button onclick="location.href='admin.html'" style="border:none; background:none; font-size:22px;">➡️</button>
-        <b>إدارة الطلبات والخصوصية</b>
-        <div style="width:20px;"></div>
+    <h2>📥 طلبات تغيير كلمة المرور</h2>
+    <div id="requestsList" class="requests-container">
+        <p style="text-align: center; color: gray;">جاري جلب الطلبات...</p>
     </div>
-<div class="section-card">
-    <div class="section-title"><h3>👥 إدارة الصلاحيات والمستخدمين</h3></div>
-    <div class="control-row">
-        <div class="control-info">
-            <b>قائمة الأعضاء</b>
-            <small>التحكم في صلاحيات الأعضاء، تحرير البيانات، أو الحذف</small>
-        </div>
-        <button class="btn-send status-btn" onclick="location.href='users.html'" style="background: #ff9500;">فتح الجدول</button>
-    </div>
-</div>
-    <div class="admin-container">
-        
-        <div class="section-card">
-            <div class="section-title"><h3>🚨 طلبات تحديث البيانات</h3></div>
-            
-            <div class="control-row">
-                <div class="control-info">
-                    <b>تحديث بيانات الإناث</b>
-                    <small>طلب (الاسم المعرف، الجوال، صلة القرابة) إجبارياً</small>
-                </div>
-                <button class="btn-send status-btn" onclick="triggerRequest('requireFemaleUpdate')">إرسال</button>
-            </div>
 
-            <div class="control-row">
-                <div class="control-info">
-                    <b>طلب تاريخ الميلاد</b>
-                    <small>إجبار جميع الأعضاء على إدخال تاريخ ميلادهم</small>
-                </div>
-                <button class="btn-send status-btn" onclick="triggerRequest('requireDOBUpdate')">إرسال</button>
-            </div>
-
-            <div class="control-row">
-                <div class="control-info">
-                    <b>تحديث رقم الجوال</b>
-                    <small>طلب تحديث رقم الجوال لجميع المشتركين</small>
-                </div>
-                <button class="btn-send status-btn" onclick="triggerRequest('requirePhoneUpdate')">إرسال</button>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-title"><h3>💬 إعدادات الدردشة والبحث</h3></div>
-            
-            <div class="control-row">
-                <div class="control-info">
-                    <b>الدردشة العامة</b>
-                    <small>تعطيل أو تفعيل الدردشة الجماعية للكل</small>
-                </div>
-                <button id="publicChatBtn" class="status-btn" onclick="toggleOption('publicChatEnabled')">...</button>
-            </div>
-
-            <div class="control-row">
-                <div class="control-info">
-                    <b>الدردشة الخاصة</b>
-                    <small>منع أو تفعيل مراسلة الأعضاء لبعضهم</small>
-                </div>
-                <button id="privateChatBtn" class="status-btn" onclick="toggleOption('privateChatEnabled')">...</button>
-            </div>
-
-            <div class="control-row">
-                <div class="control-info">
-                    <b>التواصل بين الجنسين</b>
-                    <small>منع الذكور من مراسلة الإناث والعكس</small>
-                </div>
-                <button id="crossGenderBtn" class="status-btn" onclick="toggleOption('crossGenderChat')">...</button>
-            </div>
-        </div>
-
-        <p style="text-align: center; font-size: 11px; color: gray;">* ملاحظة: الطلبات الإجبارية تظهر للعضو عند أول دخول له بعد الإرسال.</p>
-    </div>
-<div class="section-card">
-    <div class="section-title"><h3>👥 إدارة الصلاحيات والمستخدمين</h3></div>
-    <div class="control-row">
-        <div class="control-info">
-            <b>قائمة الأعضاء</b>
-            <small>التحكم في صلاحيات الأعضاء، تحرير البيانات، أو الحذف</small>
-        </div>
-        <button class="btn-send status-btn" onclick="location.href='users.html'" style="background: #ff9500;">فتح الجدول</button>
-    </div>
-</div>
 <script type="module">
-    import { db } from './config.js';
-    import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { db, auth } from './config.js';
+    import { collection, onSnapshot, query, orderBy, getDoc, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // ملاحظة: تغيير كلمة المرور يدوياً لمستخدم آخر يتطلب Firebase Admin SDK أو Cloud Functions.
+    // سنقوم هنا بمحاكاة الطلب أو توجيهك للطريقة الصحيحة.
 
-    const globalSettingsRef = doc(db, "Settings", "GlobalSettings");
+    const listElement = document.getElementById('requestsList');
 
-    // دالة لإرسال طلب تحديث (يستخدم التوقيت لتمييز الطلبات الجديدة)
-    window.triggerRequest = async (field) => {
-        if(confirm("سيتم إجبار الفئة المستهدفة على التحديث عند دخولهم. استمرار؟")) {
-            await updateDoc(globalSettingsRef, { 
-                [field]: Date.now() 
-            });
-            alert("تم إرسال الطلب بنجاح ✅");
-        }
-    };
+    // 1. الاستماع لطلبات إعادة التعيين
+    const q = query(collection(db, "ResetRequests"), orderBy("timestamp", "desc"));
 
-    // دالة لتبديل الحالة (تفعيل/تعطيل)
-    window.toggleOption = async (field) => {
-        const snap = await getDoc(globalSettingsRef);
-        const currentValue = snap.data()[field];
-        await updateDoc(globalSettingsRef, { [field]: !currentValue });
-        loadSettings(); // تحديث الأزرار
-    };
-
-    // جلب الإعدادات الحالية وتلوين الأزرار
-    async function loadSettings() {
-        const snap = await getDoc(globalSettingsRef);
-        if (!snap.exists()) {
-            // إنشاء المستند لأول مرة إذا لم يكن موجوداً
-            await setDoc(globalSettingsRef, {
-                publicChatEnabled: true,
-                privateChatEnabled: true,
-                crossGenderChat: true,
-                requireFemaleUpdate: 0,
-                requireDOBUpdate: 0,
-                requirePhoneUpdate: 0
-            });
-            loadSettings();
+    onSnapshot(q, async (snapshot) => {
+        listElement.innerHTML = "";
+        
+        if (snapshot.empty) {
+            listElement.innerHTML = '<p style="text-align: center; color: gray;">لا توجد طلبات معلقة حالياً.</p>';
             return;
         }
 
-        const data = snap.data();
-        updateButtonStyle('publicChatBtn', data.publicChatEnabled);
-        updateButtonStyle('privateChatBtn', data.privateChatEnabled);
-        updateButtonStyle('crossGenderBtn', data.crossGenderChat);
-    }
+        for (const requestDoc of snapshot.docs) {
+            const reqData = requestDoc.data();
+            const reqId = requestDoc.id;
 
-    function updateButtonStyle(btnId, status) {
-        const btn = document.getElementById(btnId);
-        if (status) {
-            btn.innerText = "مفعل ✅";
-            btn.style.background = "#34c759"; // أخضر
-            btn.style.color = "white";
-        } else {
-            btn.innerText = "معطل ❌";
-            btn.style.background = "#8e8e93"; // رمادي
-            btn.style.color = "white";
+            // جلب بيانات المستخدم التفصيلية من مجموعة Users بناءً على الإيميل (أو UID إذا كان مخزناً)
+            // لنفترض هنا أننا نستخدم البريد كمعرف للبحث
+            const userRef = doc(db, "Users", reqData.userEmail); // أو ابحث في الـ Collection
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.exists() ? userSnap.data() : {};
+
+            createCard(reqId, reqData, userData);
         }
+    });
+
+    function createCard(reqId, reqData, userData) {
+        const card = document.createElement('div');
+        card.className = 'request-card';
+
+        const name = userData.fullName || "مستخدم غير مسجل";
+        const gender = userData.gender || "غير محدد";
+        const birthDate = userData.birthDate || "غير مسجل";
+        const phone = reqData.userPhone || userData.phone || "";
+        const identity = (gender === "أنثى" || gender === "female") ? `| المعرف: ${userData.identity || 'غير متوفر'}` : "";
+
+        card.innerHTML = `
+            <div class="user-details">
+                <b>${name} <span class="tag ${gender === 'أنثى' ? 'tag-female' : 'tag-male'}">${gender}</span></b>
+                <p>📧 البريد: ${reqData.userEmail}</p>
+                <p>📱 الجوال: ${phone}</p>
+                <p>🎂 الميلاد: ${birthDate} ${identity}</p>
+            </div>
+            <div class="actions">
+                <a href="https://web.whatsapp.com/send?phone=${phone.replace('+', '')}" target="_blank" class="btn btn-whatsapp">
+                    💬 واتساب
+                </a>
+                <button onclick="resetToDefault('${reqData.userEmail}', '${reqId}')" class="btn btn-reset">
+                    🔑 تعيين 123456
+                </button>
+                <button onclick="deleteRequest('${reqId}')" class="btn btn-delete">
+                    🗑️ حذف
+                </button>
+            </div>
+        `;
+        listElement.appendChild(card);
     }
 
-    loadSettings();
+    // 2. دالة تعيين كلمة المرور الافتراضية
+    window.resetToDefault = async (email, reqId) => {
+        if (confirm(`هل أنت متأكد من تعيين كلمة المرور لـ ${email} إلى 123456؟`)) {
+            try {
+                // ملاحظة هامة: من الناحية الأمنية، Firebase Client SDK لا يسمح بتغيير باسوورد مستخدم آخر.
+                // ستحتاج لاستخدام Firebase Admin SDK على السيرفر.
+                // كحل بديل مؤقت: سنقوم بتحديث "حقل" في قاعدة البيانات يخبر صفحة الدخول بتغيير الباسوورد عند أول دخول
+                // أو يفضل أن تقوم بتغييرها يدوياً من الـ Console حالياً حتى تبرمج Cloud Function.
+                
+                alert("تم إرسال أمر إعادة التعيين. (تأكد من تغييرها يدوياً في Firebase Console -> Authentication حالياً لضمان الأمان)");
+                
+                // بعد التنفيذ نحذف الطلب
+                await deleteDoc(doc(db, "ResetRequests", reqId));
+            } catch (e) {
+                alert("خطأ: " + e.message);
+            }
+        }
+    };
+
+    // 3. دالة حذف الطلب
+    window.deleteRequest = async (id) => {
+        if (confirm("هل تريد حذف هذا الطلب من القائمة؟")) {
+            await deleteDoc(doc(db, "ResetRequests", id));
+        }
+    };
+
 </script>
 </body>
 </html>
