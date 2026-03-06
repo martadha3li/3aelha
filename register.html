@@ -2,161 +2,212 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إنشاء حساب جديد | منصة العائلة</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>انضمام للعائلة | تسجيل حساب جديد</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        .reg-container { padding: 30px 20px; max-width: 500px; margin: auto; padding-bottom: 50px; }
-        .form-card { background: white; padding: 25px; border-radius: 25px; box-shadow: var(--shadow); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 13px; color: #444; }
-        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s; }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+        :root { --primary: #007aff; --bg: #f2f2f7; --text: #1c1c1e; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding: 20px 0; display: flex; justify-content: center; }
         
-        /* قسم المعرف - مخفي افتراضياً */
-        #guardianSection { 
-            display: none; 
-            background: #fff5f5; 
-            padding: 15px; 
-            border-radius: 15px; 
-            border: 1px dashed #ffcccc; 
-            margin-top: 10px; 
-            animation: fadeIn 0.4s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .reg-card { background: white; width: 95%; max-width: 500px; padding: 30px; border-radius: 35px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); box-sizing: border-box; }
+        h2 { text-align: center; margin-bottom: 25px; color: var(--primary); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .full-width { grid-column: span 2; }
+        
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #666; margin-right: 5px; }
+        .input-style { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 15px; font-size: 15px; box-sizing: border-box; outline: none; background: #f9f9fb; font-family: 'Cairo'; }
+        .input-style:focus { border-color: var(--primary); background: #fff; }
+        
+        .btn-reg { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 18px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        .btn-reg:disabled { background: #ccc; }
+
+        #locationStatus { font-size: 11px; color: var(--primary); margin-top: 5px; text-align: center; }
+        .hidden { display: none; }
+        .link { color: var(--primary); text-decoration: none; font-weight: bold; font-size: 14px; }
     </style>
 </head>
-<body style="background: #f8f9fa;">
+<body>
 
-    <div class="top-bar">
-        <button onclick="location.href='login.html'" style="border:none; background:none; font-size:20px;">➡️</button>
-        <b>إنشاء حساب جديد</b>
-        <div style="width:20px;"></div>
-    </div>
-
-    <div class="reg-container">
-        <div class="form-card">
-            <div class="form-group">
-                <label>الاسم الكامل</label>
-                <input type="text" id="regName" class="form-input" placeholder="الاسم الثلاثي">
+    <div class="reg-card">
+        <h2>حساب جديد</h2>
+        
+        <div class="form-grid">
+            <div>
+                <label>الاسم الأول *</label>
+                <input type="text" id="fName" class="input-style" placeholder="مثال: أحمد">
+            </div>
+            <div>
+                <label>اسم الأب *</label>
+                <input type="text" id="pName" class="input-style">
+            </div>
+            <div>
+                <label>اسم الجد *</label>
+                <input type="text" id="gName" class="input-style">
+            </div>
+            <div>
+                <label>الجد الثاني (اختياري)</label>
+                <input type="text" id="g2Name" class="input-style">
+            </div>
+            <div class="full-width">
+                <label>لقب العائلة *</label>
+                <input type="text" id="lName" class="input-style" placeholder="العائلة">
             </div>
 
-            <div class="form-group">
-                <label>رقم الجوال</label>
-                <input type="tel" id="regPhone" class="form-input" placeholder="05xxxxxxxx">
+            <div class="full-width">
+                <label>البريد الإلكتروني *</label>
+                <input type="email" id="email" class="input-style" placeholder="name@example.com">
+            </div>
+            <div class="full-width">
+                <label>رقم الجوال *</label>
+                <input type="tel" id="phone" class="input-style" placeholder="05xxxxxxxx">
+            </div>
+            <div>
+                <label>تاريخ الميلاد *</label>
+                <input type="date" id="dob" class="input-style">
+            </div>
+            <div>
+                <label>الجنس *</label>
+                <select id="gender" class="input-style" onchange="checkGender()">
+                    <option value="ذكر">ذكر</option>
+                    <option value="أنثى">أنثى</option>
+                </select>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group">
-                    <label>تاريخ الميلاد</label>
-                    <input type="date" id="regDob" class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>الجنس</label>
-                    <select id="regGender" class="form-input" onchange="checkGender()">
-                        <option value="male">ذكر</option>
-                        <option value="female">أنثى</option>
-                    </select>
-                </div>
+            <div id="identityBox" class="full-width hidden">
+                <label>المعرف (خاص للإناث) *</label>
+                <input type="text" id="identity" class="input-style" placeholder="رقم المعرف أو الهوية">
             </div>
 
-            <div id="guardianSection">
-                <p style="margin:0 0 10px 0; font-size: 12px; color: #d63031; font-weight: bold;">🛡️ بيانات المُعرّف (ولي الأمر)</p>
-                <div class="form-group">
-                    <input type="text" id="guardianName" class="form-input" placeholder="اسم المعرف الكامل">
-                </div>
-                <div class="form-group">
-                    <input type="tel" id="guardianPhone" class="form-input" placeholder="رقم جوال المعرف">
-                </div>
+            <div class="full-width">
+                <label>المدينة *</label>
+                <select id="city" class="input-style">
+                    <option value="">اختر المدينة...</option>
+                    <option value="الرياض">الرياض</option>
+                    <option value="جدة">جدة</option>
+                    <option value="مكة المكرمة">مكة المكرمة</option>
+                    <option value="المدينة المنورة">المدينة المنورة</option>
+                    <option value="الدمام">الدمام</option>
+                    <option value="الطائف">الطائف</option>
+                    <option value="تبوك">تبوك</option>
+                    <option value="بريدة">بريدة</option>
+                    <option value="خميس مشيط">خميس مشيط</option>
+                    <option value="الهفوف">الهفوف</option>
+                    <option value="المبرز">المبرز</option>
+                    <option value="حفر الباطن">حفر الباطن</option>
+                    <option value="حائل">حائل</option>
+                    <option value="نجران">نجران</option>
+                    <option value="الجبيل">الجبيل</option>
+                    <option value="أبها">أبها</option>
+                    <option value="ينبع">ينبع</option>
+                    <option value="الخبر">الخبر</option>
+                    <option value="عرعر">عرعر</option>
+                    <option value="جيزان">جيزان</option>
+                    <option value="سكاكا">سكاكا</option>
+                    <option value="الباحة">الباحة</option>
+                </select>
             </div>
 
-            <div class="form-group">
-                <label>مدينة السكن الدائم</label>
-                <input type="text" id="regCity" class="form-input" placeholder="المدينة">
+            <div class="full-width">
+                <label>كلمة المرور *</label>
+                <input type="password" id="password" class="input-style" placeholder="********">
             </div>
-
-            <div class="form-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" id="regEmail" class="form-input" placeholder="example@mail.com">
-            </div>
-
-            <div class="form-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="regPass" class="form-input" placeholder="********">
-            </div>
-
-            <button id="btnReg" class="btn-main" style="width:100%; margin-top:10px; padding:15px;" onclick="handleRegister()">إنشاء الحساب 🚀</button>
         </div>
+
+        <div id="locationStatus">جاري تحديد موقعك الجغرافي... 📍</div>
+        
+        <button id="regBtn" class="btn-reg" onclick="handleRegister()">إنشاء الحساب</button>
+
+        <p style="text-align: center; margin-top: 20px;">
+            لديك حساب بالفعل؟ <a href="login.html" class="link">سجل دخولك</a>
+        </p>
     </div>
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. مراقبة اختيار الجنس لإظهار/إخفاء قسم المعرف
-    window.checkGender = () => {
-        const gender = document.getElementById('regGender').value;
-        const section = document.getElementById('guardianSection');
-        section.style.display = (gender === 'female') ? 'block' : 'none';
-    };
+        let userCoords = { lat: null, lng: null };
 
-    // 2. دالة جلب الموقع الجغرافي GPS
-    async function getGPS() {
-        return new Promise((resolve) => {
+        // 1. جلب الموقع الجغرافي فور فتح الصفحة
+        window.onload = () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-                    () => resolve(null),
-                    { timeout: 5000 }
+                    (position) => {
+                        userCoords.lat = position.coords.latitude;
+                        userCoords.lng = position.coords.longitude;
+                        document.getElementById('locationStatus').innerText = "تم تحديد الموقع بنجاح ✅";
+                    },
+                    () => {
+                        document.getElementById('locationStatus').innerText = "تعذر جلب الموقع، سيتم التسجيل بدونه.";
+                    }
                 );
-            } else resolve(null);
-        });
-    }
+            }
+        };
 
-    // 3. معالجة التسجيل
-    window.handleRegister = async () => {
-        const btn = document.getElementById('btnReg');
-        const email = document.getElementById('regEmail').value.trim();
-        const pass = document.getElementById('regPass').value.trim();
-        const gender = document.getElementById('regGender').value;
+        // 2. إظهار/إخفاء حقل المعرف
+        window.checkGender = () => {
+            const gender = document.getElementById('gender').value;
+            const box = document.getElementById('identityBox');
+            if(gender === 'أنثى') box.classList.remove('hidden');
+            else box.classList.add('hidden');
+        };
 
-        // التحقق من الحقول
-        if(!email || !pass) return alert("يرجى إكمال البيانات الأساسية");
-        if(gender === 'female' && !document.getElementById('guardianName').value) return alert("يرجى إدخال بيانات المعرف");
+        // 3. عملية التسجيل
+        window.handleRegister = async () => {
+            const fName = document.getElementById('fName').value.trim();
+            const pName = document.getElementById('pName').value.trim();
+            const gName = document.getElementById('gName').value.trim();
+            const g2Name = document.getElementById('g2Name').value.trim();
+            const lName = document.getElementById('lName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const dob = document.getElementById('dob').value;
+            const gender = document.getElementById('gender').value;
+            const identity = document.getElementById('identity').value;
+            const city = document.getElementById('city').value;
+            const password = document.getElementById('password').value;
 
-        btn.disabled = true;
-        btn.innerText = "جاري تحديد موقعك وحفظ البيانات...";
+            // التحقق من الحقول الإلزامية
+            if(!fName || !pName || !gName || !lName || !email || !phone || !dob || !city || !password) {
+                return alert("يرجى ملء جميع الحقول المطلوبة (*)");
+            }
 
-        const location = await getGPS();
+            const btn = document.getElementById('regBtn');
+            btn.disabled = true;
+            btn.innerText = "جاري إنشاء الحساب...";
 
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const uid = userCredential.user.uid;
+            try {
+                // إنشاء الحساب في Authentication
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-            await setDoc(doc(db, "Users", uid), {
-                fullName: document.getElementById('regName').value,
-                phone: document.getElementById('regPhone').value,
-                dob: document.getElementById('regDob').value,
-                gender: gender,
-                city: document.getElementById('regCity').value,
-                email: email,
-                guardianName: gender === 'female' ? document.getElementById('guardianName').value : null,
-                guardianPhone: gender === 'female' ? document.getElementById('guardianPhone').value : null,
-                regLoc: location, // حفظ الموقع الجغرافي هنا
-                status: "pending",
-                role: "user",
-                createdAt: serverTimestamp()
-            });
+                // تخزين البيانات في Firestore
+                await setDoc(doc(db, "Users", user.uid), {
+                    fullName: `${fName} ${pName} ${gName} ${g2Name} ${lName}`.replace(/\s+/g, ' '),
+                    details: { fName, pName, gName, g2Name, lName },
+                    email: email,
+                    phone: phone,
+                    birthDate: dob,
+                    gender: gender,
+                    identity: gender === 'أنثى' ? identity : null,
+                    city: city,
+                    location: userCoords,
+                    role: "member",
+                    createdAt: serverTimestamp()
+                });
 
-            alert("تم التسجيل بنجاح! حسابك بانتظار تفعيل الإدارة.");
-            window.location.replace("login.html");
-        } catch (e) {
-            alert("خطأ: " + e.message);
-            btn.disabled = false;
-            btn.innerText = "إنشاء الحساب 🚀";
-        }
-    };
-</script>
+                alert("تم التسجيل بنجاح! مريباً بك في العائلة.");
+                window.location.href = "news.html";
+
+            } catch (error) {
+                console.error(error);
+                alert("خطأ في التسجيل: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "إنشاء الحساب";
+            }
+        };
+    </script>
 </body>
 </html>
