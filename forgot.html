@@ -3,123 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إعادة تعيين كلمة المرور</title>
+    <title>استعادة الحساب | منصة العائلة</title>
     <style>
         :root { --primary: #007aff; --bg: #f2f2f7; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        
-        .top-bar { position: fixed; top: 0; width: 100%; background: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.05); z-index: 10; }
-        
-        .container { width: 100%; max-width: 400px; padding: 20px; box-sizing: border-box; margin-top: 60px; }
-        .card { background: white; padding: 30px; border-radius: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
-        
-        .icon-circle { width: 60px; height: 60px; background: #f2f2f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 25px; }
-        
-        .form-input { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; background: #f9f9fb; text-align: center; margin-bottom: 20px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { background: white; width: 90%; max-width: 380px; padding: 30px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
+        .logo-img { width: 70px; margin-bottom: 15px; border-radius: 18px; }
+        .form-input { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 15px; text-align: center; background: #f9f9fb; transition: 0.3s; }
         .form-input:focus { border-color: var(--primary); background: white; }
-
-        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-main:disabled { background: #ccc; cursor: not-child; }
-
-        #statusMsg { margin-top: 20px; font-size: 14px; line-height: 1.5; padding: 10px; border-radius: 10px; display: none; }
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
+        .link-text { color: var(--primary); cursor: pointer; font-weight: bold; font-size: 13px; text-decoration: none; display: block; margin-top: 15px; }
+        .success-box { display: none; color: #34c759; }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <button onclick="history.back()" style="border:none; background:none; font-size:22px; cursor:pointer;">➡️</button>
-        <b style="font-size: 17px;">استعادة الحساب</b>
-        <div style="width:22px;"></div>
-    </div>
-
-    <div class="container">
-        <div class="card">
-            <div class="icon-circle">🔐</div>
-            <h2 style="font-size: 20px; margin-bottom: 10px;">نسيت كلمة المرور؟</h2>
-            <p style="font-size: 13px; color: #8e8e93; margin-bottom: 25px;">
-                أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور فوراً، مع تسجيل موقع الطلب للأمان.
-            </p>
+    <div class="card" id="mainCard">
+        <img src="logo.png" class="logo-img">
+        <h3>نسيت كلمة المرور؟</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 20px;">أدخل بياناتك وسيقوم مدير المنصة بالتواصل معك لتغيير كلمة المرور.</p>
+        
+        <div id="formContainer">
+            <input type="email" id="forgotEmail" class="form-input" placeholder="البريد الإلكتروني المسجل">
+            <input type="tel" id="forgotPhone" class="form-input" placeholder="رقم الجوال المرتبط بالحساب">
             
-            <input type="email" id="resetEmail" class="form-input" placeholder="البريد الإلكتروني المسجل">
-            
-            <button id="btnReset" class="btn-main" onclick="handleResetRequest()">إرسال الرابط 🚀</button>
-            
-            <div id="statusMsg"></div>
+            <button id="sendRequestBtn" class="btn-main" onclick="sendResetRequestToAdmin()">إرسال طلب للمدير</button>
         </div>
+
+        <div id="successMessage" class="success-box">
+            <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+            <p>تم إرسال طلبك بنجاح!</p>
+            <p style="font-size: 12px; color: #666;">سيتم مراجعة بياناتك وتحديث كلمة مرورك قريباً.</p>
+        </div>
+
+        <a href="login.html" class="link-text">العودة لصفحة الدخول</a>
     </div>
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script type="module">
+        import { db } from './config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // دالة تحديد الموقع GPS
-    async function getGPS() {
-        return new Promise((resolve) => {
-            if (!navigator.geolocation) resolve(null);
-            navigator.geolocation.getCurrentPosition(
-                (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-                () => resolve(null),
-                { timeout: 4000 }
-            );
-        });
-    }
+        window.sendResetRequestToAdmin = async () => {
+            const email = document.getElementById('forgotEmail').value.trim();
+            const phone = document.getElementById('forgotPhone').value.trim();
+            const btn = document.getElementById('sendRequestBtn');
 
-    window.handleResetRequest = async () => {
-        const email = document.getElementById('resetEmail').value.trim();
-        const btn = document.getElementById('btnReset');
-        const status = document.getElementById('statusMsg');
+            if (!email || !phone) {
+                return alert("يرجى إدخال البريد والجوال معاً");
+            }
 
-        if (!email) {
-            alert("يرجى كتابة البريد الإلكتروني");
-            return;
-        }
+            // تحقق بسيط من صحة الإيميل
+            if (!email.includes("@")) {
+                return alert("يرجى إدخال بريد إلكتروني صحيح");
+            }
 
-        btn.disabled = true;
-        btn.innerText = "جاري المعالجة...";
-        status.style.display = "none";
+            btn.disabled = true;
+            btn.innerText = "جاري الإرسال...";
 
-        // 1. تحديد الموقع للأمان (اختياري لكنه يزيد الأمان لديك)
-        const location = await getGPS();
-
-        try {
-            // 2. إرسال رابط إعادة التعيين الحقيقي عبر Firebase Auth
-            await sendPasswordResetEmail(auth, email);
-
-            // 3. تسجيل الطلب في Firestore للمدير (للمراقبة الأمنية)
-            const q = query(collection(db, "Users"), where("email", "==", email));
-            const snap = await getDocs(q);
-            
-            if (!snap.empty) {
-                const userDoc = snap.docs[0];
-                await addDoc(collection(db, "PasswordRequests"), {
-                    userId: userDoc.id,
-                    email: email,
-                    requestLocation: location,
-                    status: "email_sent",
+            try {
+                // حفظ الطلب في Firestore
+                await addDoc(collection(db, "ResetRequests"), {
+                    userEmail: email,
+                    userPhone: phone,
+                    status: "pending", // حالة الطلب (قيد الانتظار)
                     timestamp: serverTimestamp()
                 });
-            }
 
-            // 4. إظهار رسالة النجاح
-            status.innerHTML = "✅ تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني بنجاح. يرجى تفقد (Inbox) أو البريد العشوائي (Spam).";
-            status.style.display = "block";
-            status.style.color = "#34c759";
-            status.style.background = "#f2faf5";
-            btn.style.display = "none";
+                // إخفاء النموذج وإظهار رسالة النجاح
+                document.getElementById('formContainer').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
 
-        } catch (error) {
-            console.error(error);
-            btn.disabled = false;
-            btn.innerText = "إرسال الرابط 🚀";
-            
-            if (error.code === 'auth/user-not-found') {
-                alert("عذراً، هذا البريد غير مسجل لدينا.");
-            } else {
-                alert("حدث خطأ: تأكد من صحة البريد أو حاول لاحقاً.");
+            } catch (error) {
+                console.error("Error sending request:", error);
+                alert("حدث خطأ أثناء إرسال الطلب، يرجى المحاولة لاحقاً.");
+                btn.disabled = false;
+                btn.innerText = "إرسال طلب للمدير";
             }
-        }
-    };
-</script>
+        };
+    </script>
 </body>
 </html>
