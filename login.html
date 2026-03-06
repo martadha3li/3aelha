@@ -3,64 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تسجيل الدخول | منصة العائلة</title>
+    <title>منصة العائلة | تسجيل الدخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #007aff; --bg: #f2f2f7; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { background: white; width: 90%; max-width: 380px; padding: 30px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
-        .hidden { display: none; }
-        .logo-img { width: 70px; margin-bottom: 15px; border-radius: 18px; }
-        .form-input { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 14px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 15px; text-align: center; background: #f9f9fb; }
-        
-        /* الأزرار */
-        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-google { width: 100%; padding: 12px; background: white; color: #555; border: 1px solid #ddd; border-radius: 14px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-link { background: none; border: 1px solid var(--primary); color: var(--primary); }
-        
-        .divider { margin: 20px 0; display: flex; align-items: center; text-align: center; color: #ccc; font-size: 12px; }
-        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #eee; }
-        .divider:not(:empty)::before { margin-left: .5em; }
-        .divider:not(:empty)::after { margin-right: .5em; }
+        :root {
+            --primary: #007aff;
+            --primary-light: #e5f1ff;
+            --bg: #f2f2f7;
+            --card: #ffffff;
+            --text-main: #1c1c1e;
+            --text-sec: #8e8e93;
+            --error: #ff3b30;
+            --success: #34c759;
+        }
 
-        .link-text { color: var(--primary); cursor: pointer; font-weight: bold; font-size: 13px; text-decoration: none; }
-        #statusMsg { color: #ff3b30; font-size: 12px; margin-top: 10px; }
+        body {
+            font-family: 'Cairo', -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-card {
+            background: var(--card);
+            padding: 40px 30px;
+            border-radius: 35px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-area img {
+            width: 85px;
+            height: 85px;
+            border-radius: 22px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 15px rgba(0,122,255,0.15);
+        }
+
+        h2 { font-size: 24px; margin: 0 0 10px 0; font-weight: 700; }
+        p.subtitle { color: var(--text-sec); font-size: 14px; margin-bottom: 30px; }
+
+        .input-group { margin-bottom: 15px; text-align: right; }
+        .input-group label { display: block; margin-right: 10px; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: var(--text-sec); }
+        
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 1.5px solid #f2f2f7;
+            border-radius: 18px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+            background: #f9f9fb;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-google {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 1.5px solid #eee;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .btn-google:hover { background: #fafafa; }
+
+        .divider {
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            color: #ccc;
+            font-size: 12px;
+        }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #eee; }
+        .divider span { padding: 0 10px; }
+
+        .footer-links { margin-top: 25px; font-size: 13px; }
+        .link { color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
+        
+        .error-msg { color: var(--error); font-size: 12px; margin-top: 10px; display: none; }
+
+        /* الأنماط المخفية */
+        .hidden { display: none; }
+
+        /* أنيميشن بسيط */
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <img src="logo.png" class="logo-img">
-        <h2 id="stepTitle">تسجيل الدخول</h2>
-        
-        <div id="classicLogin">
-            <input type="text" id="email" class="form-input" placeholder="البريد الإلكتروني أو الجوال">
-            <input type="password" id="password" class="form-input" placeholder="كلمة المرور">
-            <div style="text-align: left; margin-bottom: 15px;">
-                <span class="link-text" onclick="handleForgotPassword()">نسيت كلمة المرور؟</span>
+    <div class="login-container">
+        <div class="login-card fade-in">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo">
             </div>
-            <button id="loginBtn" class="btn-main" onclick="handleLogin()">دخول</button>
-            
-            <div class="divider">أو</div>
-            
-            <button class="btn-google" onclick="handleGoogleSignIn()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18">
-                الدخول عبر جوجل
-            </button>
 
-            <p style="margin-top: 20px; font-size: 13px; color: #666;">
-                لا تتذكر كلمة المرور؟ <br>
-                <span class="link-text" onclick="toggleMode('magic')">أرسل لي رابط دخول مباشر</span>
-            </p>
+            <div id="classicSection">
+                <h2>أهلاً بك</h2>
+                <p class="subtitle">سجل دخولك لمتابعة أخبار العائلة</p>
+
+                <div class="input-group">
+                    <input type="text" id="email" class="form-input" placeholder="البريد الإلكتروني أو الجوال">
+                </div>
+                <div class="input-group" style="margin-bottom: 5px;">
+                    <input type="password" id="password" class="form-input" placeholder="كلمة المرور">
+                </div>
+                
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <a href="forgot.html" class="link" style="font-size: 12px;">نسيت كلمة المرور؟</a>
+                </div>
+
+                <button class="btn-primary" onclick="handleLogin()">دخول</button>
+
+                <div class="divider"><span>أو عبر</span></div>
+
+                <button class="btn-google" onclick="handleGoogleSignIn()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18">
+                    متابعة باستخدام Google
+                </button>
+
+                <div class="footer-links">
+                    <span>ليس لديك حساب؟</span> <a href="register.html" class="link">انضم إلينا</a>
+                    <br><br>
+                    <span class="link" onclick="toggleView('magic')">دخول سريع عبر رابط الإيميل</span>
+                </div>
+            </div>
+
+            <div id="magicSection" class="hidden">
+                <h2>دخول سريع</h2>
+                <p class="subtitle">سنرسل رابطاً لبريدك لتدخل فوراً دون كلمة مرور</p>
+                
+                <div class="input-group">
+                    <input type="email" id="magicEmail" class="form-input" placeholder="name@example.com">
+                </div>
+
+                <button class="btn-primary" onclick="handleMagicLink()">إرسال رابط التفعيل</button>
+                
+                <div class="footer-links">
+                    <span class="link" onclick="toggleView('classic')">العودة للطريقة التقليدية</span>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="error-msg"></div>
         </div>
-
-        <div id="magicLogin" class="hidden">
-            <p style="font-size: 13px; color: #666;">أدخل بريدك لإرسال رابط الدخول السريع</p>
-            <input type="email" id="magicEmail" class="form-input" placeholder="name@example.com">
-            <button id="magicBtn" class="btn-main btn-link" onclick="handleMagicLink()">إرسال الرابط</button>
-            <p><span class="link-text" onclick="toggleMode('classic')">العودة للطريقة التقليدية</span></p>
-        </div>
-
-        <div id="statusMsg"></div>
     </div>
 
     <script type="module">
@@ -69,80 +199,70 @@
             signInWithEmailAndPassword, 
             GoogleAuthProvider, 
             signInWithPopup, 
-            sendPasswordResetEmail,
-            sendSignInLinkToEmail
+            sendSignInLinkToEmail 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const msg = document.getElementById('statusMsg');
+        const errorDiv = document.getElementById('errorMessage');
 
-        // --- 1. الدخول التقليدي ---
+        function showError(text) {
+            errorDiv.innerText = text;
+            errorDiv.style.display = 'block';
+        }
+
+        // 1. الدخول التقليدي
         window.handleLogin = async () => {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            if(!email || !password) return alert("يرجى إكمال البيانات");
+            
+            if(!email || !password) return showError("يرجى ملء جميع الحقول");
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 window.location.href = "news.html";
             } catch (error) {
-                msg.innerText = "خطأ: البريد أو كلمة المرور غير صحيحة";
+                showError("تأكد من صحة البيانات المدخلة");
             }
         };
 
-        // --- 2. الدخول عبر جوجل ---
+        // 2. الدخول عبر جوجل
         window.handleGoogleSignIn = async () => {
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
                 window.location.href = "news.html";
             } catch (error) {
-                msg.innerText = "فشل تسجيل الدخول عبر جوجل";
+                showError("فشل الاتصال بحساب جوجل");
             }
         };
 
-        // --- 3. نسيان كلمة المرور ---
-        window.handleForgotPassword = async () => {
-            const email = document.getElementById('email').value.trim();
-            if(!email) return alert("يرجى كتابة البريد الإلكتروني أولاً في الخانة المخصصة");
-            
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك");
-            } catch (error) {
-                msg.innerText = "تأكد من صحة البريد الإلكتروني";
-            }
-        };
-
-        // --- 4. رابط الدخول المباشر (Passwordless) ---
+        // 3. الرابط السحري
         window.handleMagicLink = async () => {
             const email = document.getElementById('magicEmail').value.trim();
-            if(!email) return alert("يرجى إدخال البريد");
+            if(!email) return showError("يرجى إدخال البريد الإلكتروني");
 
             const actionCodeSettings = {
-                url: window.location.origin + '/news.html', // عدل المسار حسب موقعك
+                url: window.location.origin + '/news.html',
                 handleCodeInApp: true,
             };
 
             try {
                 await sendSignInLinkToEmail(auth, email, actionCodeSettings);
                 window.localStorage.setItem('emailForSignIn', email);
-                alert("تم إرسال رابط الدخول! تفقد بريدك الآن");
+                alert("تم إرسال الرابط بنجاح، تفقد بريدك الوارد");
             } catch (error) {
-                console.error(error);
-                msg.innerText = "خطأ في إرسال الرابط: " + error.code;
+                showError("حدث خطأ: " + error.code);
             }
         };
 
-        // التبديل بين الواجهات
-        window.toggleMode = (mode) => {
-            if(mode === 'magic') {
-                document.getElementById('classicLogin').classList.add('hidden');
-                document.getElementById('magicLogin').classList.remove('hidden');
-                document.getElementById('stepTitle').innerText = "دخول سريع";
+        // التنقل بين الواجهات
+        window.toggleView = (view) => {
+            errorDiv.style.display = 'none';
+            if(view === 'magic') {
+                document.getElementById('classicSection').classList.add('hidden');
+                document.getElementById('magicSection').classList.remove('hidden');
             } else {
-                document.getElementById('magicLogin').classList.add('hidden');
-                document.getElementById('classicLogin').classList.remove('hidden');
-                document.getElementById('stepTitle').innerText = "تسجيل الدخول";
+                document.getElementById('magicSection').classList.add('hidden');
+                document.getElementById('classicSection').classList.remove('hidden');
             }
         };
     </script>
