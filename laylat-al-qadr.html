@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أعمال ليالي القدر | منصة العائلة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo&family=Amiri&family=Tajawal&family=Almarai&family=Changa&family=Lalezar&family=Reem+Kufi&family=Scheherazade+New&family=Lateef&family=Harmattan&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --dark-blue: #1a2a6c;
+            --bg-night: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-night);
+            color: var(--text-color);
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* شريط التحكم العلوي */
+        .settings-bar {
+            position: sticky;
+            top: 0;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 15px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--gold);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        select, input[type="range"] {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--gold);
+            background: #0f172a;
+            color: white;
+            font-family: 'Cairo';
+        }
+
+        /* التبويبات الرئيسية (الليالي) */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--gold);
+            color: var(--bg-night);
+        }
+
+        /* محتوى الأدعية */
+        .content-area {
+            max-width: 800px;
+            margin: auto;
+            padding: 15px;
+            line-height: 1.8;
+            text-align: justify;
+            text-justify: inter-word; /* لضبط الحواف بدقة */
+        }
+
+        .night-section { display: none; }
+        .night-section.active { display: block; animation: fadeIn 0.5s; }
+
+        .dua-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-right: 5px solid var(--gold);
+        }
+
+        .dua-title {
+            color: var(--gold);
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #475569;
+            padding-bottom: 10px;
+            display: block;
+        }
+
+        .instruction {
+            color: #94a3b8;
+            font-size: 0.9em;
+            font-style: italic;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* تنسيق النصوص للأدعية */
+        .dua-text {
+            word-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="settings-bar">
+        <select id="fontFamily" onchange="updateSettings()">
+            <option value="'Cairo'">خط القاهرة (عصري)</option>
+            <option value="'Amiri'">خط أميري (تراثي)</option>
+            <option value="'Scheherazade New'">خط شهرزاد (مصحفي)</option>
+            <option value="'Tajawal'">خط تجول</option>
+            <option value="'Almarai'">خط المراعي</option>
+            <option value="'Lateef'">خط لطيف (نسخ)</option>
+            <option value="'Reem Kufi'">خط ريم كوفي</option>
+            <option value="'Changa'">خط تشانغا</option>
+            <option value="'Harmattan'">خط هرمتان</option>
+            <option value="'Lalezar'">خط لاليزار</option>
+        </select>
+        
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span>حجم الخط:</span>
+            <input type="range" id="fontSize" min="16" max="40" value="22" oninput="updateSettings()">
+        </div>
+    </div>
+
+    <h1 style="text-align: center; color: var(--gold); margin-top: 20px;">🌙 أعمال ليالي القدر</h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showNight(19)">ليلة ١٩</button>
+        <button class="tab-btn" onclick="showNight(21)">ليلة ٢١</button>
+        <button class="tab-btn" onclick="showNight(23)">ليلة ٢٣</button>
+    </div>
+
+    <div class="content-area" id="duaContent">
+        
+        <div id="night19" class="night-section active">
+            <div class="dua-card">
+                <span class="dua-title">الأعمال العامة لليالي القدر</span>
+                <span class="instruction">تؤدى في كل ليلة من الليالي الثلاث:</span>
+                <div class="dua-text">
+                    ١. الغسل عند غروب الشمس.<br>
+                    ٢. صلاة ركعتين يقرأ في كل ركعة الحمد والتوحيد (٧ مرات)...<br>
+                    ٣. نشر المصحف الشريف والدعاء بمأثوره...
+                </div>
+            </div>
+            <div class="dua-card">
+                <span class="dua-title">دعاء ليلة ١٩ الخاصة</span>
+                <div class="dua-text">
+                    يا ذا الذي كان قبل كل شيء، ثم خلق كل شيء، ثم يبقى ويفنى كل شيء... (اكتب نص الدعاء كاملاً هنا)
+                </div>
+            </div>
+        </div>
+
+        <div id="night21" class="night-section">
+            <div class="dua-card">
+                <span class="dua-title">فضل ليلة ٢١</span>
+                <span class="instruction">وهي ليلة استشهاد أمير المؤمنين (ع):</span>
+                <div class="dua-text">
+                    تزيد هذه الليلة في التأكيد على زيارة أمير المؤمنين (ع) ودعاء الجوشن الكبير... (اكتب التفاصيل هنا)
+                </div>
+            </div>
+        </div>
+
+        <div id="night23" class="night-section">
+            <div class="dua-card">
+                <span class="dua-title">أعمال ليلة ٢٣ (الليلة الأرجح)</span>
+                <span class="instruction">أهم ليلة من ليالي القدر:</span>
+                <div class="dua-text">
+                    ١. قراءة سورتي العنكبوت والروم.<br>
+                    ٢. قراءة سورة القدر ١٠٠٠ مرة.<br>
+                    ٣. دعاء الفرج (اللهم كن لوليك الحجة بن الحسن)...
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // وظيفة التنقل بين الليالي
+        function showNight(night) {
+            document.querySelectorAll('.night-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById('night' + night).classList.add('active');
+            event.target.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // وظيفة تحديث الخط والحجم
+        function updateSettings() {
+            const font = document.getElementById('fontFamily').value;
+            const size = document.getElementById('fontSize').value;
+            const content = document.getElementById('duaContent');
+
+            content.style.fontFamily = font;
+            content.style.fontSize = size + 'px';
+            
+            // تخزين الإعدادات في المتصفح لكي لا تضيع عند التحديث
+            localStorage.setItem('duaFont', font);
+            localStorage.setItem('duaSize', size);
+        }
+
+        // تحميل الإعدادات المحفوظة عند فتح الصفحة
+        window.onload = () => {
+            const savedFont = localStorage.getItem('duaFont');
+            const savedSize = localStorage.getItem('duaSize');
+            if(savedFont) document.getElementById('fontFamily').value = savedFont;
+            if(savedSize) document.getElementById('fontSize').value = savedSize;
+            updateSettings();
+        };
+    </script>
+
+</body>
+</html>
