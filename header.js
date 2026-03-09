@@ -2,30 +2,33 @@ import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 async function createDynamicHeader() {
+    // منع التكرار إذا تم استدعاء الدالة مرتين
+    if (document.getElementById('headerCapsule')) return;
+
     const headerHTML = `
     <style>
         .header-wrapper {
             position: fixed;
-            top: 12px;
+            top: 15px;
             left: 0;
             right: 0;
             margin: auto;
             width: 92%;
             max-width: 420px;
-            z-index: 20000; /* قيمة عالية لضمان الظهور فوق كل شيء */
+            z-index: 100000; /* قيمة فلكية لضمان الظهور فوق كل شيء */
             direction: rtl;
-            pointer-events: none; /* للسماح باللمس خلف الحاوية الشفافة */
+            pointer-events: none;
         }
 
         .header-capsule {
-            pointer-events: auto; /* إعادة تفعيل اللمس للكبسولة فقط */
+            pointer-events: auto;
             background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
             border-radius: 24px;
-            padding: 6px 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0,0,0,0.05);
-            border: 0.5px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            border: 0.5px solid rgba(255, 255, 255, 0.4);
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -39,87 +42,72 @@ async function createDynamicHeader() {
         .header-logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            font-size: 14px;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 16px;
             color: #1c1c1e;
         }
+        
         .header-logo img { 
-            height: 32px; 
-            width: 32px; 
-            border-radius: 9px; 
+            height: 34px; 
+            width: 34px; 
+            border-radius: 10px; 
             object-fit: cover;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
         .settings-trigger {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(0, 122, 255, 0.1);
             color: #007AFF;
-            border-radius: 50%;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
-            transition: 0.3s;
+            font-size: 18px;
+            transition: all 0.2s ease;
         }
 
-        /* قسم الشبكة المطور */
+        /* حاوية الأيقونات المنسدلة */
         .header-dropdown {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 أعمدة لتوزيع أفضل */
-            gap: 8px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
             max-height: 0;
             opacity: 0;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 0;
         }
 
         .header-capsule.open {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.96);
         }
 
         .header-capsule.open .header-dropdown {
             max-height: 120px;
             opacity: 1;
-            padding: 15px 5px 10px 5px;
-            margin-top: 8px;
+            padding: 15px 0 5px 0;
+            margin-top: 10px;
             border-top: 0.5px solid rgba(0,0,0,0.05);
         }
 
-        /* تنسيق أزرار التنقل */
         .head-nav-item {
             text-decoration: none;
             color: #3a3a3c;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             gap: 6px;
-            padding: 8px 0;
-            border-radius: 14px;
+            padding: 10px 0;
+            border-radius: 15px;
             transition: background 0.2s;
         }
-        .head-nav-item:active { background: rgba(0,0,0,0.05); }
-        
-        .head-nav-item i { 
-            font-size: 20px; 
-            height: 24px;
-            display: flex;
-            align-items: center;
-            font-style: normal;
-        }
-        
-        .head-nav-item span { 
-            font-size: 10px; 
-            font-weight: 600; 
-            white-space: nowrap;
-        }
 
+        .head-nav-item:active { background: rgba(0,0,0,0.05); }
+        .head-nav-item i { font-size: 22px; font-style: normal; }
+        .head-nav-item span { font-size: 10px; font-weight: 700; }
         .head-nav-item.admin i { color: #007AFF; }
         .head-nav-item.logout { color: #FF3B30; }
 
@@ -129,7 +117,7 @@ async function createDynamicHeader() {
         <div class="header-capsule" id="headerCapsule">
             <div class="header-top-row">
                 <div class="header-logo">
-                    <img src="logo.png" onerror="this.src='https://via.placeholder.com/32'">
+                    <img src="logo.png" onerror="this.src='https://via.placeholder.com/34'">
                     <span>عائلة 2026</span>
                 </div>
                 <div class="settings-trigger" id="headTrigger">⚙️</div>
@@ -137,65 +125,66 @@ async function createDynamicHeader() {
 
             <div class="header-dropdown">
                 <div id="adminToolsHead" style="display: contents;">
-                    <a href="admin_config.html" class="head-nav-item admin"><i>⚙️</i><span>الإعدادات</span></a>
+                    <a href="admin_config.html" class="head-nav-item admin"><i>⚙️</i><span>إعدادات</span></a>
                     <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
                     <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>اللوحة</span></a>
                 </div>
-                
                 <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
             </div>
         </div>
     </div>
     `;
 
+    // حقن الكود في بداية الـ body
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
     const capsule = document.getElementById('headerCapsule');
     const trigger = document.getElementById('headTrigger');
     const logout = document.getElementById('logoutHead');
 
-    // وظيفة الفتح والإغلاق بتأثير مرن
-    trigger.onclick = (e) => {
+    // تفعيل وظيفة الفتح والإغلاق
+    trigger.addEventListener('click', (e) => {
         e.stopPropagation();
         const isOpen = capsule.classList.toggle('open');
         trigger.innerHTML = isOpen ? "✕" : "⚙️";
-        trigger.style.background = isOpen ? "rgba(255, 59, 48, 0.1)" : "rgba(0, 122, 255, 0.1)";
         trigger.style.color = isOpen ? "#FF3B30" : "#007AFF";
-    };
+    });
 
-    // إغلاق عند الضغط خارج الكبسولة
+    // إغلاق عند الضغط بالخارج
     document.addEventListener('click', (e) => {
         if (!capsule.contains(e.target) && capsule.classList.contains('open')) {
             capsule.classList.remove('open');
             trigger.innerHTML = "⚙️";
-            trigger.style.background = "rgba(0, 122, 255, 0.1)";
             trigger.style.color = "#007AFF";
         }
     });
 
-    // التحكم بالصلاحيات
+    // فحص الصلاحيات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            try {
-                const userSnap = await getDoc(doc(db, "Users", user.uid));
-                const data = userSnap.data();
-                const role = (data?.role || "").toLowerCase();
-                const isAdmin = role.includes('admin') || role.includes('مدير');
-                document.getElementById('adminToolsHead').style.display = isAdmin ? "contents" : "none";
-                
-                // تحديث عدد الأعمدة بناءً على الرتبة
-                const dropdown = document.querySelector('.header-dropdown');
-                dropdown.style.gridTemplateColumns = isAdmin ? "repeat(4, 1fr)" : "repeat(1, 1fr)";
-            } catch (err) { console.error("Header Auth Error:", err); }
+            const userSnap = await getDoc(doc(db, "Users", user.uid));
+            const role = (userSnap.data()?.role || "").toLowerCase();
+            const isAdmin = role.includes('admin') || role.includes('مدير');
+            const adminTools = document.getElementById('adminToolsHead');
+            const dropdown = document.querySelector('.header-dropdown');
+            
+            if (adminTools) adminTools.style.display = isAdmin ? "contents" : "none";
+            if (dropdown) dropdown.style.gridTemplateColumns = isAdmin ? "repeat(4, 1fr)" : "repeat(1, 1fr)";
         }
     });
 
-    logout.onclick = (e) => {
+    // تسجيل الخروج
+    logout.addEventListener('click', (e) => {
         e.preventDefault();
         if(confirm("هل تريد تسجيل الخروج؟")) {
             auth.signOut().then(() => window.location.href = "index.html");
         }
-    };
+    });
 }
 
-createDynamicHeader();
+// التأكد من تحميل الصفحة بالكامل قبل تشغيل الدالة
+if (document.readyState === 'complete') {
+    createDynamicHeader();
+} else {
+    window.addEventListener('load', createDynamicHeader);
+}
