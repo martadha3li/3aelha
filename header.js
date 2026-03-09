@@ -2,127 +2,110 @@ import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 async function createDynamicHeader() {
-    if (document.getElementById('headerCapsule')) return;
+    // التأكد من عدم تكرار العنصر
+    if (document.getElementById('headerWrapper')) return;
 
     const headerHTML = `
     <style>
-        .header-wrapper {
-            position: fixed;
-            top: 20px;
-            left: 20px; /* تم وضعه في الزاوية ليبدأ كدائرة */
-            z-index: 100000;
-            direction: rtl;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* الحاوية الخارجية - فوق كل شيء حرفياً */
+        #headerWrapper {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important; /* وضعناها في اليمين لتكون واضحة */
+            z-index: 2147483647 !important; /* أعلى قيمة z-index ممكنة في المتصفحات */
+            direction: rtl !important;
         }
 
-        /* الكبسولة تبدأ كدائرة صغيرة */
+        /* الأيقونة الدائرية (الزر العائم) */
         .header-capsule {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 50px; /* شكل دائري */
-            width: 50px;  /* عرض الدائرة */
-            height: 50px; /* طول الدائرة */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            border: 0.5px solid rgba(255,255,255,0.4);
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden;
-            cursor: pointer;
+            background: #ffffff !important;
+            width: 55px !important;
+            height: 55px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+            border: 2px solid #007AFF !important;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            overflow: hidden !important;
+            cursor: pointer !important;
         }
 
-        /* عندما تنفتح الكبسولة تتمدد */
+        /* عند الفتح تتمدد لتصبح كبسولة */
         .header-capsule.open {
-            width: 320px; /* تتمدد عرضياً */
-            height: auto;
-            border-radius: 25px;
-            padding: 10px 15px;
-            cursor: default;
+            width: 300px !important;
+            height: auto !important;
+            border-radius: 20px !important;
+            padding: 15px !important;
+            flex-direction: column !important;
+            cursor: default !important;
         }
 
+        .circle-img {
+            width: 45px !important;
+            height: 45px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+        }
+
+        .header-capsule.open .circle-img { display: none !important; }
+
+        /* المحتوى الداخلي */
         .header-content {
-            display: none; /* مخفي في وضع الدائرة */
-            width: 100%;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            display: none !important;
+            width: 100% !important;
+            text-align: center !important;
         }
 
-        .header-capsule.open .header-content {
-            display: block;
-            opacity: 1;
+        .header-capsule.open .header-content { display: block !important; }
+
+        .header-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 12px !important;
         }
 
-        /* الأيقونة التي تظهر في وضع الدائرة (الشعار) */
-        .circle-trigger-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
+        .close-x { font-size: 22px !important; cursor: pointer !important; color: #999 !important; }
+
+        .grid-menu {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 10px !important;
+            border-top: 1px solid #eee !important;
+            padding-top: 10px !important;
         }
 
-        .header-capsule.open .circle-trigger-img {
-            display: none; /* تختفي عند الفتح لتظهر المحتويات */
+        .menu-btn {
+            text-decoration: none !important;
+            color: #333 !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 5px !important;
         }
 
-        /* تنسيق الصف العلوي داخل الكبسولة المفتوحة */
-        .header-top-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .header-logo-inner { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; }
-        .header-logo-inner img { width: 30px; height: 30px; border-radius: 8px; }
-
-        .close-btn { font-size: 20px; color: #8e8e93; cursor: pointer; padding: 5px; }
-
-        /* شبكة الأيقونات */
-        .header-dropdown {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            border-top: 0.5px solid #eee;
-            padding-top: 10px;
-        }
-
-        .head-nav-item {
-            text-decoration: none;
-            color: #3a3a3c;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        .head-nav-item i { font-size: 20px; font-style: normal; }
-        .head-nav-item span { font-size: 9px; font-weight: bold; }
-        .head-nav-item.logout { color: #FF3B30; }
-        .head-nav-item.admin { color: #007AFF; }
+        .menu-btn i { font-style: normal !important; font-size: 20px !important; }
+        .menu-btn.logout { color: #FF3B30 !important; }
     </style>
 
-    <div class="header-wrapper" id="headerWrapper">
+    <div id="headerWrapper">
         <div class="header-capsule" id="headerCapsule">
-            <img src="logo.png" class="circle-trigger-img" id="circleTrigger" onerror="this.src='https://via.placeholder.com/40'">
+            <img src="logo.png" class="circle-img" id="mainTrigger" onerror="this.src='https://via.placeholder.com/45/007AFF/FFFFFF?text=F'">
 
             <div class="header-content">
-                <div class="header-top-row">
-                    <div class="header-logo-inner">
-                        <img src="logo.png">
-                        <span>منصة العائلة</span>
-                    </div>
-                    <div class="close-btn" id="closeHeader">✕</div>
+                <div class="header-top">
+                    <b style="font-size:14px;">إعدادات المنصة</b>
+                    <span class="close-x" id="closeHeader">✕</span>
                 </div>
-                
-                <div class="header-dropdown">
-                    <div id="adminToolsHead" style="display: contents;">
-                        <a href="admin_config.html" class="head-nav-item admin"><i>⚙️</i><span>إعدادات</span></a>
-                        <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
-                        <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>اللوحة</span></a>
-                    </div>
-                    <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
+                <div class="grid-menu" id="adminGrid">
+                    <a href="admin_config.html" class="menu-btn"><i>⚙️</i><span>أزرار</span></a>
+                    <a href="add_news.html" class="menu-btn"><i>⊕</i><span>إضافة</span></a>
+                    <a href="admin.html" class="menu-btn"><i>🛠️</i><span>لوحة</span></a>
+                    <a href="#" class="menu-btn logout" id="logoutBtn"><i>🚪</i><span>خروج</span></a>
                 </div>
             </div>
         </div>
@@ -132,41 +115,35 @@ async function createDynamicHeader() {
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
     const capsule = document.getElementById('headerCapsule');
-    const circleTrigger = document.getElementById('circleTrigger');
+    const trigger = document.getElementById('mainTrigger');
     const closeBtn = document.getElementById('closeHeader');
-    const logout = document.getElementById('logoutHead');
 
-    // فتح الكبسولة عند الضغط على الدائرة
-    circleTrigger.onclick = () => {
-        capsule.classList.add('open');
-    };
-
-    // إغلاق الكبسولة عند الضغط على X
+    trigger.onclick = () => capsule.classList.add('open');
     closeBtn.onclick = (e) => {
         e.stopPropagation();
         capsule.classList.remove('open');
     };
 
-    // التحقق من الصلاحيات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
-            const userSnap = await getDoc(doc(db, "Users", user.uid));
-            const isAdmin = (userSnap.data()?.role || "").toLowerCase().match(/admin|مدير/);
-            document.getElementById('adminToolsHead').style.display = isAdmin ? "contents" : "none";
-            
-            // تعديل العرض بناءً على الصلاحية
+            const snap = await getDoc(doc(db, "Users", user.uid));
+            const role = (snap.data()?.role || "").toLowerCase();
+            const isAdmin = role.includes('admin') || role.includes('مدير');
+            // إذا لم يكن مديراً، يظهر فقط زر الخروج
             if (!isAdmin) {
-                capsule.style.setProperty('--open-width', '150px');
-                document.querySelector('.header-dropdown').style.gridTemplateColumns = "repeat(1, 1fr)";
+                const btns = document.querySelectorAll('.grid-menu a:not(.logout)');
+                btns.forEach(b => b.remove());
+                document.getElementById('adminGrid').style.gridTemplateColumns = "1fr";
             }
         }
     });
 
-    logout.onclick = () => {
-        if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload());
+    document.getElementById('logoutBtn').onclick = () => {
+        if(confirm("تسجيل خروج؟")) auth.signOut().then(()=> location.reload());
     };
 }
 
-// التشغيل
-if (document.readyState === 'complete') { createDynamicHeader(); } 
-else { window.addEventListener('load', createDynamicHeader); }
+// تشغيل فوري وبأكثر من طريقة لضمان الظهور
+createDynamicHeader();
+window.onload = createDynamicHeader;
+document.addEventListener('DOMContentLoaded', createDynamicHeader);
