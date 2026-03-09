@@ -2,89 +2,147 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الملف الشخصي | نقاطي</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الملف الشخصي | منصة العائلة</title>
     <style>
-        :root { --primary: #5856d6; --bg: #f2f2f7; --success: #34c759; }
-        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; }
-        .container { padding: 15px; max-width: 600px; margin: auto; }
-        .stats-card { background: var(--primary); color: white; border-radius: 25px; padding: 25px; text-align: center; box-shadow: 0 10px 20px rgba(88, 86, 214, 0.2); }
-        .history-card { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
-        .history-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; --card-bg: #FFFFFF; }
+        body { background-color: var(--ios-bg); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; direction: rtl; }
+        .profile-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 500px; margin: auto; }
+        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #1c1c1e; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        .input-group { margin-bottom: 15px; text-align: right; }
+        .input-group label { display: block; font-size: 13px; color: #8e8e93; margin-bottom: 5px; margin-right: 5px; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; box-sizing: border-box; outline: none; }
+        .input-group input:disabled { background: #f9f9f9; color: #999; }
+
+        .btn-save { width: 100%; padding: 15px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .phone-change-box { background: #fff9e6; border: 1px solid #ffeeba; padding: 15px; border-radius: 12px; margin-top: 20px; }
+        .back-btn { display: inline-block; margin-bottom: 15px; color: var(--ios-blue); text-decoration: none; font-weight: bold; }
+        
+        /* Modal Style */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <button onclick="history.back()" style="border:none; background:none; font-size:22px;">➡️</button>
-    <b>ملفي الشخصي</b>
-    <div style="width:24px;"></div>
-</div>
+    <a href="news.html" class="back-btn">← العودة للتايم لاين</a>
 
-<div class="container">
-    <div class="stats-card">
-        <small>إجمالي النقاط المجموعة 💎</small>
-        <h1 id="totalPts" style="font-size: 48px; margin: 10px 0;">0</h1>
-        <div id="userNameDisp" style="font-weight: bold; opacity: 0.9;">--</div>
+    <div class="profile-card">
+        <div class="section-title">تعديل الملف الشخصي</div>
+        
+        <div class="input-group">
+            <label>الاسم الكامل</label>
+            <input type="text" id="pFullName">
+        </div>
+
+        <div class="input-group">
+            <label>تاريخ الميلاد</label>
+            <input type="date" id="pBirthDate">
+        </div>
+
+        <div class="input-group">
+            <label>المدينة (المسجلة تلقائياً)</label>
+            <input type="text" id="pCity" disabled>
+        </div>
+
+        <div class="input-group">
+            <label>رقم الجوال الحالي</label>
+            <input type="text" id="pPhone" disabled>
+            <button onclick="openPhoneModal()" style="background: none; border: none; color: var(--ios-blue); font-size: 12px; padding: 5px; cursor: pointer;">طلب تغيير الرقم؟</button>
+        </div>
+
+        <button class="btn-save" id="saveBtn" onclick="saveProfile()">حفظ التعديلات</button>
     </div>
 
-    <div class="history-card">
-        <h3 style="margin-top:0;">🏆 سجل البطولات</h3>
-        <div id="historyList">جاري تحميل السجل...</div>
+    <div id="phoneModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">طلب تغيير الجوال</h3>
+            <div class="input-group">
+                <label>الرقم الجديد</label>
+                <input type="tel" id="newPhoneInput" placeholder="05xxxxxxxx">
+            </div>
+            <div class="input-group">
+                <label>السبب</label>
+                <input type="text" id="changeReason" placeholder="لماذا تريد التغيير؟">
+            </div>
+            <button class="btn-save" onclick="sendPhoneRequest()">إرسال الطلب للمدير</button>
+            <button onclick="closePhoneModal()" style="width:100%; background:none; border:none; margin-top:10px; color:#666;">إلغاء</button>
+        </div>
     </div>
-</div>
 
-<script type="module">
-    import { auth, db } from './config.js';
-    import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <script type="module">
+        import { auth, db } from './config.js';
+        import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            loadUserData(user.uid);
-        } else location.href = "login.html";
-    });
+        let userUID;
 
-    async function loadUserData(uid) {
-        // جلب الاسم من مجموعة Users (اختياري حسب كودك)
-        // loadMyName(uid);
-
-        // جلب الإجابات والنقاط
-        const q = query(collection(db, "Answers"), where("userId", "==", uid));
-        onSnapshot(q, snap => {
-            let total = 0;
-            let comps = {};
-            
-            snap.forEach(d => {
-                const a = d.data();
-                total += (a.pointsAwarded || 0);
-                
-                // تجميع البيانات لكل مسابقة
-                if(!comps[a.compTitle]) comps[a.compTitle] = { pts: 0, date: a.timestamp?.toDate().toLocaleDateString('ar-SA') || '--' };
-                comps[a.compTitle].pts += (a.pointsAwarded || 0);
-            });
-
-            document.getElementById('totalPts').innerText = total;
-            
-            const list = document.getElementById('historyList');
-            list.innerHTML = "";
-            for (const [title, data] of Object.entries(comps)) {
-                list.innerHTML += `
-                    <div class="history-item">
-                        <div>
-                            <b>${title}</b><br>
-                            <small style="color:gray;">📅 ${data.date}</small>
-                        </div>
-                        <div style="text-align:left;">
-                            <span style="color:var(--success); font-weight:bold;">+${data.pts} نقطة</span><br>
-                            <small style="color:var(--primary); font-weight:bold;">${data.pts > 0 ? '🏆 فائز' : '⏳ مشارك'}</small>
-                        </div>
-                    </div>`;
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                userUID = user.uid;
+                loadUserData();
+            } else {
+                window.location.href = "login.html";
             }
-            if(snap.empty) list.innerHTML = "لم تشارك في أي مسابقة حتى الآن.";
         });
-    }
-</script>
+
+        async function loadUserData() {
+            const snap = await getDoc(doc(db, "Users", userUID));
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('pFullName').value = data.fullName || "";
+                document.getElementById('pBirthDate').value = data.birthDate || "";
+                document.getElementById('pPhone').value = data.phone || "غير مسجل";
+                // عرض المدينة التي تم التقاطها بواسطة GPS أثناء التسجيل
+                document.getElementById('pCity').value = data.city || data.locationName || "غير محددة";
+            }
+        }
+
+        window.saveProfile = async () => {
+            const btn = document.getElementById('saveBtn');
+            btn.innerText = "جاري الحفظ...";
+            btn.disabled = true;
+
+            try {
+                await updateDoc(doc(db, "Users", userUID), {
+                    fullName: document.getElementById('pFullName').value,
+                    birthDate: document.getElementById('pBirthDate').value
+                });
+                alert("تم تحديث البيانات بنجاح ✅");
+            } catch (e) {
+                alert("خطأ في الحفظ");
+            } finally {
+                btn.innerText = "حفظ التعديلات";
+                btn.disabled = false;
+            }
+        };
+
+        window.openPhoneModal = () => document.getElementById('phoneModal').style.display = 'flex';
+        window.closePhoneModal = () => document.getElementById('phoneModal').style.display = 'none';
+
+        window.sendPhoneRequest = async () => {
+            const newPhone = document.getElementById('newPhoneInput').value;
+            const reason = document.getElementById('changeReason').value;
+
+            if(!newPhone || !reason) return alert("يرجى ملء كافة الحقول");
+
+            try {
+                await addDoc(collection(db, "AdminRequests"), {
+                    userId: userUID,
+                    userName: document.getElementById('pFullName').value,
+                    type: "تغيير رقم جوال",
+                    oldPhone: document.getElementById('pPhone').value,
+                    newPhone: newPhone,
+                    reason: reason,
+                    status: "pending",
+                    timestamp: serverTimestamp()
+                });
+                alert("تم إرسال طلبك للمدير للمراجعة ⏳");
+                closePhoneModal();
+            } catch (e) {
+                alert("حدث خطأ في إرسال الطلب");
+            }
+        };
+    </script>
 </body>
 </html>
