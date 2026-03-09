@@ -14,8 +14,28 @@
 
         body { 
             background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 80px; padding-bottom: 100px; direction: rtl;
+            margin: 0; padding-top: 20px; padding-bottom: 100px; direction: rtl;
         }
+
+        /* كود تعريف المستخدم العلوي */
+        .user-header-profile {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #eee;
+        }
+        .user-avatar-circle {
+            width: 55px; height: 55px; background: var(--ios-blue);
+            color: white; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 22px; font-weight: bold;
+        }
+        .user-info-text b { display: block; font-size: 16px; color: var(--text-main); }
+        .user-info-text span { font-size: 13px; color: var(--text-sec); }
 
         /* تنسيقات البطاقات والأخبار */
         #pinnedArea { padding: 0 15px; margin-bottom: 10px; }
@@ -30,12 +50,10 @@
         .post-meta { display: flex; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--text-sec); }
         .meta-item { background: #f5f5f7; padding: 3px 8px; border-radius: 6px; }
 
-        /* المودال (نافذة الخبر) */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 25px 25px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* التعليقات */
         .comments-box { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         .comment { background: #f2f2f7; padding: 10px; border-radius: 12px; margin-bottom: 8px; font-size: 13px; }
         .comment b { color: var(--ios-blue); display: block; margin-bottom: 2px; }
@@ -43,13 +61,10 @@
         .input-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
         .send-btn { background: var(--ios-blue); color: white; border: none; padding: 0 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
-        /* خيارات المدير */
         .options-btn { position: absolute; left: 0; top: 0; color: #ccc; font-size: 20px; padding: 5px; z-index: 10; }
         .dropdown { position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; overflow: hidden; }
         .dropdown button { padding: 10px 15px; border: none; background: none; text-align: right; font-size: 13px; border-bottom: 1px solid #f2f2f2; cursor: pointer; width: 100%; }
-        .dropdown button:hover { background: #f9f9f9; }
-
-        /* نافذة طلب الاسم لمرة واحدة */
+        
         #nameOverlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
             z-index: 9999; display: none; align-items: center; justify-content: center;
@@ -62,6 +77,14 @@
     </style>
 </head>
 <body>
+
+    <div id="userTopProfile" class="user-header-profile" style="display:none;">
+        <div class="user-avatar-circle" id="userAvatar">؟</div>
+        <div class="user-info-text">
+            <b id="displayFullName">جاري التحميل...</b>
+            <span id="displayAge">الحساب...</span>
+        </div>
+    </div>
 
     <script type="module" src="header.js"></script>
     <script type="module" src="navbar.js"></script>
@@ -100,16 +123,17 @@
                 if (userSnap.exists()) {
                     const data = userSnap.data();
                     if (data.fullName) {
-                        // المستخدم لديه اسم، نقوم بتحميل الصفحة بشكل طبيعي
                         userName = data.fullName;
                         isAdmin = (data.role || "").toLowerCase().includes('admin') || (data.role || "").includes('مدير');
+                        
+                        // تحديث بيانات الملف الشخصي في الأعلى
+                        updateTopProfile(data);
+                        
                         loadPosts();
                     } else {
-                        // مسجل دخول ولكن بدون اسم (حالة Magic Link لأول مرة)
                         showNameRequest();
                     }
                 } else {
-                    // السجل غير موجود نهائياً في Users
                     showNameRequest();
                 }
             } catch (err) {
@@ -120,21 +144,41 @@
         }
     });
 
-    // إظهار نافذة طلب الاسم
+    // دالة تحديث بيانات البروفايل العلوي وحساب العمر
+    function updateTopProfile(data) {
+        const profileDiv = document.getElementById('userTopProfile');
+        const nameDisplay = document.getElementById('displayFullName');
+        const ageDisplay = document.getElementById('displayAge');
+        const avatar = document.getElementById('userAvatar');
+
+        nameDisplay.innerText = data.fullName;
+        avatar.innerText = data.fullName.charAt(0);
+
+        if (data.birthDate) {
+            const birth = new Date(data.birthDate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            ageDisplay.innerText = `العمر: ${age} سنة`;
+        } else {
+            ageDisplay.innerText = "العمر غير محدد";
+        }
+        profileDiv.style.display = 'flex';
+    }
+
     function showNameRequest() {
         document.getElementById('nameOverlay').style.display = 'flex';
     }
 
-    // وظيفة حفظ الاسم الأولية
     window.saveFirstTimeName = async () => {
         const nameInput = document.getElementById('newUserNameInput').value.trim();
         const btn = document.getElementById('saveNameBtn');
-
         if (nameInput.length < 3) return alert("يرجى كتابة اسمك الثلاثي بشكل صحيح");
-
         btn.disabled = true;
         btn.innerText = "جاري الحفظ...";
-
         try {
             await setDoc(doc(db, "Users", userUID), {
                 fullName: nameInput,
@@ -142,18 +186,15 @@
                 role: "member",
                 createdAt: serverTimestamp()
             }, { merge: true });
-
             userName = nameInput;
             document.getElementById('nameOverlay').style.display = 'none';
-            loadPosts(); // تحميل الأخبار بعد حفظ الاسم
+            location.reload(); 
         } catch (e) {
             alert("حدث خطأ أثناء حفظ الاسم");
             btn.disabled = false;
-            btn.innerText = "حفظ ومتابعة";
         }
     };
     
-    // ربط زر الحفظ بالدالة
     document.getElementById('saveNameBtn').onclick = window.saveFirstTimeName;
 
     function loadPosts() {
@@ -209,7 +250,6 @@
         if (!snap.exists()) return;
         const post = snap.data();
         const hasLiked = post.likedBy?.includes(userUID);
-        
         updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
         let commsHTML = post.comments?.sort((a,b) => b.date - a.date).map(c => `
@@ -259,7 +299,6 @@
     };
 
     window.delNews = async (id) => { if (confirm("هل أنت متأكد من حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id)); };
-    
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
