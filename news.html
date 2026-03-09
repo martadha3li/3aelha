@@ -14,33 +14,39 @@
 
         body { 
             background-color: var(--ios-bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 0; padding-top: 20px; padding-bottom: 100px; direction: rtl;
+            margin: 0; padding-top: 10px; padding-bottom: 100px; direction: rtl;
         }
 
-        /* كود تعريف المستخدم العلوي */
+        /* كود تعريف المستخدم العلوي - قابل للضغط */
         .user-header-profile {
             background: white;
             margin: 15px;
-            padding: 20px;
+            padding: 18px;
             border-radius: 20px;
             box-shadow: var(--shadow);
             display: flex;
             align-items: center;
             gap: 15px;
-            border: 1px solid #eee;
+            border: 1px solid #E5E5EA;
+            transition: transform 0.2s;
+            cursor: pointer;
         }
+        .user-header-profile:active { transform: scale(0.98); background: #f9f9f9; }
+
         .user-avatar-circle {
             width: 55px; height: 55px; background: var(--ios-blue);
             color: white; border-radius: 50%; display: flex;
             align-items: center; justify-content: center; font-size: 22px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,122,255,0.3);
         }
         .user-info-text b { display: block; font-size: 16px; color: var(--text-main); }
-        .user-info-text span { font-size: 13px; color: var(--text-sec); }
+        .user-info-text span { font-size: 13px; color: var(--text-sec); display: block; }
+        .user-info-text small { color: var(--ios-blue); font-size: 11px; font-weight: bold; }
 
         /* تنسيقات البطاقات والأخبار */
         #pinnedArea { padding: 0 15px; margin-bottom: 10px; }
-        .pin-card-wedding { background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold); border-radius: 15px; padding: 8px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
-        .pin-card-death { background: #f0f0f0; border-right: 5px solid var(--death-gray); border-radius: 10px; padding: 8px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
+        .pin-card-wedding { background: linear-gradient(45deg, #fff9e6, #fff); border: 1px solid var(--gold); border-radius: 15px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
+        .pin-card-death { background: #f0f0f0; border-right: 5px solid var(--death-gray); border-radius: 10px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
 
         .post-card { background: var(--card-bg); margin: 12px 15px; border-radius: 20px; display: flex; padding: 12px; gap: 15px; box-shadow: var(--shadow); position: relative; border: .5px solid #E5E5EA; cursor: pointer; }
         .post-image-container { width: 85px; height: 85px; flex-shrink: 0; }
@@ -50,39 +56,29 @@
         .post-meta { display: flex; gap: 8px; margin-top: 5px; font-size: 11px; color: var(--text-sec); }
         .meta-item { background: #f5f5f7; padding: 3px 8px; border-radius: 6px; }
 
+        /* المودال */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 6000; align-items: flex-end; justify-content: center; backdrop-filter: blur(8px); }
         .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 25px 25px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .comments-box { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        .comment { background: #f2f2f7; padding: 10px; border-radius: 12px; margin-bottom: 8px; font-size: 13px; }
-        .comment b { color: var(--ios-blue); display: block; margin-bottom: 2px; }
-        .input-row { display: flex; gap: 8px; margin-top: 15px; position: sticky; bottom: 0; background: white; padding: 10px 0; }
-        .input-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        .send-btn { background: var(--ios-blue); color: white; border: none; padding: 0 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-
+        /* خيارات المدير */
         .options-btn { position: absolute; left: 0; top: 0; color: #ccc; font-size: 20px; padding: 5px; z-index: 10; }
         .dropdown { position: absolute; left: 0; top: 30px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; overflow: hidden; }
-        .dropdown button { padding: 10px 15px; border: none; background: none; text-align: right; font-size: 13px; border-bottom: 1px solid #f2f2f2; cursor: pointer; width: 100%; }
-        
-        #nameOverlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
-            z-index: 9999; display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px);
-        }
-        .name-card {
-            background: white; width: 85%; max-width: 350px; padding: 30px; 
-            border-radius: 25px; text-align: center; box-shadow: var(--shadow);
-        }
+        .dropdown button { padding: 10px 15px; border: none; background: none; text-align: right; font-size: 13px; cursor: pointer; }
+
+        /* نافذة طلب الاسم */
+        #nameOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .name-card { background: white; width: 85%; max-width: 350px; padding: 30px; border-radius: 25px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="userTopProfile" class="user-header-profile" style="display:none;">
+    <div id="userTopProfile" class="user-header-profile" style="display:none;" onclick="window.location.href='profile.html'">
         <div class="user-avatar-circle" id="userAvatar">؟</div>
         <div class="user-info-text">
             <b id="displayFullName">جاري التحميل...</b>
-            <span id="displayAge">الحساب...</span>
+            <span id="displayAge">جاري حساب العمر...</span>
+            <small>الملف الشخصي ←</small>
         </div>
     </div>
 
@@ -98,11 +94,10 @@
 
     <div id="nameOverlay">
         <div class="name-card">
-            <h2 style="font-size: 20px; margin-bottom: 10px;">أهلاً بك في العائلة 👋</h2>
-            <p style="font-size: 13px; color: var(--text-sec); margin-bottom: 20px;">يرجى كتابة اسمك الثلاثي ليتمكن الجميع من معرفتك</p>
-            <input type="text" id="newUserNameInput" placeholder="اكتب اسمك هنا..." 
-                   style="width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #ddd; text-align: center; font-size: 16px; margin-bottom: 20px; outline: none; box-sizing: border-box;">
-            <button id="saveNameBtn" style="width: 100%; padding: 14px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px;">حفظ ومتابعة</button>
+            <h2>أهلاً بك في العائلة 👋</h2>
+            <p>يرجى كتابة اسمك الرباعي ليتمكن الجميع من معرفتك</p>
+            <input type="text" id="newUserNameInput" placeholder="الاسم الأول، الأب، الجد، العائلة" style="width:100%; padding:15px; border-radius:12px; border:1px solid #ddd; margin-bottom:20px; text-align:center;">
+            <button id="saveNameBtn" style="width:100%; padding:15px; background:var(--ios-blue); color:white; border:none; border-radius:12px; font-weight:bold;">حفظ ومتابعة</button>
         </div>
     </div>
 
@@ -125,10 +120,7 @@
                     if (data.fullName) {
                         userName = data.fullName;
                         isAdmin = (data.role || "").toLowerCase().includes('admin') || (data.role || "").includes('مدير');
-                        
-                        // تحديث بيانات الملف الشخصي في الأعلى
-                        updateTopProfile(data);
-                        
+                        updateHeaderUI(data);
                         loadPosts();
                     } else {
                         showNameRequest();
@@ -137,106 +129,69 @@
                     showNameRequest();
                 }
             } catch (err) {
-                console.error("Error fetching user data:", err);
+                console.error(err);
             }
         } else { 
-            window.location.href = "login.html"; 
+            window.location.href = "index.html"; 
         }
     });
 
-    // دالة تحديث بيانات البروفايل العلوي وحساب العمر
-    function updateTopProfile(data) {
-        const profileDiv = document.getElementById('userTopProfile');
-        const nameDisplay = document.getElementById('displayFullName');
-        const ageDisplay = document.getElementById('displayAge');
-        const avatar = document.getElementById('userAvatar');
-
-        nameDisplay.innerText = data.fullName;
-        avatar.innerText = data.fullName.charAt(0);
-
+    function updateHeaderUI(data) {
+        document.getElementById('userTopProfile').style.display = 'flex';
+        document.getElementById('displayFullName').innerText = data.fullName;
+        document.getElementById('userAvatar').innerText = data.fullName.charAt(0);
+        
         if (data.birthDate) {
             const birth = new Date(data.birthDate);
             const today = new Date();
             let age = today.getFullYear() - birth.getFullYear();
             const m = today.getMonth() - birth.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            ageDisplay.innerText = `العمر: ${age} سنة`;
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            document.getElementById('displayAge').innerText = "العمر: " + age + " سنة";
         } else {
-            ageDisplay.innerText = "العمر غير محدد";
+            document.getElementById('displayAge').innerText = "أضف تاريخ ميلادك من البروفايل";
         }
-        profileDiv.style.display = 'flex';
     }
 
-    function showNameRequest() {
-        document.getElementById('nameOverlay').style.display = 'flex';
-    }
+    function showNameRequest() { document.getElementById('nameOverlay').style.display = 'flex'; }
 
-    window.saveFirstTimeName = async () => {
-        const nameInput = document.getElementById('newUserNameInput').value.trim();
-        const btn = document.getElementById('saveNameBtn');
-        if (nameInput.length < 3) return alert("يرجى كتابة اسمك الثلاثي بشكل صحيح");
-        btn.disabled = true;
-        btn.innerText = "جاري الحفظ...";
-        try {
-            await setDoc(doc(db, "Users", userUID), {
-                fullName: nameInput,
-                email: auth.currentUser.email,
-                role: "member",
-                createdAt: serverTimestamp()
-            }, { merge: true });
-            userName = nameInput;
-            document.getElementById('nameOverlay').style.display = 'none';
-            location.reload(); 
-        } catch (e) {
-            alert("حدث خطأ أثناء حفظ الاسم");
-            btn.disabled = false;
-        }
+    document.getElementById('saveNameBtn').onclick = async () => {
+        const val = document.getElementById('newUserNameInput').value.trim();
+        if (val.split(' ').length < 3) return alert("يرجى كتابة الاسم الثلاثي أو الرباعي");
+        await setDoc(doc(db, "Users", userUID), { fullName: val, role: "member", createdAt: serverTimestamp() }, { merge: true });
+        location.reload();
     };
-    
-    document.getElementById('saveNameBtn').onclick = window.saveFirstTimeName;
 
     function loadPosts() {
-        const feed = document.getElementById('newsFeed');
-        const pinned = document.getElementById('pinnedArea');
-        
         onSnapshot(query(collection(db, "News"), orderBy("publishDate", "desc")), (snap) => {
-            feed.innerHTML = ""; 
-            pinned.innerHTML = "";
+            const feed = document.getElementById('newsFeed');
+            const pinned = document.getElementById('pinnedArea');
+            feed.innerHTML = ""; pinned.innerHTML = "";
             
             snap.forEach((docSnap) => {
                 const post = docSnap.data();
                 const postId = docSnap.id;
-                const type = post.type || 'normal';
-
-                if (type === 'wedding' || type === 'death') {
-                    const pin = document.createElement('div');
-                    pin.className = type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
-                    pin.onclick = () => window.showPostFull(postId);
-                    pin.innerHTML = `<span>${type === 'wedding' ? '💍' : '🖤'}</span> <b style="flex:1;">${post.title}</b>`;
-                    pinned.appendChild(pin);
+                
+                if (post.type === 'wedding' || post.type === 'death') {
+                    const p = document.createElement('div');
+                    p.className = post.type === 'wedding' ? 'pin-card-wedding' : 'pin-card-death';
+                    p.onclick = () => window.showPostFull(postId);
+                    p.innerHTML = `<span>${post.type === 'wedding' ? '💍' : '🖤'}</span> <b style="flex:1;">${post.title}</b>`;
+                    pinned.appendChild(p);
                 }
 
                 const card = document.createElement('div');
                 card.className = "post-card";
                 card.onclick = () => window.showPostFull(postId);
                 card.innerHTML = `
-                    <div class="post-image-container">
-                        <img class="post-image" src="${post.img || 'https://via.placeholder.com/150'}">
-                    </div>
+                    <div class="post-image-container"><img class="post-image" src="${post.img || 'logo.png'}"></div>
                     <div class="post-info">
-                        ${isAdmin ? `
-                            <div class="options-btn" onclick="event.stopPropagation(); window.toggleDrop('${postId}')">⋮</div>
-                            <div id="drop-${postId}" class="dropdown">
-                                <button onclick="event.stopPropagation(); window.delNews('${postId}')" style="color:red;">🗑️ حذف الخبر</button>
-                            </div>
-                        ` : ''}
+                        ${isAdmin ? `<div class="options-btn" onclick="event.stopPropagation(); window.toggleDrop('${postId}')">⋮</div>
+                        <div id="drop-${postId}" class="dropdown"><button onclick="event.stopPropagation(); window.delNews('${postId}')" style="color:red;">🗑️ حذف</button></div>` : ''}
                         <h2 class="post-title">${post.title}</h2>
                         <div class="post-meta">
                             <span class="meta-item">❤️ ${post.likedBy?.length || 0}</span>
                             <span class="meta-item">💬 ${post.comments?.length || 0}</span>
-                            <span class="meta-item">👁️ ${post.viewedBy?.length || 0}</span>
                         </div>
                     </div>
                 `;
@@ -247,44 +202,23 @@
 
     window.showPostFull = async (id) => {
         const snap = await getDoc(doc(db, "News", id));
-        if (!snap.exists()) return;
         const post = snap.data();
         const hasLiked = post.likedBy?.includes(userUID);
         updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
-        let commsHTML = post.comments?.sort((a,b) => b.date - a.date).map(c => `
-            <div class="comment"><b>${c.userName}</b>${c.text}</div>
-        `).join('') || '<p style="color:gray; font-size:12px; text-align:center;">لا توجد تعليقات بعد..</p>';
-
         document.getElementById('modalBody').innerHTML = `
-            <div style="${post.type === 'wedding' ? 'border:2px solid var(--gold); background:#fffdf5; padding:15px; border-radius:20px;' : post.type === 'death' ? 'border-right:6px solid #000; background:#f9f9f9; padding:15px;' : ''}">
-                ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px; max-height:250px; object-fit:cover;">` : ''}
-                <h2 style="margin:0; font-size:18px;">${post.title}</h2>
-                <p style="font-size:14px; color:#444; line-height:1.6; margin-top:10px;">${post.body || post.content || ''}</p>
-                <div style="font-size:13px; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                    <span onclick="window.like('${id}', ${hasLiked})" style="cursor:pointer; color:${hasLiked ? 'red' : 'gray'}; font-weight:bold;">❤️ أعجبني (${post.likedBy?.length || 0})</span>
-                    <span style="margin-right:15px; color:gray;">👁️ المشاهدات: ${post.viewedBy?.length || 0}</span>
-                </div>
-                <div class="comments-box">
-                    <h4 style="margin:0 0 10px 0;">التعليقات (${post.comments?.length || 0})</h4>
-                    <div id="comsList" style="max-height:200px; overflow-y:auto;">${commsHTML}</div>
-                    <div class="input-row">
-                        <input type="text" id="cInp" placeholder="اكتب تعليقك..." onkeydown="if(event.key==='Enter') window.addCom('${id}')">
-                        <button class="send-btn" onclick="window.addCom('${id}')">نشر</button>
-                    </div>
+            <div style="padding:10px;">
+                ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px;">` : ''}
+                <h3>${post.title}</h3>
+                <p style="color:#444; line-height:1.6;">${post.content || post.body || ''}</p>
+                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                <div style="display:flex; gap:20px; font-size:14px;">
+                    <span onclick="window.like('${id}', ${hasLiked})" style="cursor:pointer; color:${hasLiked ? 'red' : 'gray'}">❤️ أعجبني</span>
+                    <span style="color:gray;">👁️ ${post.viewedBy?.length || 0} مشاهدة</span>
                 </div>
             </div>
         `;
         document.getElementById('postModal').style.display = 'flex';
-    };
-
-    window.addCom = async (id) => {
-        const inp = document.getElementById('cInp');
-        if (!inp.value.trim()) return;
-        const newComment = { text: inp.value, userName, userId: userUID, date: Date.now() };
-        await updateDoc(doc(db, "News", id), { comments: arrayUnion(newComment) });
-        inp.value = ""; 
-        window.showPostFull(id);
     };
 
     window.like = async (id, liked) => {
@@ -294,11 +228,10 @@
 
     window.toggleDrop = (id) => {
         document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
-        const drop = document.getElementById(`drop-${id}`);
-        if(drop) drop.style.display = 'flex';
+        document.getElementById(`drop-${id}`).style.display = 'flex';
     };
 
-    window.delNews = async (id) => { if (confirm("هل أنت متأكد من حذف هذا الخبر؟")) await deleteDoc(doc(db, "News", id)); };
+    window.delNews = async (id) => { if(confirm("حذف الخبر؟")) await deleteDoc(doc(db, "News", id)); };
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
