@@ -9,66 +9,74 @@
             --ios-blue: #007AFF; --ios-bg: #F2F2F7;
             --card-bg: #FFFFFF; --text-main: #1c1c1e; --text-sec: #8E8E93;
             --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --gold-bg: #fff9e6; --gold-border: #d4af37;
         }
 
         body { 
             background-color: var(--ios-bg); font-family: -apple-system, sans-serif; 
-            margin: 0; padding-top: 70px; padding-bottom: 100px; direction: rtl;
+            margin: 0; padding-top: 80px; /* إزاحة لترك مساحة للشريط العلوي الثابت */
+            padding-bottom: 100px; direction: rtl;
         }
 
-        /* بروفايل العضو العلوي */
+        /* حاوية الأخبار المثبتة */
+        #pinnedArea { margin-bottom: 15px; display: none; }
+        .pin-card {
+            background: var(--gold-bg); border: 1px solid var(--gold-border);
+            padding: 12px; border-radius: 15px; margin: 0 15px 10px 15px;
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(212,175,55,0.15);
+        }
+
+        /* كرت البروفايل العلوي */
         .user-header-profile {
-            background: white; margin: 10px 15px; padding: 12px 15px;
+            background: white; margin: 0 15px 15px 15px; padding: 12px 15px;
             border-radius: 15px; display: flex; align-items: center; gap: 12px;
             box-shadow: var(--shadow); cursor: pointer; border: 0.5px solid #d1d1d6;
         }
-        .user-avatar-circle { width: 45px; height: 45px; background: var(--ios-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .user-avatar-circle { width: 45px; height: 45px; background: var(--ios-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
 
-        /* تنسيق الأخبار (شرائط صغيرة) */
+        /* تنسيق شرائط الأخبار (صغيرة ونحيفة) */
         .post-card { 
             background: var(--card-bg); margin: 8px 15px; border-radius: 12px; 
             display: flex; padding: 8px; gap: 12px; box-shadow: var(--shadow); 
             align-items: center; cursor: pointer; border: 0.5px solid #e5e5ea;
+            position: relative;
         }
-        .post-image-container { width: 60px; height: 60px; flex-shrink: 0; }
-        .post-image { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .post-image-container { width: 55px; height: 55px; flex-shrink: 0; }
+        .post-image { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; background: #eee; }
         .post-info { flex: 1; min-width: 0; }
         .post-title { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .post-meta { display: flex; gap: 10px; margin-top: 4px; font-size: 10px; color: var(--text-sec); }
 
-        /* المودال في وسط الشاشة */
+        /* نافذة الخبر (وسط الشاشة) */
         .modal { 
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
-            z-index: 9000; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
+            z-index: 300000; align-items: center; justify-content: center; backdrop-filter: blur(8px);
         }
         .modal-content { 
-            background: white; width: 90%; max-width: 450px; border-radius: 20px; 
-            padding: 0; max-height: 85vh; overflow-y: auto; position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: zoomIn 0.3s ease;
+            background: white; width: 90%; max-width: 450px; border-radius: 25px; 
+            max-height: 85vh; overflow-y: auto; position: relative; animation: popIn 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.28);
         }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
         
         .modal-header { position: sticky; top: 0; background: white; padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .close-modal { font-size: 24px; cursor: pointer; color: var(--text-sec); background: none; border: none; }
+        .close-modal { font-size: 26px; cursor: pointer; color: #999; border: none; background: none; }
 
-        /* التعليقات */
+        /* نظام التعليقات */
         .comments-section { padding: 15px; background: #f9f9f9; border-top: 1px solid #eee; }
-        .comment-item { background: white; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 0.5px solid #eee; }
-        .comment-user { font-size: 12px; font-weight: bold; color: var(--ios-blue); display: block; }
-        .comment-date { font-size: 9px; color: #999; margin-bottom: 5px; display: block; }
-        .comment-text { font-size: 13px; color: #333; }
+        .comment-item { background: white; padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 0.5px solid #eee; }
+        .comment-user { font-size: 12px; font-weight: 800; color: var(--ios-blue); margin-bottom: 2px; display: block; }
+        .comment-date { font-size: 9px; color: #bbb; display: block; margin-bottom: 5px; }
+        .comment-text { font-size: 13px; color: #333; line-height: 1.4; }
 
-        .comment-input-area { 
-            padding: 10px 15px; border-top: 1px solid #eee; display: flex; gap: 8px; 
-            background: white; position: sticky; bottom: 0; 
-        }
-        .comment-input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px; }
-        .comment-send-btn { background: var(--ios-blue); color: white; border: none; padding: 0 15px; border-radius: 20px; font-weight: bold; }
+        .comment-input-area { padding: 10px 15px; border-top: 1px solid #eee; display: flex; gap: 8px; background: white; position: sticky; bottom: 0; }
+        .comment-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px; }
+        .comment-send-btn { background: var(--ios-blue); color: white; border: none; padding: 0 18px; border-radius: 20px; font-weight: bold; }
 
-        /* خيارات المدير */
-        .dropdown { position: absolute; left: 10px; top: 35px; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 20; border: 1px solid #eee; }
-        .dropdown button { padding: 10px; border: none; background: none; text-align: right; font-size: 12px; border-bottom: 1px solid #f2f2f2; width: 120px; cursor: pointer; }
-
+        /* أدوات المدير */
+        .dropdown { position: absolute; left: 10px; top: 40px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; overflow: hidden; }
+        .dropdown button { padding: 12px 15px; border: none; background: none; text-align: right; font-size: 12px; border-bottom: 0.5px solid #f2f2f2; width: 140px; cursor: pointer; }
+        .dropdown button:last-child { border: none; }
     </style>
 </head>
 <body>
@@ -76,27 +84,28 @@
     <div id="userTopProfile" class="user-header-profile" style="display:none;" onclick="window.location.href='profile.html'">
         <div class="user-avatar-circle" id="userAvatar">؟</div>
         <div class="user-info-text">
-            <b id="displayFullName" style="font-size: 14px;">جاري التحميل...</b>
+            <b id="displayFullName" style="font-size: 15px; display: block;">جاري التحميل...</b>
             <span id="displayAge" style="font-size: 11px; color: var(--text-sec);">حساب العمر...</span>
         </div>
     </div>
 
     <div id="pinnedArea"></div>
+
     <div id="newsFeed"></div>
 
-    <div id="postModal" class="modal">
-        <div class="modal-content">
+    <div id="postModal" class="modal" onclick="if(event.target==this) closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <span id="modalTypeBadge" style="font-size: 12px; font-weight: bold;">تفاصيل الخبر</span>
-                <button class="close-modal" onclick="closeModal()">×</button>
+                <span style="font-weight: bold; color: var(--ios-blue);">تفاصيل الخبر</span>
+                <button class="close-modal" onclick="closeModal()">✕</button>
             </div>
             <div id="modalBody" style="padding: 15px;"></div>
             <div id="commentsContainer" class="comments-section"></div>
             <div id="commentInputArea" class="comment-input-area"></div>
         </div>
     </div>
-            <script type="module" src="header.js"></script>
 
+    <script type="module" src="header.js"></script>
     <script type="module" src="navbar.js"></script>
 
 <script type="module">
@@ -112,31 +121,49 @@
             if (userSnap.exists()) {
                 const data = userSnap.data();
                 userName = data.fullName;
-                isAdmin = (data.role || "").includes('admin') || (data.role || "").includes('مدير');
-                updateUI(data);
+                isAdmin = (data.role || "").toLowerCase().match(/admin|مدير/);
+                updateUserUI(data);
                 loadPosts();
             }
         } else { window.location.href = "index.html"; }
     });
 
-    function updateUI(data) {
+    function updateUserUI(data) {
         document.getElementById('userTopProfile').style.display = 'flex';
         document.getElementById('displayFullName').innerText = data.fullName;
         document.getElementById('userAvatar').innerText = data.fullName.charAt(0);
-        // حساب العمر (نفس الكود السابق)
         if (data.birthDate) {
             const age = new Date().getFullYear() - new Date(data.birthDate).getFullYear();
-            document.getElementById('displayAge').innerText = "العمر: " + age + " سنة";
+            document.getElementById('displayAge').innerText = "العمر: " + age + " سنة • عرض الملف الشخصي ←";
         }
     }
 
     function loadPosts() {
         onSnapshot(query(collection(db, "News"), orderBy("publishDate", "desc")), (snap) => {
             const feed = document.getElementById('newsFeed');
-            feed.innerHTML = "";
+            const pinnedArea = document.getElementById('pinnedArea');
+            feed.innerHTML = ""; pinnedArea.innerHTML = "";
+
             snap.forEach(docSnap => {
                 const post = docSnap.data();
                 const postId = docSnap.id;
+
+                // التعامل مع الأخبار المثبتة
+                if (post.pinned === true || post.isPinned === true) {
+                    const pinCard = document.createElement('div');
+                    pinCard.className = "pin-card";
+                    pinCard.onclick = () => showPostFull(postId);
+                    pinCard.innerHTML = `
+                        <span style="font-size: 20px;">📌</span>
+                        <div style="flex:1; overflow:hidden;">
+                            <b style="font-size: 13px; color: #856404; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${post.title}</b>
+                            <small style="font-size: 10px; color: #b08d21;">خبر مثبت من الإدارة</small>
+                        </div>
+                    `;
+                    pinnedArea.appendChild(pinCard);
+                }
+
+                // الخبر العادي (الشريط)
                 const card = document.createElement('div');
                 card.className = "post-card";
                 card.onclick = () => showPostFull(postId);
@@ -150,7 +177,8 @@
                             <span>👁️ ${post.viewedBy?.length || 0}</span>
                         </div>
                     </div>
-                    ${isAdmin ? `<div style="position:relative">
+                    ${isAdmin ? `
+                    <div style="position:relative">
                         <div onclick="event.stopPropagation(); toggleDrop('${postId}')" style="padding:10px; color:#ccc">⋮</div>
                         <div id="drop-${postId}" class="dropdown">
                             <button onclick="event.stopPropagation(); delNews('${postId}')" style="color:red">🗑️ حذف</button>
@@ -162,6 +190,7 @@
                 `;
                 feed.appendChild(card);
             });
+            pinnedArea.style.display = pinnedArea.innerHTML === "" ? "none" : "block";
         });
     }
 
@@ -173,43 +202,41 @@
         await updateDoc(doc(db, "News", id), { viewedBy: arrayUnion(userUID) });
 
         document.getElementById('modalBody').innerHTML = `
-            ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:12px; margin-bottom:12px;">` : ''}
-            <h3 style="margin:0 0 10px 0; font-size:17px;">${post.title}</h3>
-            <p style="font-size:14px; color:#444; line-height:1.6;">${post.content || post.body || ''}</p>
-            <div style="margin-top:15px; font-size:13px; display:flex; gap:15px; border-top:1px solid #eee; padding-top:10px;">
+            ${post.img ? `<img src="${post.img}" style="width:100%; border-radius:15px; margin-bottom:15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">` : ''}
+            <h3 style="margin:0 0 12px 0; font-size:18px; line-height:1.4;">${post.title}</h3>
+            <p style="font-size:14px; color:#444; line-height:1.7; white-space: pre-line;">${post.content || post.body || ''}</p>
+            <div style="margin-top:20px; font-size:13px; display:flex; gap:20px; border-top:1px solid #eee; padding-top:15px;">
                 <span onclick="like('${id}', ${hasLiked})" style="cursor:pointer; color:${hasLiked?'#ff3b30':'#999'}; font-weight:bold;">❤️ أعجبني (${post.likedBy?.length || 0})</span>
-                <span style="color:#999;">👁️ مشاهدة (${post.viewedBy?.length || 0})</span>
+                <span style="color:#999;">👁️ المشاهدات (${post.viewedBy?.length || 0})</span>
             </div>
         `;
 
-        // التعليقات
         const comsBox = document.getElementById('commentsContainer');
         if (post.comments?.length > 0) {
-            comsBox.innerHTML = `<h4>التعليقات</h4>` + post.comments.sort((a,b)=>b.date - a.date).map(c => `
+            comsBox.innerHTML = `<h4 style="margin:0 0 15px 0; font-size:14px; color:#666;">التعليقات (${post.comments.length})</h4>` + 
+            post.comments.sort((a,b)=>b.date - a.date).map(c => `
                 <div class="comment-item">
                     <span class="comment-user">${c.userName}</span>
                     <span class="comment-date">${new Date(c.date).toLocaleString('ar-SA')}</span>
                     <div class="comment-text">${c.text}</div>
                 </div>
             `).join('');
-        } else { comsBox.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">لا توجد تعليقات</p>'; }
+        } else { comsBox.innerHTML = '<p style="text-align:center; color:#bbb; font-size:12px; padding:20px;">لا توجد تعليقات بعد، كن أول من يعلق!</p>'; }
 
-        // منطقة الإدخال
         const inputArea = document.getElementById('commentInputArea');
         if (post.commentsDisabled) {
-            inputArea.innerHTML = '<p style="width:100%; text-align:center; font-size:12px; color:red;">🔒 التعليقات مقفلة لهذا الخبر</p>';
+            inputArea.innerHTML = '<p style="width:100%; text-align:center; font-size:13px; color:#FF3B30; font-weight:bold; padding:5px;">🔒 التعليقات مقفلة بواسطة الإدارة</p>';
         } else {
             inputArea.innerHTML = `
-                <input type="text" id="cInp" placeholder="اكتب تعليقك باسمك الكامل...">
+                <input type="text" id="cInp" placeholder="اكتب تعليقاً...">
                 <button class="comment-send-btn" onclick="addCom('${id}')">نشر</button>
             `;
         }
-        
         document.getElementById('postModal').style.display = 'flex';
     };
 
     window.addCom = async (id) => {
-        const txt = document.getElementById('cInp').value;
+        const txt = document.getElementById('cInp').value.trim();
         if (!txt) return;
         await updateDoc(doc(db, "News", id), {
             comments: arrayUnion({ text: txt, userName: userName, date: Date.now(), userId: userUID })
@@ -224,7 +251,7 @@
 
     window.toggleComments = async (id, currentStatus) => {
         await updateDoc(doc(db, "News", id), { commentsDisabled: !currentStatus });
-        alert(currentStatus ? "تم فتح التعليقات" : "تم قفل التعليقات");
+        alert(currentStatus ? "🔓 تم فتح التعليقات" : "🔒 تم قفل التعليقات");
     };
 
     window.closeModal = () => { document.getElementById('postModal').style.display = 'none'; };
@@ -232,12 +259,8 @@
         document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none');
         document.getElementById(`drop-${id}`).style.display = 'flex'; 
     };
-    window.delNews = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "News", id)); };
+    window.delNews = async (id) => { if(confirm("هل أنت متأكد من حذف هذا الخبر نهائياً؟")) await deleteDoc(doc(db, "News", id)); };
     document.addEventListener('click', () => document.querySelectorAll('.dropdown').forEach(d => d.style.display = 'none'));
 </script>
 </body>
 </html>
-
-
-
-
