@@ -2,148 +2,149 @@ import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 async function createDynamicHeader() {
-    // التأكد من عدم تكرار العنصر
-    if (document.getElementById('headerWrapper')) return;
+    if (document.getElementById('mainHeaderContainer')) return;
 
     const headerHTML = `
     <style>
-        /* الحاوية الخارجية - فوق كل شيء حرفياً */
-        #headerWrapper {
-            position: fixed !important;
-            top: 20px !important;
-            right: 20px !important; /* وضعناها في اليمين لتكون واضحة */
-            z-index: 2147483647 !important; /* أعلى قيمة z-index ممكنة في المتصفحات */
-            direction: rtl !important;
+        /* الحاوية الثابتة في أعلى الشاشة */
+        #mainHeaderContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px; /* ارتفاع الشريط */
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 200000;
+            border-bottom: 0.5px solid #d1d1d6;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            direction: rtl;
         }
 
-        /* الأيقونة الدائرية (الزر العائم) */
-        .header-capsule {
-            background: #ffffff !important;
-            width: 55px !important;
-            height: 55px !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
-            border: 2px solid #007AFF !important;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-            overflow: hidden !important;
-            cursor: pointer !important;
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        /* عند الفتح تتمدد لتصبح كبسولة */
-        .header-capsule.open {
-            width: 300px !important;
-            height: auto !important;
-            border-radius: 20px !important;
-            padding: 15px !important;
-            flex-direction: column !important;
-            cursor: default !important;
+        .header-logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: #1c1c1e;
         }
 
-        .circle-img {
-            width: 45px !important;
-            height: 45px !important;
-            border-radius: 50% !important;
-            object-fit: cover !important;
+        .header-logo-section img {
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+            object-fit: cover;
         }
 
-        .header-capsule.open .circle-img { display: none !important; }
-
-        /* المحتوى الداخلي */
-        .header-content {
-            display: none !important;
-            width: 100% !important;
-            text-align: center !important;
+        .admin-trigger-circle {
+            width: 38px;
+            height: 38px;
+            background: #f2f2f7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
         }
 
-        .header-capsule.open .header-content { display: block !important; }
-
-        .header-top {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            margin-bottom: 12px !important;
+        /* نافذة الخيارات المنسدلة */
+        .admin-dropdown-panel {
+            position: absolute;
+            top: 70px;
+            left: 15px;
+            width: 220px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            padding: 8px;
+            border: 0.5px solid #eee;
+            animation: fadeInDown 0.3s ease;
         }
 
-        .close-x { font-size: 22px !important; cursor: pointer !important; color: #999 !important; }
-
-        .grid-menu {
-            display: grid !important;
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 10px !important;
-            border-top: 1px solid #eee !important;
-            padding-top: 10px !important;
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .menu-btn {
-            text-decoration: none !important;
-            color: #333 !important;
-            font-size: 11px !important;
-            font-weight: bold !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 5px !important;
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 12px;
         }
 
-        .menu-btn i { font-style: normal !important; font-size: 20px !important; }
-        .menu-btn.logout { color: #FF3B30 !important; }
+        .dropdown-item:active { background: #f2f2f7; }
+        .dropdown-item.logout { color: #FF3B30; border-top: 0.5px solid #eee; margin-top: 5px; }
+
     </style>
 
-    <div id="headerWrapper">
-        <div class="header-capsule" id="headerCapsule">
-            <img src="logo.png" class="circle-img" id="mainTrigger" onerror="this.src='https://via.placeholder.com/45/007AFF/FFFFFF?text=F'">
-
-            <div class="header-content">
-                <div class="header-top">
-                    <b style="font-size:14px;">إعدادات المنصة</b>
-                    <span class="close-x" id="closeHeader">✕</span>
-                </div>
-                <div class="grid-menu" id="adminGrid">
-                    <a href="admin_config.html" class="menu-btn"><i>⚙️</i><span>أزرار</span></a>
-                    <a href="add_news.html" class="menu-btn"><i>⊕</i><span>إضافة</span></a>
-                    <a href="admin.html" class="menu-btn"><i>🛠️</i><span>لوحة</span></a>
-                    <a href="#" class="menu-btn logout" id="logoutBtn"><i>🚪</i><span>خروج</span></a>
-                </div>
+    <div id="mainHeaderContainer">
+        <div class="header-flex">
+            <div class="header-logo-section">
+                <img src="logo.png" onerror="this.src='https://via.placeholder.com/35'">
+                <span>عائلة 2026</span>
             </div>
+            
+            <div class="admin-trigger-circle" id="headerMenuBtn">⚙️</div>
+        </div>
+
+        <div class="admin-dropdown-panel" id="headerDropdown">
+            <div id="adminLinks" style="display:none;">
+                <a href="admin_config.html" class="dropdown-item">⚙️ إعدادات الأزرار</a>
+                <a href="add_news.html" class="dropdown-item">⊕ إضافة خبر</a>
+                <a href="admin.html" class="dropdown-item">🛠️ لوحة التحكم</a>
+            </div>
+            <a href="profile.html" class="dropdown-item">👤 ملفي الشخصي</a>
+            <a href="#" class="dropdown-item logout" id="logoutAction">🚪 تسجيل الخروج</a>
         </div>
     </div>
     `;
 
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
-    const capsule = document.getElementById('headerCapsule');
-    const trigger = document.getElementById('mainTrigger');
-    const closeBtn = document.getElementById('closeHeader');
+    const menuBtn = document.getElementById('headerMenuBtn');
+    const dropdown = document.getElementById('headerDropdown');
 
-    trigger.onclick = () => capsule.classList.add('open');
-    closeBtn.onclick = (e) => {
+    menuBtn.onclick = (e) => {
         e.stopPropagation();
-        capsule.classList.remove('open');
+        dropdown.style.display = (dropdown.style.display === 'flex') ? 'none' : 'flex';
     };
+
+    document.onclick = () => dropdown.style.display = 'none';
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "Users", user.uid));
             const role = (snap.data()?.role || "").toLowerCase();
             const isAdmin = role.includes('admin') || role.includes('مدير');
-            // إذا لم يكن مديراً، يظهر فقط زر الخروج
-            if (!isAdmin) {
-                const btns = document.querySelectorAll('.grid-menu a:not(.logout)');
-                btns.forEach(b => b.remove());
-                document.getElementById('adminGrid').style.gridTemplateColumns = "1fr";
-            }
+            if (isAdmin) document.getElementById('adminLinks').style.display = 'block';
         }
     });
 
-    document.getElementById('logoutBtn').onclick = () => {
-        if(confirm("تسجيل خروج؟")) auth.signOut().then(()=> location.reload());
+    document.getElementById('logoutAction').onclick = () => {
+        if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload());
     };
 }
 
-// تشغيل فوري وبأكثر من طريقة لضمان الظهور
 createDynamicHeader();
-window.onload = createDynamicHeader;
-document.addEventListener('DOMContentLoaded', createDynamicHeader);
