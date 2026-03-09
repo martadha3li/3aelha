@@ -2,95 +2,91 @@ import { auth, db } from './config.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 async function createDynamicHeader() {
-    // منع التكرار إذا تم استدعاء الدالة مرتين
     if (document.getElementById('headerCapsule')) return;
 
     const headerHTML = `
     <style>
         .header-wrapper {
             position: fixed;
-            top: 15px;
-            left: 0;
-            right: 0;
-            margin: auto;
-            width: 92%;
-            max-width: 420px;
-            z-index: 100000; /* قيمة فلكية لضمان الظهور فوق كل شيء */
+            top: 20px;
+            left: 20px; /* تم وضعه في الزاوية ليبدأ كدائرة */
+            z-index: 100000;
             direction: rtl;
-            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
+        /* الكبسولة تبدأ كدائرة صغيرة */
         .header-capsule {
-            pointer-events: auto;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border-radius: 24px;
-            padding: 8px 16px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-            border: 0.5px solid rgba(255, 255, 255, 0.4);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 50px; /* شكل دائري */
+            width: 50px;  /* عرض الدائرة */
+            height: 50px; /* طول الدائرة */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 0.5px solid rgba(255,255,255,0.4);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
         }
 
+        /* عندما تنفتح الكبسولة تتمدد */
+        .header-capsule.open {
+            width: 320px; /* تتمدد عرضياً */
+            height: auto;
+            border-radius: 25px;
+            padding: 10px 15px;
+            cursor: default;
+        }
+
+        .header-content {
+            display: none; /* مخفي في وضع الدائرة */
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .header-capsule.open .header-content {
+            display: block;
+            opacity: 1;
+        }
+
+        /* الأيقونة التي تظهر في وضع الدائرة (الشعار) */
+        .circle-trigger-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .header-capsule.open .circle-trigger-img {
+            display: none; /* تختفي عند الفتح لتظهر المحتويات */
+        }
+
+        /* تنسيق الصف العلوي داخل الكبسولة المفتوحة */
         .header-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 44px;
+            margin-bottom: 10px;
         }
 
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 800;
-            font-size: 16px;
-            color: #1c1c1e;
-        }
-        
-        .header-logo img { 
-            height: 34px; 
-            width: 34px; 
-            border-radius: 10px; 
-            object-fit: cover;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
+        .header-logo-inner { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; }
+        .header-logo-inner img { width: 30px; height: 30px; border-radius: 8px; }
 
-        .settings-trigger {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 122, 255, 0.1);
-            color: #007AFF;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.2s ease;
-        }
+        .close-btn { font-size: 20px; color: #8e8e93; cursor: pointer; padding: 5px; }
 
-        /* حاوية الأيقونات المنسدلة */
+        /* شبكة الأيقونات */
         .header-dropdown {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .header-capsule.open {
-            background: rgba(255, 255, 255, 0.96);
-        }
-
-        .header-capsule.open .header-dropdown {
-            max-height: 120px;
-            opacity: 1;
-            padding: 15px 0 5px 0;
-            margin-top: 10px;
-            border-top: 0.5px solid rgba(0,0,0,0.05);
+            border-top: 0.5px solid #eee;
+            padding-top: 10px;
         }
 
         .head-nav-item {
@@ -99,92 +95,78 @@ async function createDynamicHeader() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
-            padding: 10px 0;
-            border-radius: 15px;
-            transition: background 0.2s;
+            gap: 4px;
         }
-
-        .head-nav-item:active { background: rgba(0,0,0,0.05); }
-        .head-nav-item i { font-size: 22px; font-style: normal; }
-        .head-nav-item span { font-size: 10px; font-weight: 700; }
-        .head-nav-item.admin i { color: #007AFF; }
+        .head-nav-item i { font-size: 20px; font-style: normal; }
+        .head-nav-item span { font-size: 9px; font-weight: bold; }
         .head-nav-item.logout { color: #FF3B30; }
-
+        .head-nav-item.admin { color: #007AFF; }
     </style>
 
-    <div class="header-wrapper">
+    <div class="header-wrapper" id="headerWrapper">
         <div class="header-capsule" id="headerCapsule">
-            <div class="header-top-row">
-                <div class="header-logo">
-                    <img src="logo.png" onerror="this.src='https://via.placeholder.com/34'">
-                    <span>عائلة 2026</span>
-                </div>
-                <div class="settings-trigger" id="headTrigger">⚙️</div>
-            </div>
+            <img src="logo.png" class="circle-trigger-img" id="circleTrigger" onerror="this.src='https://via.placeholder.com/40'">
 
-            <div class="header-dropdown">
-                <div id="adminToolsHead" style="display: contents;">
-                    <a href="admin_config.html" class="head-nav-item admin"><i>⚙️</i><span>إعدادات</span></a>
-                    <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
-                    <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>اللوحة</span></a>
+            <div class="header-content">
+                <div class="header-top-row">
+                    <div class="header-logo-inner">
+                        <img src="logo.png">
+                        <span>منصة العائلة</span>
+                    </div>
+                    <div class="close-btn" id="closeHeader">✕</div>
                 </div>
-                <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
+                
+                <div class="header-dropdown">
+                    <div id="adminToolsHead" style="display: contents;">
+                        <a href="admin_config.html" class="head-nav-item admin"><i>⚙️</i><span>إعدادات</span></a>
+                        <a href="add_news.html" class="head-nav-item admin"><i>⊕</i><span>إضافة</span></a>
+                        <a href="admin.html" class="head-nav-item admin"><i>🛠️</i><span>اللوحة</span></a>
+                    </div>
+                    <a href="#" class="head-nav-item logout" id="logoutHead"><i>🚪</i><span>خروج</span></a>
+                </div>
             </div>
         </div>
     </div>
     `;
 
-    // حقن الكود في بداية الـ body
     document.body.insertAdjacentHTML('afterbegin', headerHTML);
 
     const capsule = document.getElementById('headerCapsule');
-    const trigger = document.getElementById('headTrigger');
+    const circleTrigger = document.getElementById('circleTrigger');
+    const closeBtn = document.getElementById('closeHeader');
     const logout = document.getElementById('logoutHead');
 
-    // تفعيل وظيفة الفتح والإغلاق
-    trigger.addEventListener('click', (e) => {
+    // فتح الكبسولة عند الضغط على الدائرة
+    circleTrigger.onclick = () => {
+        capsule.classList.add('open');
+    };
+
+    // إغلاق الكبسولة عند الضغط على X
+    closeBtn.onclick = (e) => {
         e.stopPropagation();
-        const isOpen = capsule.classList.toggle('open');
-        trigger.innerHTML = isOpen ? "✕" : "⚙️";
-        trigger.style.color = isOpen ? "#FF3B30" : "#007AFF";
-    });
+        capsule.classList.remove('open');
+    };
 
-    // إغلاق عند الضغط بالخارج
-    document.addEventListener('click', (e) => {
-        if (!capsule.contains(e.target) && capsule.classList.contains('open')) {
-            capsule.classList.remove('open');
-            trigger.innerHTML = "⚙️";
-            trigger.style.color = "#007AFF";
-        }
-    });
-
-    // فحص الصلاحيات
+    // التحقق من الصلاحيات
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const userSnap = await getDoc(doc(db, "Users", user.uid));
-            const role = (userSnap.data()?.role || "").toLowerCase();
-            const isAdmin = role.includes('admin') || role.includes('مدير');
-            const adminTools = document.getElementById('adminToolsHead');
-            const dropdown = document.querySelector('.header-dropdown');
+            const isAdmin = (userSnap.data()?.role || "").toLowerCase().match(/admin|مدير/);
+            document.getElementById('adminToolsHead').style.display = isAdmin ? "contents" : "none";
             
-            if (adminTools) adminTools.style.display = isAdmin ? "contents" : "none";
-            if (dropdown) dropdown.style.gridTemplateColumns = isAdmin ? "repeat(4, 1fr)" : "repeat(1, 1fr)";
+            // تعديل العرض بناءً على الصلاحية
+            if (!isAdmin) {
+                capsule.style.setProperty('--open-width', '150px');
+                document.querySelector('.header-dropdown').style.gridTemplateColumns = "repeat(1, 1fr)";
+            }
         }
     });
 
-    // تسجيل الخروج
-    logout.addEventListener('click', (e) => {
-        e.preventDefault();
-        if(confirm("هل تريد تسجيل الخروج؟")) {
-            auth.signOut().then(() => window.location.href = "index.html");
-        }
-    });
+    logout.onclick = () => {
+        if(confirm("تسجيل خروج؟")) auth.signOut().then(() => location.reload());
+    };
 }
 
-// التأكد من تحميل الصفحة بالكامل قبل تشغيل الدالة
-if (document.readyState === 'complete') {
-    createDynamicHeader();
-} else {
-    window.addEventListener('load', createDynamicHeader);
-}
+// التشغيل
+if (document.readyState === 'complete') { createDynamicHeader(); } 
+else { window.addEventListener('load', createDynamicHeader); }
