@@ -1,3 +1,4 @@
 self.addEventListener('fetch', function(event) {
-    // هذا الملف مطلوب تقنياً لتفعيل ميزة التثبيت (PWA)
+  // هذا الكود يسمح للتطبيق بالعمل حتى لو انقطع الإنترنت لاحقاً
+  event.respondWith(fetch(event.request));
 });
